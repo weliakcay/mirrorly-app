@@ -8,38 +8,46 @@ import Processing from './components/Processing';
 import ResultView from './components/ResultView';
 import MerchantDashboard from './components/MerchantDashboard';
 import { generateTryOnImage } from './services/geminiService';
+import { getGarmentById, getMerchantProfile, isFirebaseConfigured, getGarmentsFromDb } from './services/firebase';
 
 const App: React.FC = () => {
   // Application State
   const [currentState, setCurrentState] = useState<AppState>(AppState.SPLASH);
   
-  // Centralized Inventory & Profile State with LocalStorage Initialization
-  const [inventory, setInventory] = useState<Garment[]>(() => {
-    const saved = localStorage.getItem('mirrorly_inventory');
-    return saved ? JSON.parse(saved) : MOCK_GARMENTS;
-  });
-
-  const [merchantProfile, setMerchantProfile] = useState<MerchantProfile>(() => {
-    const saved = localStorage.getItem('mirrorly_profile');
-    return saved ? JSON.parse(saved) : DEFAULT_PROFILE;
-  });
-  
   // Data State
+  const [inventory, setInventory] = useState<Garment[]>([]);
+  const [merchantProfile, setMerchantProfile] = useState<MerchantProfile>(DEFAULT_PROFILE);
   const [selectedGarment, setSelectedGarment] = useState<Garment | null>(null);
   const [userPhoto, setUserPhoto] = useState<File | null>(null);
   const [result, setResult] = useState<ProcessingResult | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
-  // Persistence Effects
+  // Initial Data Fetch
   useEffect(() => {
-    localStorage.setItem('mirrorly_inventory', JSON.stringify(inventory));
-  }, [inventory]);
-
-  useEffect(() => {
-    localStorage.setItem('mirrorly_profile', JSON.stringify(merchantProfile));
-  }, [merchantProfile]);
+    const fetchInitialData = async () => {
+        // 1. Load Profile
+        if (isFirebaseConfigured()) {
+            const profile = await getMerchantProfile();
+            if (profile) setMerchantProfile(profile);
+            
+            // 2. Load Inventory (for dashboard mainly)
+            // Optimization: We could only load this if merchant logs in, but for small boutiques loading all is fine.
+            const items = await getGarmentsFromDb();
+            if (items.length > 0) setInventory(items);
+        } else {
+            // Fallback to local storage if firebase not set up
+            const savedInv = localStorage.getItem('mirrorly_inventory');
+            if (savedInv) setInventory(JSON.parse(savedInv));
+            
+            const savedProf = localStorage.getItem('mirrorly_profile');
+            if (savedProf) setMerchantProfile(JSON.parse(savedProf));
+        }
+    };
+    fetchInitialData();
+  }, []);
 
   // Transitions
-  const handleSplashComplete = () => {
+  const handleSplashComplete = async () => {
     // Check for URL parameters to determine if we are scanning a specific item
     const params = new URLSearchParams(window.location.search);
     const garmentId = params.get('id');
@@ -47,15 +55,28 @@ const App: React.FC = () => {
     console.log("Checking URL for ID:", garmentId);
 
     if (garmentId) {
-      // Find garment in inventory
-      const garment = inventory.find(g => g.id === garmentId);
+      setIsLoadingData(true);
+      
+      let garment: Garment | null = null;
+
+      // Try fetching directly from DB first (Single source of truth)
+      if (isFirebaseConfigured()) {
+         garment = await getGarmentById(garmentId);
+      } 
+      
+      // Fallback to local inventory state if DB failed or not configured
+      if (!garment) {
+         garment = inventory.find(g => g.id === garmentId) || null;
+      }
+
+      setIsLoadingData(false);
+
       if (garment) {
         console.log("Garment found:", garment.name);
         setSelectedGarment(garment);
         setCurrentState(AppState.GARMENT_VIEW);
       } else {
-        // ID not found, go to landing
-        console.warn('Garment ID not found in current inventory');
+        console.warn('Garment ID not found');
         setCurrentState(AppState.LANDING);
       }
     } else {
@@ -108,6 +129,10 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
+    if (isLoadingData) {
+        return <Processing />; // Reuse processing screen while fetching DB data
+    }
+
     switch (currentState) {
       case AppState.SPLASH:
         return <Splash onComplete={handleSplashComplete} />;
@@ -149,7 +174,6 @@ const App: React.FC = () => {
                 onUpdateInventory={setInventory}
                 onUpdateProfile={setMerchantProfile}
                 onBack={() => {
-                    // Reset to landing
                     setCurrentState(AppState.LANDING);
                 }} 
             />
@@ -162,10 +186,6 @@ const App: React.FC = () => {
 
   return (
     <div className="w-full h-screen bg-neutral-100 flex items-center justify-center overflow-hidden">
-      {/* 
-        Container ensures mobile-app like feel on desktop, 
-        or full width on actual mobile 
-      */}
       <div className="w-full h-full sm:max-w-md sm:h-[850px] bg-boutique-cream sm:rounded-3xl sm:shadow-2xl overflow-hidden relative border-gray-200 sm:border">
         {renderContent()}
       </div>

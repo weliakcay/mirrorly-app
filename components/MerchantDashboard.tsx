@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { QrCode, Plus, LogOut, Link as LinkIcon, Printer, X, Store, Package, Image as ImageIcon, Upload, Settings } from 'lucide-react';
+import { QrCode, Plus, LogOut, Link as LinkIcon, Printer, X, Store, Package, Image as ImageIcon, Upload, Settings, Loader2 } from 'lucide-react';
 import { Garment, MerchantProfile } from '../types';
+import { addGarmentToDb, saveMerchantProfile, isFirebaseConfigured } from '../services/firebase';
 
 interface MerchantDashboardProps {
   inventory: Garment[];
@@ -26,6 +27,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
   // Sub-states
   const [isAdding, setIsAdding] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); // New saving state
   const [activeQrItem, setActiveQrItem] = useState<Garment | null>(null);
 
   // Add Item Form State
@@ -67,42 +69,76 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   };
 
   // --- Inventory Logic ---
-  const handleAddItem = (e: React.FormEvent) => {
+  const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newItemImage) {
         alert("Lütfen ürün görseli yükleyiniz.");
         return;
     }
-
-    const newItem: Garment = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: newItemName,
-        description: newItemDesc || 'Exclusive Piece',
-        imageUrl: newItemImage,
-        price: parseFloat(newItemPrice) || 0,
-        boutiqueName: merchantProfile.name,
-        shopUrl: newItemShopUrl || merchantProfile.paymentLink || undefined
-    };
-    onUpdateInventory([...inventory, newItem]);
-    setIsAdding(false);
     
-    // Reset Form
-    setNewItemName('');
-    setNewItemDesc('');
-    setNewItemPrice('');
-    setNewItemShopUrl('');
-    setNewItemImage(null);
+    setIsSaving(true);
+
+    try {
+        const tempId = Math.random().toString(36).substr(2, 9);
+        const newItem: Garment = {
+            id: tempId, // Database might overwrite this if we used auto-id, but we'll use this for now or get ID back
+            name: newItemName,
+            description: newItemDesc || 'Exclusive Piece',
+            imageUrl: newItemImage, // Contains Base64, will be uploaded in service
+            price: parseFloat(newItemPrice) || 0,
+            boutiqueName: merchantProfile.name,
+            shopUrl: newItemShopUrl || merchantProfile.paymentLink || undefined
+        };
+
+        if (isFirebaseConfigured()) {
+            const docId = await addGarmentToDb(newItem);
+            newItem.id = docId; // Update with real ID
+            // We need to refresh inventory from DB ideally, or just optimistically add to state.
+            // Since `addGarmentToDb` converts image to URL, we can't easily push the 'newItem' (which has base64) to state 
+            // without it lagging.
+            // For MVP: Let's trust the upload happened and just push the local version (with Base64) to UI for instant feedback,
+            // but next reload fetches the URL version.
+        }
+
+        onUpdateInventory([...inventory, newItem]);
+        setIsAdding(false);
+        
+        // Reset Form
+        setNewItemName('');
+        setNewItemDesc('');
+        setNewItemPrice('');
+        setNewItemShopUrl('');
+        setNewItemImage(null);
+
+    } catch (error) {
+        alert("Kayıt sırasında bir hata oluştu. İnternet bağlantınızı kontrol edin.");
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   // --- Profile Logic ---
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
       e.preventDefault();
-      onUpdateProfile({
+      setIsSaving(true);
+      
+      const newProfile: MerchantProfile = {
           name: profileName,
           logoUrl: profileLogo || undefined,
           paymentLink: profileLink
-      });
-      alert("Mağaza bilgileri güncellendi!");
+      };
+
+      try {
+        if (isFirebaseConfigured()) {
+            await saveMerchantProfile(newProfile);
+        }
+        onUpdateProfile(newProfile);
+        alert("Mağaza bilgileri güncellendi!");
+      } catch (err) {
+        alert("Güncelleme hatası.");
+      } finally {
+        setIsSaving(false);
+      }
   };
 
   const getProductDeepLink = (itemId: string) => {
@@ -118,7 +154,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     window.print();
   };
 
-  // 1. Login Screen (Unchanged but using props)
+  // 1. Login Screen
   if (!isLoggedIn) {
     return (
         <div className="h-full flex flex-col items-center justify-center bg-gray-900 text-white animate-fade-in px-8">
@@ -270,7 +306,15 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 </div>
 
                 {isAdding && (
-                    <form onSubmit={handleAddItem} className="bg-white p-5 rounded-xl shadow-md mb-6 space-y-4 border border-gray-100">
+                    <form onSubmit={handleAddItem} className="bg-white p-5 rounded-xl shadow-md mb-6 space-y-4 border border-gray-100 relative">
+                        {isSaving && (
+                            <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center rounded-xl">
+                                <div className="flex flex-col items-center">
+                                    <Loader2 className="w-8 h-8 text-boutique-gold animate-spin" />
+                                    <span className="text-xs mt-2 text-gray-500">Buluta Yükleniyor...</span>
+                                </div>
+                            </div>
+                        )}
                         
                         {/* Image Upload Area */}
                         <div 
@@ -336,6 +380,12 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 )}
 
                 <div className="space-y-3 pb-8">
+                    {!isFirebaseConfigured() && (
+                        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-xs mb-4">
+                            Uyarı: Firebase API anahtarları eksik. Veriler sadece bu cihazda (Local) saklanacak.
+                        </div>
+                    )}
+
                     {inventory.length === 0 && <p className="text-gray-400 text-center text-sm py-8">Henüz ürün yok.</p>}
                     {inventory.map((item) => (
                         <div key={item.id} className="bg-white p-3 rounded-xl shadow-sm border border-gray-50 flex items-center gap-4">
@@ -360,7 +410,16 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
         {/* === PROFILE TAB === */}
         {activeTab === 'profile' && (
-            <div className="space-y-6">
+            <div className="space-y-6 relative">
+                 {isSaving && (
+                    <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center rounded-xl">
+                         <div className="flex flex-col items-center">
+                            <Loader2 className="w-8 h-8 text-boutique-gold animate-spin" />
+                             <span className="text-xs mt-2 text-gray-500">Güncelleniyor...</span>
+                         </div>
+                    </div>
+                )}
+
                 <div className="flex flex-col items-center">
                     <div 
                         onClick={() => logoInputRef.current?.click()}
