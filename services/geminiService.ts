@@ -26,6 +26,32 @@ const urlToBase64 = async (url: string): Promise<string> => {
   }
 };
 
+/**
+ * Simple function to validate if the API Key is active and working.
+ */
+export const testApiKey = async (apiKey: string): Promise<{ success: boolean; message: string }> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey });
+        // Use a lightweight text model just for connectivity check
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-latest', 
+            contents: 'Hello, are you active?',
+        });
+        
+        if (response.text) {
+            return { success: true, message: "Bağlantı Başarılı! API Anahtarı aktif." };
+        } else {
+            return { success: false, message: "API cevap vermedi (Boş yanıt)." };
+        }
+    } catch (error: any) {
+        console.error("API Test Error:", error);
+        return { 
+            success: false, 
+            message: `Bağlantı Hatası: ${error.message || error.statusText || "Bilinmeyen hata"}` 
+        };
+    }
+};
+
 export const generateTryOnImage = async (
   userPhotoBase64: string,
   garment: Garment,
@@ -40,13 +66,15 @@ export const generateTryOnImage = async (
       return {
           success: false,
           imageUrl: "",
-          message: "System Error: No AI Key configured. Please ask the boutique owner to check settings in the Merchant Dashboard."
+          message: "Sistem Hatası: API Anahtarı girilmemiş. Lütfen mağaza panelinden kontrol edin."
       };
     }
 
     const ai = new GoogleGenAI({ apiKey });
     
     // Use the latest vision-capable model
+    // Note: 'gemini-2.5-flash-image' works best for speed/cost. 
+    // If you have access to 'gemini-3-pro-image-preview', it is higher quality but requires different quota.
     const modelId = 'gemini-2.5-flash-image';
 
     // 1. Prepare Garment Image (Convert URL to Base64)
@@ -61,7 +89,6 @@ export const generateTryOnImage = async (
     const userBase64 = stripBase64Header(userPhotoBase64);
 
     // 3. Construct a Robust Prompt
-    // We explicitly define roles for the images to avoid confusion.
     const prompt = `
       Act as an expert AI Fashion Stylist and Photo Editor.
       
@@ -83,8 +110,6 @@ export const generateTryOnImage = async (
     `;
 
     // 4. Configure Safety Settings
-    // Fashion images often trigger false positives for 'Sexually Explicit' categories due to skin exposure.
-    // We relax these slightly to allow for legitimate clothing try-on.
     const safetySettings = [
       {
         category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
@@ -104,7 +129,7 @@ export const generateTryOnImage = async (
       },
     ];
 
-    console.log("Sending request to Gemini...");
+    console.log("Sending request to Gemini Model:", modelId);
 
     const response = await ai.models.generateContent({
       model: modelId,
@@ -113,7 +138,7 @@ export const generateTryOnImage = async (
           { text: prompt },
           {
             inlineData: {
-              mimeType: 'image/jpeg', // Assuming inputs are generally jpegs/pngs, the API is forgiving here
+              mimeType: 'image/jpeg',
               data: userBase64
             }
           },
@@ -126,7 +151,7 @@ export const generateTryOnImage = async (
         ]
       },
       config: {
-        temperature: 0.4, // Lower temperature for better adherence to the input images
+        temperature: 0.4,
         safetySettings: safetySettings
       }
     });
@@ -146,12 +171,11 @@ export const generateTryOnImage = async (
     if (!generatedImage) {
          console.warn("Gemini Response blocked or text-only:", response.text);
          
-         // specific handling if blocked by safety
          if (response.promptFeedback?.blockReason) {
-             throw new Error(`Image generation blocked by safety filters (${response.promptFeedback.blockReason}). Please try a different photo.`);
+             throw new Error(`Güvenlik Filtresi Engeli (${response.promptFeedback.blockReason}). Lütfen farklı bir fotoğraf deneyin.`);
          }
          
-         throw new Error("The magic mirror couldn't generate a reflection. Please try a clearer photo.");
+         throw new Error("Yapay zeka görüntüyü oluşturamadı. Lütfen daha net bir fotoğraf deneyin veya API kotanızı kontrol edin.");
     }
 
     return {
@@ -160,16 +184,21 @@ export const generateTryOnImage = async (
     };
 
   } catch (error: any) {
-    console.error("Gemini Try-On Error:", error);
+    console.error("Gemini Try-On Error Full:", JSON.stringify(error, null, 2));
     
-    let userMessage = "The magic mirror is having trouble seeing clearly. Please try again.";
+    let userMessage = "Sihirli ayna şu an biraz bulanık. Lütfen tekrar deneyin.";
     
-    if (error.message?.includes("API Key")) {
-        userMessage = "Configuration Error: Invalid API Key. Please verify in Merchant Dashboard.";
+    // Friendly Error Mapping
+    if (error.message?.includes("API Key") || error.status === 400) {
+        userMessage = "Yapılandırma Hatası: API Anahtarı geçersiz veya yetkisiz.";
+    } else if (error.status === 403) {
+        userMessage = "Erişim Reddedildi: API Anahtarının bu model (gemini-2.5-flash-image) için yetkisi yok.";
+    } else if (error.status === 429) {
+        userMessage = "Sistem çok yoğun (Kota Aşıldı). Lütfen 1 dakika sonra deneyin.";
     } else if (error.message?.includes("blocked")) {
-        userMessage = "The image could not be processed due to safety filters. Please try a different pose or photo.";
+        userMessage = "Görsel güvenlik filtrelerine takıldı. Lütfen daha standart bir poz/kıyafet deneyin.";
     } else if (error.message?.includes("fetch")) {
-        userMessage = "Connection Error: Could not download the garment image.";
+        userMessage = "Bağlantı Hatası: Kıyafet görseli indirilemedi.";
     }
 
     return {

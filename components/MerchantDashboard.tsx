@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { QrCode, Plus, LogOut, Link as LinkIcon, Printer, X, Store, Package, Image as ImageIcon, Upload, Settings, Loader2, Key } from 'lucide-react';
+import { QrCode, Plus, LogOut, Link as LinkIcon, Printer, X, Store, Package, Image as ImageIcon, Upload, Settings, Loader2, Key, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Garment, MerchantProfile } from '../types';
 import { addGarmentToDb, saveMerchantProfile, isFirebaseConfigured } from '../services/firebase';
+import { testApiKey } from '../services/geminiService';
 
 interface MerchantDashboardProps {
   inventory: Garment[];
@@ -29,6 +30,9 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeQrItem, setActiveQrItem] = useState<Garment | null>(null);
+
+  // Connection Test State
+  const [isTestingKey, setIsTestingKey] = useState(false);
 
   // Add Item Form State
   const [newItemName, setNewItemName] = useState('');
@@ -163,6 +167,26 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         alert(`Güncelleme hatası:\n${error.message}`);
       } finally {
         setIsSaving(false);
+      }
+  };
+
+  const handleTestConnection = async () => {
+      if (!profileApiKey) {
+          alert("Lütfen önce bir API anahtarı girin.");
+          return;
+      }
+      setIsTestingKey(true);
+      try {
+          const result = await testApiKey(profileApiKey);
+          if (result.success) {
+              alert("✅ " + result.message);
+          } else {
+              alert("❌ " + result.message);
+          }
+      } catch (e) {
+          alert("Hata oluştu.");
+      } finally {
+          setIsTestingKey(false);
       }
   };
 
@@ -479,15 +503,29 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
                     <div className="space-y-1">
                         <label className="text-xs text-gray-500 uppercase font-bold ml-1 text-boutique-gold">Google Gemini API Key</label>
-                        <div className="relative">
-                            <Key className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                            <input 
-                                type="password" 
-                                value={profileApiKey}
-                                onChange={(e) => setProfileApiKey(e.target.value)}
-                                placeholder="AIzaSy..."
-                                className="w-full bg-white border border-gray-200 rounded-lg p-3 pl-9 text-gray-900 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-boutique-gold"
-                            />
+                        <div className="flex gap-2">
+                             <div className="relative flex-1">
+                                <Key className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                <input 
+                                    type="password" 
+                                    value={profileApiKey}
+                                    onChange={(e) => setProfileApiKey(e.target.value)}
+                                    placeholder="AIzaSy..."
+                                    className="w-full bg-white border border-gray-200 rounded-lg p-3 pl-9 text-gray-900 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-boutique-gold"
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleTestConnection}
+                                disabled={isTestingKey || !profileApiKey}
+                                className={`px-4 rounded-lg font-medium text-xs transition-colors border ${isTestingKey ? 'bg-gray-100 text-gray-400 border-gray-100' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                            >
+                                {isTestingKey ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    "Bağlantıyı Test Et"
+                                )}
+                            </button>
                         </div>
                         <p className="text-[10px] text-gray-400 ml-1">
                             Sanal deneme (Virtual Try-On) için gereklidir. 
