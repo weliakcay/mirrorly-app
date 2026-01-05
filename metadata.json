@@ -1,0 +1,7 @@
+{
+  "name": "Mirrorly",
+  "description": "A magical virtual try-on mirror experience for boutiques.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
