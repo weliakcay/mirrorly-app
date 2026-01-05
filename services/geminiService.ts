@@ -27,25 +27,26 @@ export const generateTryOnImage = async (
 
     const ai = new GoogleGenAI({ apiKey });
     
-    // We use gemini-2.5-flash-image for speed and multimodal capability
-    // In a real production scenario, you might use 'imagen-3.0-generate-001' 
-    // or a specialized VTON pipeline, but here we simulate the "Magic" with Gemini.
+    // Using gemini-2.5-flash-image for balanced speed and image capability
     const modelId = 'gemini-2.5-flash-image';
 
     const prompt = `
-      You are a magical fashion mirror. 
-      I will provide a photo of a user and a description of a garment: "${garment.name} - ${garment.description}".
+      Perform a virtual try-on.
       
-      Please generate a new image of this user wearing this specific garment. 
-      Maintain the user's pose, body type, and the background environment from the user's photo.
-      The lighting should be natural and flattering.
-      Make it look like a high-quality fashion photograph.
-      Focus on the fit and the drape of the fabric.
+      Input 1: An image of a person (the user).
+      Input 2 (Description): A garment described as: "${garment.name} - ${garment.description}".
+      
+      Task: Generate a photorealistic image of the person from Input 1 wearing the garment described in Input 2.
+      
+      Requirements:
+      1. Preserve the person's identity, facial features, hair, body shape, and pose exactly as they appear in the input photo.
+      2. Preserve the background of the original photo.
+      3. Replace the person's current outfit with the "${garment.name}".
+      4. Ensure the lighting on the new garment matches the lighting of the original scene.
+      5. The final image should look like a high-end fashion photo.
+      6. Do not crop the head or face.
     `;
 
-    // Note: Direct "deepfake" style identity preservation is often restricted.
-    // We frame this as a "virtual try-on visualization".
-    
     const response = await ai.models.generateContent({
       model: modelId,
       contents: {
@@ -61,10 +62,6 @@ export const generateTryOnImage = async (
       }
     });
 
-    // Check for generated image in response
-    // For 'generateContent' with image models, sometimes it returns an image part, 
-    // sometimes text if it refuses.
-    
     let generatedImage = null;
     
     if (response.candidates?.[0]?.content?.parts) {
@@ -76,13 +73,11 @@ export const generateTryOnImage = async (
         }
     }
 
-    // Fallback logic if the model returns text (e.g. "I can't do that") or fails
     if (!generatedImage) {
-         // Attempting with Imagen if the first approach fails or for better quality logic
-         // This block is hypothetical as we stick to the main request, 
-         // but ensures the UI doesn't break.
          console.log("Gemini returned text/no image:", response.text);
-         throw new Error("Could not generate image trial.");
+         // If the model refuses due to safety or capability, we might get text.
+         // Return a specific error to show in UI
+         throw new Error("The magic mirror couldn't process this reflection. Please try a different photo.");
     }
 
     return {
@@ -92,7 +87,6 @@ export const generateTryOnImage = async (
 
   } catch (error) {
     console.error("Gemini Try-On Error:", error);
-    // Fallback for demo resilience
     return {
       success: false,
       imageUrl: "",

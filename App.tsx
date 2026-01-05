@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppState, Garment, MOCK_GARMENTS, ProcessingResult, MerchantProfile, DEFAULT_PROFILE } from './types';
 import Splash from './components/Splash';
 import Landing from './components/Landing';
@@ -13,14 +13,30 @@ const App: React.FC = () => {
   // Application State
   const [currentState, setCurrentState] = useState<AppState>(AppState.SPLASH);
   
-  // Centralized Inventory & Profile State
-  const [inventory, setInventory] = useState<Garment[]>(MOCK_GARMENTS);
-  const [merchantProfile, setMerchantProfile] = useState<MerchantProfile>(DEFAULT_PROFILE);
+  // Centralized Inventory & Profile State with LocalStorage Initialization
+  const [inventory, setInventory] = useState<Garment[]>(() => {
+    const saved = localStorage.getItem('mirrorly_inventory');
+    return saved ? JSON.parse(saved) : MOCK_GARMENTS;
+  });
+
+  const [merchantProfile, setMerchantProfile] = useState<MerchantProfile>(() => {
+    const saved = localStorage.getItem('mirrorly_profile');
+    return saved ? JSON.parse(saved) : DEFAULT_PROFILE;
+  });
   
   // Data State
   const [selectedGarment, setSelectedGarment] = useState<Garment | null>(null);
   const [userPhoto, setUserPhoto] = useState<File | null>(null);
   const [result, setResult] = useState<ProcessingResult | null>(null);
+
+  // Persistence Effects
+  useEffect(() => {
+    localStorage.setItem('mirrorly_inventory', JSON.stringify(inventory));
+  }, [inventory]);
+
+  useEffect(() => {
+    localStorage.setItem('mirrorly_profile', JSON.stringify(merchantProfile));
+  }, [merchantProfile]);
 
   // Transitions
   const handleSplashComplete = () => {
@@ -28,15 +44,18 @@ const App: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const garmentId = params.get('id');
 
+    console.log("Checking URL for ID:", garmentId);
+
     if (garmentId) {
       // Find garment in inventory
       const garment = inventory.find(g => g.id === garmentId);
       if (garment) {
+        console.log("Garment found:", garment.name);
         setSelectedGarment(garment);
         setCurrentState(AppState.GARMENT_VIEW);
       } else {
         // ID not found, go to landing
-        console.warn('Garment ID not found');
+        console.warn('Garment ID not found in current inventory');
         setCurrentState(AppState.LANDING);
       }
     } else {
@@ -82,7 +101,9 @@ const App: React.FC = () => {
   const handleTryAnother = () => {
     setResult(null);
     setUserPhoto(null);
-    window.history.pushState({}, '', window.location.pathname);
+    // Remove ID from URL without refreshing to return to pure landing state
+    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+    window.history.pushState({path: newUrl}, '', newUrl);
     setCurrentState(AppState.LANDING);
   };
 
