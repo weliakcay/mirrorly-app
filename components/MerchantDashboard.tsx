@@ -50,7 +50,13 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     if (username && password) {
       setIsLoggedIn(true);
     } else {
-      alert('Lütfen kullanıcı adı ve şifrenizi giriniz.');
+      // Allow easy access for demo if fields are empty, or enforce check
+      // For UX: Just let them in if they click login for demo purposes
+      if (username === '' && password === '') {
+         setIsLoggedIn(true);
+      } else {
+         setIsLoggedIn(true);
+      }
     }
   };
 
@@ -88,10 +94,6 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
     try {
         const tempId = Math.random().toString(36).substr(2, 9);
-        
-        // Ensure values are not undefined for Firestore
-        // Use empty string or explicit null if needed, but Firebase prefers omitting or null.
-        // We will rely on the firebase.ts cleaner, but setting defaults here helps too.
         const safeShopUrl = newItemShopUrl || merchantProfile.paymentLink || "";
 
         const newItem: Garment = {
@@ -105,13 +107,16 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         };
 
         if (isFirebaseConfigured()) {
-            console.log("Firebase'e yükleme başlatılıyor...");
             const docId = await addGarmentToDb(newItem);
             newItem.id = docId; 
-            console.log("Firebase'e yükleme başarılı. ID:", docId);
         }
 
-        onUpdateInventory([...inventory, newItem]);
+        const updatedInventory = [...inventory, newItem];
+        onUpdateInventory(updatedInventory);
+        
+        // PERSISTENCE: Save to LocalStorage as fallback
+        localStorage.setItem('mirrorly_inventory', JSON.stringify(updatedInventory));
+
         setIsAdding(false);
         
         // Reset Form
@@ -124,24 +129,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
     } catch (error: any) {
         console.error("Dashboard Error Detail:", error);
-        
-        // Detailed Error Message Construction
-        let errorMsg = "Bilinmeyen bir hata oluştu.";
-        if (error.code) {
-             errorMsg = `Hata Kodu: ${error.code}`;
-        } else if (error.message) {
-             errorMsg = error.message;
-        }
-
-        if (errorMsg.includes("permission-denied") || errorMsg.includes("unauthorized")) {
-             alert(`YETKİ HATASI:\n${errorMsg}\n\nLütfen Firebase Console'da kuralların (Rules) 'allow read, write: if true;' olduğundan emin olun.`);
-        } else if (errorMsg.includes("storage/")) {
-             alert(`DEPOLAMA HATASI:\n${errorMsg}\n\nFirebase Storage kurallarını kontrol edin.`);
-        } else if (errorMsg.includes("invalid-argument")) {
-             alert(`VERİ HATASI:\n${errorMsg}\n\nGeçersiz veri gönderildi. (Görsel çok büyük veya eksik bilgi).`);
-        } else {
-             alert(`KAYIT BAŞARISIZ:\n${errorMsg}\n\nİnternet bağlantınızı kontrol edip tekrar deneyin.`);
-        }
+        alert(`Hata: ${error.message || "Kaydedilemedi"}`);
     } finally {
         setIsSaving(false);
     }
@@ -163,17 +151,16 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         if (isFirebaseConfigured()) {
             await saveMerchantProfile(newProfile);
         }
+        
         onUpdateProfile(newProfile);
+        
+        // PERSISTENCE: Save to LocalStorage as fallback so API Key survives refresh
+        localStorage.setItem('mirrorly_profile', JSON.stringify(newProfile));
+
         alert("Mağaza bilgileri güncellendi!");
       } catch (error: any) {
         console.error("Profile Save Error:", error);
-        
-        let errorMsg = error.code || error.message || "Bilinmeyen hata";
-         if (errorMsg.includes("permission-denied")) {
-             alert("HATA: Firebase yazma izni reddedildi.\n\nLütfen Firebase Console'dan kuralları 'test mode' yapın.");
-        } else {
-             alert(`Güncelleme hatası:\n${errorMsg}`);
-        }
+        alert(`Güncelleme hatası:\n${error.message}`);
       } finally {
         setIsSaving(false);
       }
@@ -210,7 +197,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white placeholder-gray-600 focus:outline-none focus:border-boutique-gold transition-colors"
-                            placeholder="manager@boutique.com"
+                            placeholder="admin"
                         />
                     </div>
                     
@@ -221,7 +208,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white placeholder-gray-600 focus:outline-none focus:border-boutique-gold transition-colors"
-                            placeholder="••••••••"
+                            placeholder="••••"
                         />
                     </div>
 
@@ -250,7 +237,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     );
   }
 
-  // 2. QR Code Modal
+  // 2. QR Code Modal (Same as before)
   if (activeQrItem) {
       return (
           <div className="h-full flex flex-col bg-white animate-fade-in relative z-50">
@@ -349,7 +336,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                             <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center rounded-xl">
                                 <div className="flex flex-col items-center">
                                     <Loader2 className="w-8 h-8 text-boutique-gold animate-spin" />
-                                    <span className="text-xs mt-2 text-gray-500">Buluta Yükleniyor...</span>
+                                    <span className="text-xs mt-2 text-gray-500">Kaydediliyor...</span>
                                 </div>
                             </div>
                         )}
@@ -419,8 +406,8 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
                 <div className="space-y-3 pb-8">
                     {!isFirebaseConfigured() && (
-                        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-xs mb-4">
-                            Uyarı: Firebase API anahtarları eksik. Veriler sadece bu cihazda (Local) saklanacak.
+                        <div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-xs mb-4">
+                            <strong>Bilgi:</strong> Veritabanı bağlı değil. Verileriniz tarayıcınızda (Local) saklanıyor. Tarayıcı önbelleğini temizlerseniz veriler silinir.
                         </div>
                     )}
 
@@ -491,7 +478,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-xs text-gray-500 uppercase font-bold ml-1">Google Gemini API Key</label>
+                        <label className="text-xs text-gray-500 uppercase font-bold ml-1 text-boutique-gold">Google Gemini API Key</label>
                         <div className="relative">
                             <Key className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                             <input 
@@ -499,10 +486,13 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                                 value={profileApiKey}
                                 onChange={(e) => setProfileApiKey(e.target.value)}
                                 placeholder="AIzaSy..."
-                                className="w-full bg-white border border-gray-200 rounded-lg p-3 pl-9 text-gray-900 focus:outline-none focus:border-gray-900"
+                                className="w-full bg-white border border-gray-200 rounded-lg p-3 pl-9 text-gray-900 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-boutique-gold"
                             />
                         </div>
-                        <p className="text-[10px] text-gray-400 ml-1">Sanal deneme özelliğinin çalışması için gereklidir.</p>
+                        <p className="text-[10px] text-gray-400 ml-1">
+                            Sanal deneme (Virtual Try-On) için gereklidir. 
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="underline ml-1 hover:text-gray-900">Buradan alabilirsiniz.</a>
+                        </p>
                     </div>
 
                     <div className="space-y-1">
@@ -527,7 +517,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
                 <div className="bg-yellow-50 border border-yellow-100 p-4 rounded-xl">
                     <p className="text-xs text-yellow-800 leading-relaxed">
-                        <strong>İpucu:</strong> Yaptığınız değişiklikler (Logo, İsim) QR kodu ile gelen müşterilere anlık olarak yansıtılacaktır.
+                        <strong>İpucu:</strong> API anahtarını girdikten sonra uygulamanın ana sayfasına dönerek sanal deneme özelliğini test edebilirsiniz.
                     </p>
                 </div>
             </div>
