@@ -104,8 +104,12 @@ const App: React.FC = () => {
     reader.onloadend = async () => {
       const base64String = reader.result as string;
       
-      // Call Gemini Service
-      const apiResult = await generateTryOnImage(base64String, selectedGarment);
+      // Call Gemini Service with Dynamic API Key from Profile
+      const apiResult = await generateTryOnImage(
+          base64String, 
+          selectedGarment, 
+          merchantProfile.geminiApiKey
+      );
       
       setResult(apiResult);
       setCurrentState(AppState.RESULT);

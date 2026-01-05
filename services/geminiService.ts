@@ -8,10 +8,13 @@ const stripBase64Header = (base64: string) => {
 
 export const generateTryOnImage = async (
   userPhotoBase64: string,
-  garment: Garment
+  garment: Garment,
+  dynamicApiKey?: string
 ): Promise<ProcessingResult> => {
   try {
-    const apiKey = process.env.API_KEY;
+    // Priority: Dynamic Key (from DB) > Env Key (from .env file)
+    const apiKey = dynamicApiKey || process.env.API_KEY;
+
     if (!apiKey) {
       console.warn("No API KEY provided. Returning mock response.");
       // Fallback for demo without key

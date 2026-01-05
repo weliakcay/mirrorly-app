@@ -12,6 +12,7 @@ export interface MerchantProfile {
   name: string;
   logoUrl?: string; // Base64 or URL
   paymentLink?: string; // Stripe, Shopify link etc.
+  geminiApiKey?: string; // API Key for AI processing
 }
 
 export interface Garment {
@@ -61,5 +62,6 @@ export const MOCK_GARMENTS: Garment[] = [
 export const DEFAULT_PROFILE: MerchantProfile = {
   name: 'Lumière Boutique',
   logoUrl: undefined, // Will default to text if undefined
-  paymentLink: ''
+  paymentLink: '',
+  geminiApiKey: ''
 };

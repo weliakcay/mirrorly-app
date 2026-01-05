@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, collection, addDoc, getDoc, doc, getDocs, setDoc } from "firebase/firestore";
 import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
 import { Garment, MerchantProfile } from "../types";
@@ -19,16 +19,19 @@ const firebaseConfig = {
 
 // ------------------------------------------------------------------
 
-// Initialize Firebase
+// Initialize Firebase (Singleton Pattern)
+// This prevents "Firebase App named '[DEFAULT]' already exists" errors
+let app;
 let db: any;
 let storage: any;
 
 try {
     if (firebaseConfig.apiKey) {
-        const app = initializeApp(firebaseConfig);
+        // Check if an app is already initialized
+        app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
         db = getFirestore(app);
         storage = getStorage(app);
-        console.log("Firebase başarıyla bağlandı!");
+        console.log("Firebase başarıyla başlatıldı (Singleton).");
     } else {
         console.warn("UYARI: Firebase API anahtarları eksik!");
     }
@@ -49,10 +52,11 @@ export const uploadImageToStorage = async (base64Data: string, path: string): Pr
     
     try {
         const storageRef = ref(storage, path);
+        // 'data_url' format expects strings starting with "data:image/..."
         await uploadString(storageRef, base64Data, 'data_url');
         return await getDownloadURL(storageRef);
     } catch (error) {
-        console.error("Error uploading image:", error);
+        console.error("Storage Yükleme Hatası:", error);
         throw error;
     }
 };
@@ -67,12 +71,13 @@ export const addGarmentToDb = async (garment: Garment): Promise<string> => {
         // 1. Upload Image first if it's base64
         let imageUrl = garment.imageUrl;
         if (imageUrl.startsWith('data:')) {
-            imageUrl = await uploadImageToStorage(imageUrl, `garments/${Date.now()}_${garment.name.replace(/\s+/g, '_')}`);
+            // Sanitize filename to avoid path issues
+            const safeName = garment.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            const fileName = `garments/${Date.now()}_${safeName}`;
+            imageUrl = await uploadImageToStorage(imageUrl, fileName);
         }
 
         // 2. Save document
-        // We use addDoc to let Firestore generate a unique ID, OR we can use the ID passed in if we want specific IDs.
-        // Here we let Firestore generate it for new items.
         const docRef = await addDoc(collection(db, COLLECTION_GARMENTS), {
             ...garment,
             imageUrl: imageUrl
@@ -80,7 +85,7 @@ export const addGarmentToDb = async (garment: Garment): Promise<string> => {
         
         return docRef.id;
     } catch (error) {
-        console.error("Error adding garment:", error);
+        console.error("Veritabanı Kayıt Hatası:", error);
         throw error;
     }
 };
@@ -134,7 +139,8 @@ export const saveMerchantProfile = async (profile: MerchantProfile): Promise<voi
         // Upload logo if needed
         let logoUrl = profile.logoUrl;
         if (logoUrl && logoUrl.startsWith('data:')) {
-            logoUrl = await uploadImageToStorage(logoUrl, `branding/logo_${Date.now()}`);
+            const fileName = `branding/logo_${Date.now()}`;
+            logoUrl = await uploadImageToStorage(logoUrl, fileName);
         }
 
         const docRef = doc(db, COLLECTION_PROFILE, PROFILE_DOC_ID);

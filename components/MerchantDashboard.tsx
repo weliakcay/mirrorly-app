@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { QrCode, Plus, LogOut, Link as LinkIcon, Printer, X, Store, Package, Image as ImageIcon, Upload, Settings, Loader2 } from 'lucide-react';
+import { QrCode, Plus, LogOut, Link as LinkIcon, Printer, X, Store, Package, Image as ImageIcon, Upload, Settings, Loader2, Key } from 'lucide-react';
 import { Garment, MerchantProfile } from '../types';
 import { addGarmentToDb, saveMerchantProfile, isFirebaseConfigured } from '../services/firebase';
 
@@ -27,7 +27,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
   // Sub-states
   const [isAdding, setIsAdding] = useState(false);
-  const [isSaving, setIsSaving] = useState(false); // New saving state
+  const [isSaving, setIsSaving] = useState(false);
   const [activeQrItem, setActiveQrItem] = useState<Garment | null>(null);
 
   // Add Item Form State
@@ -41,6 +41,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   // Profile Form State
   const [profileName, setProfileName] = useState(merchantProfile.name);
   const [profileLink, setProfileLink] = useState(merchantProfile.paymentLink || '');
+  const [profileApiKey, setProfileApiKey] = useState(merchantProfile.geminiApiKey || '');
   const [profileLogo, setProfileLogo] = useState<string | null>(merchantProfile.logoUrl || null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,12 +60,19 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
   // --- Image Helpers ---
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string) => void) => {
-    if (e.target.files && e.target.files[0]) {
+    const file = e.target.files?.[0];
+    if (file) {
+      // 5MB Limit Check
+      if (file.size > 5 * 1024 * 1024) {
+          alert("Görsel boyutu çok büyük! Lütfen 5MB'dan küçük bir görsel seçin.");
+          return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setter(reader.result as string);
       };
-      reader.readAsDataURL(e.target.files[0]);
+      reader.readAsDataURL(file);
     }
   };
 
@@ -81,23 +89,20 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     try {
         const tempId = Math.random().toString(36).substr(2, 9);
         const newItem: Garment = {
-            id: tempId, // Database might overwrite this if we used auto-id, but we'll use this for now or get ID back
+            id: tempId,
             name: newItemName,
             description: newItemDesc || 'Exclusive Piece',
-            imageUrl: newItemImage, // Contains Base64, will be uploaded in service
+            imageUrl: newItemImage, // Contains Base64
             price: parseFloat(newItemPrice) || 0,
             boutiqueName: merchantProfile.name,
             shopUrl: newItemShopUrl || merchantProfile.paymentLink || undefined
         };
 
         if (isFirebaseConfigured()) {
+            console.log("Firebase'e yükleme başlatılıyor...");
             const docId = await addGarmentToDb(newItem);
-            newItem.id = docId; // Update with real ID
-            // We need to refresh inventory from DB ideally, or just optimistically add to state.
-            // Since `addGarmentToDb` converts image to URL, we can't easily push the 'newItem' (which has base64) to state 
-            // without it lagging.
-            // For MVP: Let's trust the upload happened and just push the local version (with Base64) to UI for instant feedback,
-            // but next reload fetches the URL version.
+            newItem.id = docId; 
+            console.log("Firebase'e yükleme başarılı. ID:", docId);
         }
 
         onUpdateInventory([...inventory, newItem]);
@@ -109,9 +114,26 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         setNewItemPrice('');
         setNewItemShopUrl('');
         setNewItemImage(null);
+        alert("Ürün başarıyla eklendi!");
 
-    } catch (error) {
-        alert("Kayıt sırasında bir hata oluştu. İnternet bağlantınızı kontrol edin.");
+    } catch (error: any) {
+        console.error("Dashboard Error Detail:", error);
+        
+        // Detailed Error Message Construction
+        let errorMsg = "Bilinmeyen bir hata oluştu.";
+        if (error.code) {
+             errorMsg = `Hata Kodu: ${error.code}`;
+        } else if (error.message) {
+             errorMsg = error.message;
+        }
+
+        if (errorMsg.includes("permission-denied") || errorMsg.includes("unauthorized")) {
+             alert(`YETKİ HATASI:\n${errorMsg}\n\nLütfen Firebase Console'da kuralların (Rules) 'allow read, write: if true;' olduğundan emin olun.`);
+        } else if (errorMsg.includes("storage/")) {
+             alert(`DEPOLAMA HATASI:\n${errorMsg}\n\nFirebase Storage kurallarını kontrol edin.`);
+        } else {
+             alert(`KAYIT BAŞARISIZ:\n${errorMsg}\n\nİnternet bağlantınızı kontrol edip tekrar deneyin.`);
+        }
     } finally {
         setIsSaving(false);
     }
@@ -125,7 +147,8 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
       const newProfile: MerchantProfile = {
           name: profileName,
           logoUrl: profileLogo || undefined,
-          paymentLink: profileLink
+          paymentLink: profileLink,
+          geminiApiKey: profileApiKey
       };
 
       try {
@@ -134,8 +157,15 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         }
         onUpdateProfile(newProfile);
         alert("Mağaza bilgileri güncellendi!");
-      } catch (err) {
-        alert("Güncelleme hatası.");
+      } catch (error: any) {
+        console.error("Profile Save Error:", error);
+        
+        let errorMsg = error.code || error.message || "Bilinmeyen hata";
+         if (errorMsg.includes("permission-denied")) {
+             alert("HATA: Firebase yazma izni reddedildi.\n\nLütfen Firebase Console'dan kuralları 'test mode' yapın.");
+        } else {
+             alert(`Güncelleme hatası:\n${errorMsg}`);
+        }
       } finally {
         setIsSaving(false);
       }
@@ -450,6 +480,21 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                             onChange={(e) => setProfileName(e.target.value)}
                             className="w-full bg-white border border-gray-200 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-gray-900"
                         />
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs text-gray-500 uppercase font-bold ml-1">Google Gemini API Key</label>
+                        <div className="relative">
+                            <Key className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                            <input 
+                                type="password" 
+                                value={profileApiKey}
+                                onChange={(e) => setProfileApiKey(e.target.value)}
+                                placeholder="AIzaSy..."
+                                className="w-full bg-white border border-gray-200 rounded-lg p-3 pl-9 text-gray-900 focus:outline-none focus:border-gray-900"
+                            />
+                        </div>
+                        <p className="text-[10px] text-gray-400 ml-1">Sanal deneme özelliğinin çalışması için gereklidir.</p>
                     </div>
 
                     <div className="space-y-1">
