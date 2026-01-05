@@ -44,11 +44,26 @@ const COLLECTION_GARMENTS = "garments";
 const COLLECTION_PROFILE = "merchant_profiles";
 const PROFILE_DOC_ID = "main_profile"; 
 
+// Helper to remove undefined fields because Firestore doesn't like them
+// and throws "invalid-argument"
+const cleanData = (data: any) => {
+  const cleaned = { ...data };
+  Object.keys(cleaned).forEach(key => {
+    if (cleaned[key] === undefined) {
+      delete cleaned[key];
+    }
+  });
+  return cleaned;
+};
+
 /**
  * Uploads a Base64 image to Firebase Storage and returns the public URL.
  */
 export const uploadImageToStorage = async (base64Data: string, path: string): Promise<string> => {
-    if (!storage) return base64Data; 
+    if (!storage) {
+        console.warn("Storage not initialized, returning raw base64");
+        return base64Data; 
+    }
     
     try {
         const storageRef = ref(storage, path);
@@ -75,13 +90,22 @@ export const addGarmentToDb = async (garment: Garment): Promise<string> => {
             const safeName = garment.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
             const fileName = `garments/${Date.now()}_${safeName}`;
             imageUrl = await uploadImageToStorage(imageUrl, fileName);
+            
+            // Safety check: If upload failed or storage missing, imageUrl might still be base64.
+            // Firestore has a 1MB limit, so we shouldn't save base64 there.
+            if (imageUrl.startsWith('data:')) {
+                 throw new Error("Görsel yüklenemedi (Storage hatası). Lütfen internet bağlantınızı kontrol edin.");
+            }
         }
 
-        // 2. Save document
-        const docRef = await addDoc(collection(db, COLLECTION_GARMENTS), {
+        // 2. Save document with sanitized data
+        // Explicitly remove undefined values to prevent 'invalid-argument' errors
+        const garmentData = cleanData({
             ...garment,
             imageUrl: imageUrl
         });
+
+        const docRef = await addDoc(collection(db, COLLECTION_GARMENTS), garmentData);
         
         return docRef.id;
     } catch (error) {
@@ -144,7 +168,10 @@ export const saveMerchantProfile = async (profile: MerchantProfile): Promise<voi
         }
 
         const docRef = doc(db, COLLECTION_PROFILE, PROFILE_DOC_ID);
-        await setDoc(docRef, { ...profile, logoUrl }, { merge: true });
+        // Sanitize data
+        const profileData = cleanData({ ...profile, logoUrl });
+        
+        await setDoc(docRef, profileData, { merge: true });
 
     } catch (error) {
         console.error("Error saving profile:", error);

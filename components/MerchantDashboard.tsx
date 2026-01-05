@@ -88,6 +88,12 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
     try {
         const tempId = Math.random().toString(36).substr(2, 9);
+        
+        // Ensure values are not undefined for Firestore
+        // Use empty string or explicit null if needed, but Firebase prefers omitting or null.
+        // We will rely on the firebase.ts cleaner, but setting defaults here helps too.
+        const safeShopUrl = newItemShopUrl || merchantProfile.paymentLink || "";
+
         const newItem: Garment = {
             id: tempId,
             name: newItemName,
@@ -95,7 +101,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
             imageUrl: newItemImage, // Contains Base64
             price: parseFloat(newItemPrice) || 0,
             boutiqueName: merchantProfile.name,
-            shopUrl: newItemShopUrl || merchantProfile.paymentLink || undefined
+            shopUrl: safeShopUrl
         };
 
         if (isFirebaseConfigured()) {
@@ -131,6 +137,8 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
              alert(`YETKİ HATASI:\n${errorMsg}\n\nLütfen Firebase Console'da kuralların (Rules) 'allow read, write: if true;' olduğundan emin olun.`);
         } else if (errorMsg.includes("storage/")) {
              alert(`DEPOLAMA HATASI:\n${errorMsg}\n\nFirebase Storage kurallarını kontrol edin.`);
+        } else if (errorMsg.includes("invalid-argument")) {
+             alert(`VERİ HATASI:\n${errorMsg}\n\nGeçersiz veri gönderildi. (Görsel çok büyük veya eksik bilgi).`);
         } else {
              alert(`KAYIT BAŞARISIZ:\n${errorMsg}\n\nİnternet bağlantınızı kontrol edip tekrar deneyin.`);
         }
