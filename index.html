@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
     <title>Mirrorly</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -54,6 +54,12 @@
       body {
         background-color: #fdfbf7; /* Boutique Cream */
         -webkit-font-smoothing: antialiased;
+        /* Ensure full height on mobile browsers */
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+      }
+      html {
+        height: -webkit-fill-available;
       }
       .hide-scrollbar::-webkit-scrollbar {
         display: none;
