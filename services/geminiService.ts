@@ -1,12 +1,25 @@
 import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from "@google/genai";
 import { ProcessingResult, Garment } from "../types";
 
-// Helper to remove data URL prefix to get raw base64
-const stripBase64Header = (base64: string) => {
-  return base64.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
+// 1. Robust Base64 Cleaner
+const cleanBase64 = (base64: string) => {
+  // Split at comma if it exists (data:image/png;base64,.....)
+  if (base64.includes(',')) {
+    return base64.split(',')[1];
+  }
+  return base64;
 };
 
-// Helper to convert a URL (like Firebase Storage URL) to Base64
+// 2. Detect MimeType from Base64 Header
+const getMimeType = (base64: string): string => {
+  const match = base64.match(/^data:(image\/[a-zA-Z+]+);base64,/);
+  if (match && match[1]) {
+    return match[1];
+  }
+  return 'image/jpeg'; // Default fallback
+};
+
+// Helper to convert URL to Base64
 const urlToBase64 = async (url: string): Promise<string> => {
   try {
     const response = await fetch(url);
@@ -14,41 +27,30 @@ const urlToBase64 = async (url: string): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64String = reader.result as string;
-        resolve(stripBase64Header(base64String));
+        resolve(reader.result as string);
       };
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
   } catch (error) {
     console.error("Error converting garment URL to base64:", error);
-    throw new Error("Could not process garment image. Please check internet connection.");
+    throw new Error("Kıyafet görseli indirilemedi. İnternet bağlantınızı kontrol edin.");
   }
 };
 
-/**
- * Simple function to validate if the API Key is active and working.
- */
 export const testApiKey = async (apiKey: string): Promise<{ success: boolean; message: string }> => {
     try {
         const ai = new GoogleGenAI({ apiKey });
-        // Use a lightweight text model just for connectivity check
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-latest', 
-            contents: 'Hello, are you active?',
+            contents: 'Hello',
         });
-        
         if (response.text) {
-            return { success: true, message: "Bağlantı Başarılı! API Anahtarı aktif." };
-        } else {
-            return { success: false, message: "API cevap vermedi (Boş yanıt)." };
+            return { success: true, message: "Bağlantı Başarılı!" };
         }
+        return { success: false, message: "API cevap vermedi." };
     } catch (error: any) {
-        console.error("API Test Error:", error);
-        return { 
-            success: false, 
-            message: `Bağlantı Hatası: ${error.message || error.statusText || "Bilinmeyen hata"}` 
-        };
+        return { success: false, message: `Hata: ${error.message || "Bilinmiyor"}` };
     }
 };
 
@@ -58,96 +60,69 @@ export const generateTryOnImage = async (
   dynamicApiKey?: string
 ): Promise<ProcessingResult> => {
   try {
-    // Priority: Dynamic Key (from DB) > Env Key (from .env file)
     const apiKey = dynamicApiKey || process.env.API_KEY;
 
     if (!apiKey) {
-      console.warn("No API KEY provided.");
       return {
           success: false,
           imageUrl: "",
-          message: "Sistem Hatası: API Anahtarı girilmemiş. Lütfen mağaza panelinden kontrol edin."
+          message: "API Anahtarı eksik. Lütfen mağaza panelinden anahtarı girin."
       };
     }
 
     const ai = new GoogleGenAI({ apiKey });
     
-    // Use the latest vision-capable model
-    // Note: 'gemini-2.5-flash-image' works best for speed/cost. 
-    // If you have access to 'gemini-3-pro-image-preview', it is higher quality but requires different quota.
+    // Model Selection: Using the image editing specialized model if available
     const modelId = 'gemini-2.5-flash-image';
 
-    // 1. Prepare Garment Image (Convert URL to Base64)
-    let garmentBase64 = "";
+    // Prepare Images
+    let garmentFullBase64 = "";
     if (garment.imageUrl.startsWith("data:")) {
-        garmentBase64 = stripBase64Header(garment.imageUrl);
+        garmentFullBase64 = garment.imageUrl;
     } else {
-        garmentBase64 = await urlToBase64(garment.imageUrl);
+        garmentFullBase64 = await urlToBase64(garment.imageUrl);
     }
 
-    // 2. Prepare User Image
-    const userBase64 = stripBase64Header(userPhotoBase64);
+    const userMimeType = getMimeType(userPhotoBase64);
+    const garmentMimeType = getMimeType(garmentFullBase64);
 
-    // 3. Construct a Robust Prompt
+    const userRawBase64 = cleanBase64(userPhotoBase64);
+    const garmentRawBase64 = cleanBase64(garmentFullBase64);
+
+    // Prompt Engineering
     const prompt = `
-      Act as an expert AI Fashion Stylist and Photo Editor.
+      You are an advanced AI Fashion Assistant specialized in virtual try-on technology.
       
-      You have received two images:
-      [IMAGE 1]: The "Customer" (a photo of a person).
-      [IMAGE 2]: The "Garment" (a product photo of: ${garment.name} - ${garment.description}).
+      Task: Generate a photorealistic image of the person in the first image wearing the garment shown in the second image.
 
-      YOUR TASK:
-      Create a highly photorealistic image of the [Customer] wearing the [Garment].
+      Input 1 (Person): A user photo.
+      Input 2 (Garment): ${garment.name} (${garment.description}).
 
-      CRITICAL INSTRUCTIONS:
-      1. IDENTITY: You MUST preserve the [Customer]'s face, hair, skin tone, body shape, and pose exactly. Do not change the person.
-      2. CLOTHING: Replace the [Customer]'s original clothes with the [Garment]. 
-      3. FIT: The [Garment] must drape naturally over the [Customer]'s body. Account for lighting and shadows.
-      4. BACKGROUND: Keep the original background of the [Customer] photo if possible, or use a neutral boutique background.
-      5. QUALITY: The output must look like a real photograph, not a cartoon.
-
-      Output ONLY the generated image.
+      Guidelines:
+      1. Replace the person's current outfit with the [Garment].
+      2. Keep the person's face, hair, pose, and body shape EXACTLY the same.
+      3. Maintain the original background and lighting of the person's photo.
+      4. Ensure the fabric texture and drape of the garment looks realistic on the body.
+      5. Output ONLY the resulting image. Do not provide text descriptions.
     `;
 
-    // 4. Configure Safety Settings
+    // Safety Settings (Relaxed for Fashion/Body context)
     const safetySettings = [
-      {
-        category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-        threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-      },
-      {
-        category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-        threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-      },
-      {
-        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-        threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-      },
-      {
-        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-        threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-      },
+      { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+      { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+      { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+      { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
     ];
 
-    console.log("Sending request to Gemini Model:", modelId);
+    console.log("Generating Try-On with model:", modelId);
 
     const response = await ai.models.generateContent({
       model: modelId,
       contents: {
         parts: [
           { text: prompt },
-          {
-            inlineData: {
-              mimeType: 'image/jpeg',
-              data: userBase64
-            }
-          },
-          {
-            inlineData: {
-              mimeType: 'image/jpeg',
-              data: garmentBase64
-            }
-          }
+          { inlineData: { mimeType: userMimeType, data: userRawBase64 } },
+          { inlineData: { mimeType: garmentMimeType, data: garmentRawBase64 } }
         ]
       },
       config: {
@@ -156,26 +131,42 @@ export const generateTryOnImage = async (
       }
     });
 
+    // --- Image Extraction Logic ---
     let generatedImage = null;
     
-    // Extract image from response
+    // Check for inline data (image)
     if (response.candidates?.[0]?.content?.parts) {
         for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) {
+            if (part.inlineData && part.inlineData.data) {
                 generatedImage = `data:image/png;base64,${part.inlineData.data}`;
                 break;
             }
         }
     }
 
+    // If no image found, check if the model returned text (Error explanation)
     if (!generatedImage) {
-         console.warn("Gemini Response blocked or text-only:", response.text);
-         
-         if (response.promptFeedback?.blockReason) {
-             throw new Error(`Güvenlik Filtresi Engeli (${response.promptFeedback.blockReason}). Lütfen farklı bir fotoğraf deneyin.`);
-         }
-         
-         throw new Error("Yapay zeka görüntüyü oluşturamadı. Lütfen daha net bir fotoğraf deneyin veya API kotanızı kontrol edin.");
+        const textResponse = response.text || "";
+        console.warn("Model returned text instead of image:", textResponse);
+        
+        if (textResponse.length > 5) {
+            // Return the model's explanation to the user (e.g., "I cannot process this image...")
+            // Translate common refusals for better UX
+            if (textResponse.includes("safety") || textResponse.includes("policy")) {
+                throw new Error("Güvenlik filtresi: Model bu fotoğrafı işlemeyi reddetti. Lütfen daha net ve standart bir poz deneyin.");
+            }
+            if (textResponse.includes("cannot identify")) {
+                throw new Error("Model fotoğraftaki kişiyi net algılayamadı. Lütfen ışığı iyi bir fotoğraf yükleyin.");
+            }
+            // Return the raw text if it's a specific instruction
+            throw new Error(`Model Mesajı: ${textResponse.substring(0, 100)}...`);
+        }
+
+        if (response.promptFeedback?.blockReason) {
+             throw new Error(`Güvenlik Engeli: ${response.promptFeedback.blockReason}`);
+        }
+        
+        throw new Error("Görüntü oluşturulamadı (Boş yanıt).");
     }
 
     return {
@@ -184,22 +175,15 @@ export const generateTryOnImage = async (
     };
 
   } catch (error: any) {
-    console.error("Gemini Try-On Error Full:", JSON.stringify(error, null, 2));
+    console.error("Gemini Try-On Fatal Error:", error);
     
-    let userMessage = "Sihirli ayna şu an biraz bulanık. Lütfen tekrar deneyin.";
-    
-    // Friendly Error Mapping
-    if (error.message?.includes("API Key") || error.status === 400) {
-        userMessage = "Yapılandırma Hatası: API Anahtarı geçersiz veya yetkisiz.";
-    } else if (error.status === 403) {
-        userMessage = "Erişim Reddedildi: API Anahtarının bu model (gemini-2.5-flash-image) için yetkisi yok.";
-    } else if (error.status === 429) {
-        userMessage = "Sistem çok yoğun (Kota Aşıldı). Lütfen 1 dakika sonra deneyin.";
-    } else if (error.message?.includes("blocked")) {
-        userMessage = "Görsel güvenlik filtrelerine takıldı. Lütfen daha standart bir poz/kıyafet deneyin.";
-    } else if (error.message?.includes("fetch")) {
-        userMessage = "Bağlantı Hatası: Kıyafet görseli indirilemedi.";
-    }
+    let userMessage = error.message;
+
+    // Standardize specific API errors
+    if (userMessage.includes("400")) userMessage = "Hatalı İstek (400): Gönderilen görsel formatı desteklenmiyor olabilir.";
+    if (userMessage.includes("403")) userMessage = "Yetki Hatası (403): API anahtarının bu işlemi yapma izni yok veya kota doldu.";
+    if (userMessage.includes("429")) userMessage = "Çok fazla istek (429): Lütfen 1 dakika bekleyip tekrar deneyin.";
+    if (userMessage.includes("fetch")) userMessage = "Bağlantı Hatası: Görseller sunucuya iletilemedi.";
 
     return {
       success: false,
