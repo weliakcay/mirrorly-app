@@ -10,7 +10,12 @@ const PhotoInput: React.FC<PhotoInputProps> = ({ onPhotoSelected }) => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      onPhotoSelected(e.target.files[0]);
+      const file = e.target.files[0];
+      onPhotoSelected(file);
+      // Reset input so if user selects same file again (after a retry), it triggers
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -37,8 +42,8 @@ const PhotoInput: React.FC<PhotoInputProps> = ({ onPhotoSelected }) => {
           />
 
           <button 
-            onClick={() => fileInputRef.current?.click()} // On mobile, this usually prompts Camera or Library
-            className="w-full bg-white border border-gray-200 rounded-xl p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-4 group"
+            onClick={() => fileInputRef.current?.click()} // On mobile, this prompts Camera or Library
+            className="w-full bg-white border border-gray-200 rounded-xl p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-4 group active:bg-gray-50"
           >
             <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
               <Camera className="w-8 h-8 text-gray-700" />

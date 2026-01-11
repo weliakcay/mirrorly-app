@@ -1,18 +1,20 @@
+
 export enum AppState {
   SPLASH = 'SPLASH',
-  LANDING = 'LANDING', // New state for users visiting without a QR code
+  LANDING = 'LANDING', 
   GARMENT_VIEW = 'GARMENT_VIEW',
   PHOTO_INPUT = 'PHOTO_INPUT',
   PROCESSING = 'PROCESSING',
   RESULT = 'RESULT',
   MERCHANT_DASHBOARD = 'MERCHANT_DASHBOARD',
+  CUSTOMER_HISTORY = 'CUSTOMER_HISTORY', // New State
 }
 
 export interface MerchantProfile {
   name: string;
-  logoUrl?: string; // Base64 or URL
-  paymentLink?: string; // Stripe, Shopify link etc.
-  geminiApiKey?: string; // API Key for AI processing
+  logoUrl?: string; 
+  paymentLink?: string; 
+  geminiApiKey?: string; 
 }
 
 export interface Garment {
@@ -21,9 +23,8 @@ export interface Garment {
   description: string;
   imageUrl: string;
   price: number;
-  // boutiqueName is now derived from the global profile, but kept for fallback
   boutiqueName?: string; 
-  shopUrl?: string; // Optional URL for direct purchasing
+  shopUrl?: string; 
 }
 
 export interface ProcessingResult {
@@ -32,8 +33,15 @@ export interface ProcessingResult {
   message?: string;
 }
 
+export interface HistoryItem {
+  id: string;
+  timestamp: number;
+  garment: Garment;
+  resultImageUrl: string;
+}
+
 export interface UserSession {
-  userPhoto: string | null; // Base64
+  userPhoto: string | null; 
   selectedGarment: Garment | null;
   result: ProcessingResult | null;
 }
@@ -61,7 +69,7 @@ export const MOCK_GARMENTS: Garment[] = [
 
 export const DEFAULT_PROFILE: MerchantProfile = {
   name: 'Lumière Boutique',
-  logoUrl: undefined, // Will default to text if undefined
+  logoUrl: undefined, 
   paymentLink: '',
   geminiApiKey: ''
 };

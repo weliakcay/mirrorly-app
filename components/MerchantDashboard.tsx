@@ -148,7 +148,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
           name: profileName,
           logoUrl: profileLogo || undefined,
           paymentLink: profileLink,
-          geminiApiKey: profileApiKey
+          geminiApiKey: profileApiKey.trim() // Force Trim
       };
 
       try {
@@ -177,7 +177,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
       }
       setIsTestingKey(true);
       try {
-          const result = await testApiKey(profileApiKey);
+          const result = await testApiKey(profileApiKey.trim());
           if (result.success) {
               alert("✅ " + result.message);
           } else {

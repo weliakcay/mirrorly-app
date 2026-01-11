@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AppState, Garment, MOCK_GARMENTS, ProcessingResult, MerchantProfile, DEFAULT_PROFILE } from './types';
 import Splash from './components/Splash';
@@ -7,8 +8,10 @@ import PhotoInput from './components/PhotoInput';
 import Processing from './components/Processing';
 import ResultView from './components/ResultView';
 import MerchantDashboard from './components/MerchantDashboard';
+import CustomerHistory from './components/CustomerHistory';
 import { generateTryOnImage } from './services/geminiService';
 import { getGarmentById, getMerchantProfile, isFirebaseConfigured, getGarmentsFromDb } from './services/firebase';
+import { saveToHistory } from './services/historyService';
 
 const App: React.FC = () => {
   // Application State
@@ -31,7 +34,6 @@ const App: React.FC = () => {
             if (profile) setMerchantProfile(profile);
             
             // 2. Load Inventory (for dashboard mainly)
-            // Optimization: We could only load this if merchant logs in, but for small boutiques loading all is fine.
             const items = await getGarmentsFromDb();
             if (items.length > 0) setInventory(items);
         } else {
@@ -48,23 +50,18 @@ const App: React.FC = () => {
 
   // Transitions
   const handleSplashComplete = async () => {
-    // Check for URL parameters to determine if we are scanning a specific item
     const params = new URLSearchParams(window.location.search);
     const garmentId = params.get('id');
-
-    console.log("Checking URL for ID:", garmentId);
 
     if (garmentId) {
       setIsLoadingData(true);
       
       let garment: Garment | null = null;
 
-      // Try fetching directly from DB first (Single source of truth)
       if (isFirebaseConfigured()) {
          garment = await getGarmentById(garmentId);
       } 
       
-      // Fallback to local inventory state if DB failed or not configured
       if (!garment) {
          garment = inventory.find(g => g.id === garmentId) || null;
       }
@@ -72,15 +69,12 @@ const App: React.FC = () => {
       setIsLoadingData(false);
 
       if (garment) {
-        console.log("Garment found:", garment.name);
         setSelectedGarment(garment);
         setCurrentState(AppState.GARMENT_VIEW);
       } else {
-        console.warn('Garment ID not found');
         setCurrentState(AppState.LANDING);
       }
     } else {
-      // No ID, standard entry
       setCurrentState(AppState.LANDING);
     }
   };
@@ -93,28 +87,95 @@ const App: React.FC = () => {
     setCurrentState(AppState.MERCHANT_DASHBOARD);
   };
 
-  const handlePhotoSelected = async (file: File) => {
+  const handlePhotoSelected = (file: File) => {
     if (!selectedGarment) return;
     
+    // 1. CRITICAL FIX: Update state FIRST to show loading screen immediately
     setUserPhoto(file);
     setCurrentState(AppState.PROCESSING);
 
-    // Convert file to base64 for the API
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64String = reader.result as string;
-      
-      // Call Gemini Service with Dynamic API Key from Profile
-      const apiResult = await generateTryOnImage(
-          base64String, 
-          selectedGarment, 
-          merchantProfile.geminiApiKey
-      );
-      
-      setResult(apiResult);
-      setCurrentState(AppState.RESULT);
-    };
-    reader.readAsDataURL(file);
+    // 2. Add a delay to allow UI to repaint "Processing" screen before heavy JS starts
+    setTimeout(() => {
+        processImageFile(file);
+    }, 500);
+  };
+
+  const processImageFile = async (file: File) => {
+    if (!selectedGarment) return;
+
+    // --- CRITICAL FIX START: Check API Key Logic ---
+    // If entered via QR code, merchantProfile might still be default (empty API key).
+    // We must ensure we have the key before calling Gemini.
+    let activeApiKey = merchantProfile.geminiApiKey;
+
+    if (!activeApiKey && isFirebaseConfigured()) {
+        try {
+            console.log("API Key missing in state. Attempting to fetch fresh profile...");
+            const freshProfile = await getMerchantProfile();
+            if (freshProfile && freshProfile.geminiApiKey) {
+                // Update state for next time
+                setMerchantProfile(freshProfile);
+                activeApiKey = freshProfile.geminiApiKey;
+                console.log("API Key successfully retrieved from DB.");
+            }
+        } catch (e) {
+            console.error("Failed to fetch profile in background:", e);
+        }
+    }
+    // --- CRITICAL FIX END ---
+
+    // Use a try-catch block around the FileReader to handle memory errors
+    try {
+        const reader = new FileReader();
+        
+        reader.onloadend = async () => {
+          try {
+              const base64String = reader.result as string;
+              
+              // Call Gemini Service with the confirmed API Key
+              const apiResult = await generateTryOnImage(
+                  base64String, 
+                  selectedGarment, 
+                  activeApiKey 
+              );
+              
+              if (apiResult.success && apiResult.imageUrl) {
+                  saveToHistory(selectedGarment, apiResult.imageUrl);
+              }
+
+              setResult(apiResult);
+              setCurrentState(AppState.RESULT);
+
+          } catch (e) {
+              console.error("API Error:", e);
+              setResult({
+                  success: false,
+                  imageUrl: "",
+                  message: "Görsel işlenirken bir sorun oluştu. İnternet bağlantınızı kontrol edip tekrar deneyin."
+              });
+              setCurrentState(AppState.RESULT);
+          }
+        };
+
+        reader.onerror = () => {
+            setResult({
+                success: false,
+                imageUrl: "",
+                message: "Fotoğraf okunamadı. Dosya bozuk olabilir veya izin verilmedi."
+            });
+            setCurrentState(AppState.RESULT);
+        };
+
+        reader.readAsDataURL(file);
+    } catch (err) {
+        console.error("FileReader Error:", err);
+        setResult({
+            success: false,
+            imageUrl: "",
+            message: "Fotoğraf çok büyük veya cihaz belleği yetersiz."
+        });
+        setCurrentState(AppState.RESULT);
+    }
   };
 
   const handleRetake = () => {
@@ -126,7 +187,6 @@ const App: React.FC = () => {
   const handleTryAnother = () => {
     setResult(null);
     setUserPhoto(null);
-    // Remove ID from URL without refreshing to return to pure landing state
     const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
     window.history.pushState({path: newUrl}, '', newUrl);
     setCurrentState(AppState.LANDING);
@@ -134,7 +194,7 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     if (isLoadingData) {
-        return <Processing />; // Reuse processing screen while fetching DB data
+        return <Processing />;
     }
 
     switch (currentState) {
@@ -142,7 +202,15 @@ const App: React.FC = () => {
         return <Splash onComplete={handleSplashComplete} />;
       
       case AppState.LANDING:
-        return <Landing onMerchantLogin={handleMerchantLoginRequest} />;
+        return (
+            <Landing 
+                onMerchantLogin={handleMerchantLoginRequest} 
+                onOpenHistory={() => setCurrentState(AppState.CUSTOMER_HISTORY)}
+            />
+        );
+
+      case AppState.CUSTOMER_HISTORY:
+        return <CustomerHistory onBack={() => setCurrentState(AppState.LANDING)} />;
 
       case AppState.GARMENT_VIEW:
         return selectedGarment ? (
@@ -152,7 +220,7 @@ const App: React.FC = () => {
             onContinue={handleGarmentContinue}
             onMerchantClick={handleMerchantLoginRequest}
           />
-        ) : <Landing onMerchantLogin={handleMerchantLoginRequest} />;
+        ) : <Landing onMerchantLogin={handleMerchantLoginRequest} onOpenHistory={() => setCurrentState(AppState.CUSTOMER_HISTORY)} />;
 
       case AppState.PHOTO_INPUT:
         return <PhotoInput onPhotoSelected={handlePhotoSelected} />;
