@@ -75,22 +75,53 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
     });
 };
 
+// Robust URL fetcher that handles CORS issues common on mobile/web
 const urlToBase64 = async (url: string): Promise<string> => {
+  // Strategy 1: Try loading as HTML Image with CORS allowed (Most efficient)
   try {
-    const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
-    if (!response.ok) throw new Error(`Status: ${response.status}`);
-    const blob = await response.blob();
-    return await blobToBase64(blob);
-  } catch (error) {
-    console.warn("Direct fetch failed, using proxy...", error);
+    return await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous'; // Attempt to get CORS permission
+      
+      // Cache bust to prevent browser from serving a non-CORS cached version
+      const safeUrl = url.includes('?') ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`;
+      img.src = safeUrl;
+
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+           reject(new Error('Canvas context failed'));
+           return;
+        }
+        try {
+            ctx.drawImage(img, 0, 0);
+            // Convert to base64 immediately
+            resolve(canvas.toDataURL('image/jpeg', 0.8));
+        } catch (e) {
+            // "Tainted canvas" error means server sent image but refused CORS
+            reject(new Error('Canvas tainted (CORS rejected)'));
+        }
+      };
+      
+      img.onerror = () => reject(new Error('Image load failed'));
+    });
+  } catch (firstAttemptError) {
+    console.warn("Standard load failed, switching to proxy...", firstAttemptError);
+
+    // Strategy 2: Use a Proxy to bypass CORS completely
     try {
+        // Encode URL twice to ensure special chars pass through proxy
         const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
         const response = await fetch(proxyUrl);
         if (!response.ok) throw new Error(`Proxy Status: ${response.status}`);
         const blob = await response.blob();
         return await blobToBase64(blob);
     } catch (proxyError) {
-        throw new Error("Kıyafet görseli indirilemedi. İnternet bağlantınızı kontrol edin.");
+        console.error("Proxy failed:", proxyError);
+        throw new Error("Kıyafet görseli indirilemedi. (Ağ/CORS Hatası)");
     }
   }
 };
@@ -137,9 +168,12 @@ export const generateTryOnImage = async (
 
     // 2. Prepare Garment Image
     let garmentFullBase64 = "";
+    
+    // Check if it's already base64 (local upload) or a URL (database/mock)
     if (garment.imageUrl.startsWith("data:")) {
         garmentFullBase64 = await resizeImage(garment.imageUrl, 800);
     } else {
+        // Fetch remote URL and convert to base64
         const rawUrlBase64 = await urlToBase64(garment.imageUrl);
         garmentFullBase64 = await resizeImage(rawUrlBase64, 800);
     }
@@ -221,7 +255,7 @@ export const generateTryOnImage = async (
     let msg = error.message;
     if (msg.includes("429")) msg = "Sistem yoğun, lütfen 1 dakika bekleyin.";
     if (msg.includes("403")) msg = "API Anahtarı yetkisiz.";
-    if (msg.includes("Failed to fetch")) msg = "İnternet bağlantısı hatası.";
+    if (msg.includes("Failed to fetch")) msg = "İnternet bağlantısı hatası (Görsel İndirilemedi).";
     
     return {
       success: false,
