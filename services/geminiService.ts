@@ -3,8 +3,9 @@ import { ProcessingResult, Garment } from "../types";
 
 // --- Helpers ---
 
-// 1. Optimized Resize Image (Memory Safe for Mobile)
-const resizeImage = (base64Str: string, maxWidth = 800): Promise<string> => {
+// 1. Optimized Resize Image (Aggressive Mobile Optimization)
+// Reduced default maxWidth from 800 -> 600 for faster mobile processing
+const resizeImage = (base64Str: string, maxWidth = 600): Promise<string> => {
   return new Promise((resolve) => {
     const img = new Image();
     img.src = base64Str;
@@ -31,12 +32,12 @@ const resizeImage = (base64Str: string, maxWidth = 800): Promise<string> => {
       if (ctx) {
           // Better quality smoothing
           ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
+          ctx.imageSmoothingQuality = 'medium'; // Changed to medium for speed
           ctx.drawImage(img, 0, 0, width, height);
           
-          // Aggressive compression for API speed (JPEG 0.7)
+          // Aggressive compression for API speed (JPEG 0.6)
           // This prevents payload errors and timeouts
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
           resolve(dataUrl);
       } else {
           // If canvas context fails (rare), return original
@@ -87,7 +88,11 @@ const urlToBase64 = async (url: string): Promise<string> => {
       const safeUrl = url.includes('?') ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`;
       img.src = safeUrl;
 
+      // Add a quick timeout for image loading specifically
+      const timer = setTimeout(() => reject(new Error("Image Load Timeout")), 8000);
+
       img.onload = () => {
+        clearTimeout(timer);
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
@@ -99,14 +104,17 @@ const urlToBase64 = async (url: string): Promise<string> => {
         try {
             ctx.drawImage(img, 0, 0);
             // Convert to base64 immediately
-            resolve(canvas.toDataURL('image/jpeg', 0.8));
+            resolve(canvas.toDataURL('image/jpeg', 0.6));
         } catch (e) {
             // "Tainted canvas" error means server sent image but refused CORS
             reject(new Error('Canvas tainted (CORS rejected)'));
         }
       };
       
-      img.onerror = () => reject(new Error('Image load failed'));
+      img.onerror = () => {
+        clearTimeout(timer);
+        reject(new Error('Image load failed'));
+      }
     });
   } catch (firstAttemptError) {
     console.warn("Standard load failed, switching to proxy...", firstAttemptError);
@@ -115,7 +123,14 @@ const urlToBase64 = async (url: string): Promise<string> => {
     try {
         // Encode URL twice to ensure special chars pass through proxy
         const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-        const response = await fetch(proxyUrl);
+        
+        // Fetch with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s proxy timeout
+        
+        const response = await fetch(proxyUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
         if (!response.ok) throw new Error(`Proxy Status: ${response.status}`);
         const blob = await response.blob();
         return await blobToBase64(blob);
@@ -124,6 +139,13 @@ const urlToBase64 = async (url: string): Promise<string> => {
         throw new Error("Kıyafet görseli indirilemedi. (Ağ/CORS Hatası)");
     }
   }
+};
+
+// Timeout Promise Helper
+const timeoutPromise = (ms: number, errorMessage: string) => {
+    return new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error(errorMessage)), ms);
+    });
 };
 
 // --- Main Functions ---
@@ -162,20 +184,17 @@ export const generateTryOnImage = async (
     const ai = new GoogleGenAI({ apiKey });
     const modelId = 'gemini-2.5-flash-image';
 
-    // 1. Prepare & Optimize User Image
-    // Resizing to 800px max width for optimal speed/quality balance
-    const resizedUserPhoto = await resizeImage(userPhotoBase64, 800);
+    // 1. Prepare & Optimize User Image (600px)
+    const resizedUserPhoto = await resizeImage(userPhotoBase64, 600);
 
     // 2. Prepare Garment Image
     let garmentFullBase64 = "";
     
-    // Check if it's already base64 (local upload) or a URL (database/mock)
     if (garment.imageUrl.startsWith("data:")) {
-        garmentFullBase64 = await resizeImage(garment.imageUrl, 800);
+        garmentFullBase64 = await resizeImage(garment.imageUrl, 600);
     } else {
-        // Fetch remote URL and convert to base64
         const rawUrlBase64 = await urlToBase64(garment.imageUrl);
-        garmentFullBase64 = await resizeImage(rawUrlBase64, 800);
+        garmentFullBase64 = await resizeImage(rawUrlBase64, 600);
     }
 
     const userMime = getMimeType(resizedUserPhoto);
@@ -210,20 +229,33 @@ export const generateTryOnImage = async (
 
     console.log("Generating Try-On...");
 
-    const response = await ai.models.generateContent({
-      model: modelId,
-      contents: {
-        parts: [
-          { text: prompt },
-          { inlineData: { mimeType: userMime, data: cleanBase64(resizedUserPhoto) } },
-          { inlineData: { mimeType: garmentMime, data: cleanBase64(garmentFullBase64) } }
-        ]
-      },
-      config: {
-        temperature: 0.3, // Lower temperature for more fidelity
-        safetySettings: safetySettings
-      }
-    });
+    // RACE CONDITION: API Call vs 45s Timeout
+    // If Gemini takes longer than 45s, we abort to prevent UI freezing forever.
+    const response = await Promise.race([
+        ai.models.generateContent({
+            model: modelId,
+            contents: {
+                parts: [
+                { text: prompt },
+                { inlineData: { mimeType: userMime, data: cleanBase64(resizedUserPhoto) } },
+                { inlineData: { mimeType: garmentMime, data: cleanBase64(garmentFullBase64) } }
+                ]
+            },
+            config: {
+                temperature: 0.3, 
+                safetySettings: safetySettings
+            }
+        }),
+        timeoutPromise(45000, "İşlem çok uzun sürdü (45sn). Lütfen tekrar deneyin.")
+    ]);
+
+    // Check if result is a valid Gemini response
+    // (If timeoutPromise wins, it throws error, so we land in catch block)
+    
+    // Type guard/check
+    if (!('candidates' in response)) {
+        throw new Error("Geçersiz sunucu yanıtı.");
+    }
 
     let generatedImage = null;
     if (response.candidates?.[0]?.content?.parts) {
@@ -255,7 +287,8 @@ export const generateTryOnImage = async (
     let msg = error.message;
     if (msg.includes("429")) msg = "Sistem yoğun, lütfen 1 dakika bekleyin.";
     if (msg.includes("403")) msg = "API Anahtarı yetkisiz.";
-    if (msg.includes("Failed to fetch")) msg = "İnternet bağlantısı hatası (Görsel İndirilemedi).";
+    if (msg.includes("Failed to fetch")) msg = "İnternet bağlantısı hatası.";
+    if (msg.includes("Image Load Timeout")) msg = "Kıyafet görseli yüklenemedi (Zaman aşımı).";
     
     return {
       success: false,

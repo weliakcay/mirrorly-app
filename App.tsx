@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AppState, Garment, MOCK_GARMENTS, ProcessingResult, MerchantProfile, DEFAULT_PROFILE } from './types';
 import Splash from './components/Splash';
@@ -104,8 +103,6 @@ const App: React.FC = () => {
     if (!selectedGarment) return;
 
     // --- CRITICAL FIX START: Check API Key Logic ---
-    // If entered via QR code, merchantProfile might still be default (empty API key).
-    // We must ensure we have the key before calling Gemini.
     let activeApiKey = merchantProfile.geminiApiKey;
 
     if (!activeApiKey && isFirebaseConfigured()) {
@@ -113,7 +110,6 @@ const App: React.FC = () => {
             console.log("API Key missing in state. Attempting to fetch fresh profile...");
             const freshProfile = await getMerchantProfile();
             if (freshProfile && freshProfile.geminiApiKey) {
-                // Update state for next time
                 setMerchantProfile(freshProfile);
                 activeApiKey = freshProfile.geminiApiKey;
                 console.log("API Key successfully retrieved from DB.");
@@ -183,6 +179,13 @@ const App: React.FC = () => {
     setUserPhoto(null);
     setCurrentState(AppState.PHOTO_INPUT);
   };
+  
+  const handleCancelProcessing = () => {
+    // Allows user to abort if it takes too long
+    setResult(null);
+    setUserPhoto(null);
+    setCurrentState(AppState.PHOTO_INPUT);
+  };
 
   const handleTryAnother = () => {
     setResult(null);
@@ -226,7 +229,8 @@ const App: React.FC = () => {
         return <PhotoInput onPhotoSelected={handlePhotoSelected} />;
 
       case AppState.PROCESSING:
-        return <Processing />;
+        // Pass the cancel handler here
+        return <Processing onCancel={handleCancelProcessing} />;
 
       case AppState.RESULT:
         return result && selectedGarment ? (
