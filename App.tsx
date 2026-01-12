@@ -15,7 +15,7 @@ import { saveToHistory } from './services/historyService';
 const App: React.FC = () => {
   // Application State
   const [currentState, setCurrentState] = useState<AppState>(AppState.SPLASH);
-  
+
   // Data State
   const [inventory, setInventory] = useState<Garment[]>([]);
   const [merchantProfile, setMerchantProfile] = useState<MerchantProfile>(DEFAULT_PROFILE);
@@ -27,22 +27,22 @@ const App: React.FC = () => {
   // Initial Data Fetch
   useEffect(() => {
     const fetchInitialData = async () => {
-        // 1. Load Profile
-        if (isFirebaseConfigured()) {
-            const profile = await getMerchantProfile();
-            if (profile) setMerchantProfile(profile);
-            
-            // 2. Load Inventory (for dashboard mainly)
-            const items = await getGarmentsFromDb();
-            if (items.length > 0) setInventory(items);
-        } else {
-            // Fallback to local storage if firebase not set up
-            const savedInv = localStorage.getItem('mirrorly_inventory');
-            if (savedInv) setInventory(JSON.parse(savedInv));
-            
-            const savedProf = localStorage.getItem('mirrorly_profile');
-            if (savedProf) setMerchantProfile(JSON.parse(savedProf));
-        }
+      // 1. Load Profile
+      if (isFirebaseConfigured()) {
+        const profile = await getMerchantProfile();
+        if (profile) setMerchantProfile(profile);
+
+        // 2. Load Inventory (for dashboard mainly)
+        const items = await getGarmentsFromDb();
+        if (items.length > 0) setInventory(items);
+      } else {
+        // Fallback to local storage if firebase not set up
+        const savedInv = localStorage.getItem('mirrorly_inventory');
+        if (savedInv) setInventory(JSON.parse(savedInv));
+
+        const savedProf = localStorage.getItem('mirrorly_profile');
+        if (savedProf) setMerchantProfile(JSON.parse(savedProf));
+      }
     };
     fetchInitialData();
   }, []);
@@ -54,15 +54,22 @@ const App: React.FC = () => {
 
     if (garmentId) {
       setIsLoadingData(true);
-      
+
       let garment: Garment | null = null;
 
-      if (isFirebaseConfigured()) {
-         garment = await getGarmentById(garmentId);
-      } 
-      
-      if (!garment) {
-         garment = inventory.find(g => g.id === garmentId) || null;
+      try {
+        if (isFirebaseConfigured()) {
+          garment = await getGarmentById(garmentId);
+        }
+
+        if (!garment) {
+          // Fallback to inventory if not found in DB (or if DB not configured)
+          // We need to ensure inventory is loaded if we are relying on it.
+          // Since localStorage is sync, it should be there.
+          garment = inventory.find(g => g.id === garmentId) || null;
+        }
+      } catch (error) {
+        console.error("Error finding garment:", error);
       }
 
       setIsLoadingData(false);
@@ -71,6 +78,8 @@ const App: React.FC = () => {
         setSelectedGarment(garment);
         setCurrentState(AppState.GARMENT_VIEW);
       } else {
+        // ERROR HANDLING: Don't just go to landing
+        alert("Üzgünüz, aradığınız ürün bulunamadı veya kaldırılmış.\n(ID: " + garmentId + ")");
         setCurrentState(AppState.LANDING);
       }
     } else {
@@ -88,14 +97,14 @@ const App: React.FC = () => {
 
   const handlePhotoSelected = (file: File) => {
     if (!selectedGarment) return;
-    
+
     // 1. CRITICAL FIX: Update state FIRST to show loading screen immediately
     setUserPhoto(file);
     setCurrentState(AppState.PROCESSING);
 
     // 2. Add a delay to allow UI to repaint "Processing" screen before heavy JS starts
     setTimeout(() => {
-        processImageFile(file);
+      processImageFile(file);
     }, 500);
   };
 
@@ -106,71 +115,71 @@ const App: React.FC = () => {
     let activeApiKey = merchantProfile.geminiApiKey;
 
     if (!activeApiKey && isFirebaseConfigured()) {
-        try {
-            console.log("API Key missing in state. Attempting to fetch fresh profile...");
-            const freshProfile = await getMerchantProfile();
-            if (freshProfile && freshProfile.geminiApiKey) {
-                setMerchantProfile(freshProfile);
-                activeApiKey = freshProfile.geminiApiKey;
-                console.log("API Key successfully retrieved from DB.");
-            }
-        } catch (e) {
-            console.error("Failed to fetch profile in background:", e);
+      try {
+        console.log("API Key missing in state. Attempting to fetch fresh profile...");
+        const freshProfile = await getMerchantProfile();
+        if (freshProfile && freshProfile.geminiApiKey) {
+          setMerchantProfile(freshProfile);
+          activeApiKey = freshProfile.geminiApiKey;
+          console.log("API Key successfully retrieved from DB.");
         }
+      } catch (e) {
+        console.error("Failed to fetch profile in background:", e);
+      }
     }
     // --- CRITICAL FIX END ---
 
     // Use a try-catch block around the FileReader to handle memory errors
     try {
-        const reader = new FileReader();
-        
-        reader.onloadend = async () => {
-          try {
-              const base64String = reader.result as string;
-              
-              // Call Gemini Service with the confirmed API Key
-              const apiResult = await generateTryOnImage(
-                  base64String, 
-                  selectedGarment, 
-                  activeApiKey 
-              );
-              
-              if (apiResult.success && apiResult.imageUrl) {
-                  saveToHistory(selectedGarment, apiResult.imageUrl);
-              }
+      const reader = new FileReader();
 
-              setResult(apiResult);
-              setCurrentState(AppState.RESULT);
+      reader.onloadend = async () => {
+        try {
+          const base64String = reader.result as string;
 
-          } catch (e) {
-              console.error("API Error:", e);
-              setResult({
-                  success: false,
-                  imageUrl: "",
-                  message: "Görsel işlenirken bir sorun oluştu. İnternet bağlantınızı kontrol edip tekrar deneyin."
-              });
-              setCurrentState(AppState.RESULT);
+          // Call Gemini Service with the confirmed API Key
+          const apiResult = await generateTryOnImage(
+            base64String,
+            selectedGarment,
+            activeApiKey
+          );
+
+          if (apiResult.success && apiResult.imageUrl) {
+            saveToHistory(selectedGarment, apiResult.imageUrl);
           }
-        };
 
-        reader.onerror = () => {
-            setResult({
-                success: false,
-                imageUrl: "",
-                message: "Fotoğraf okunamadı. Dosya bozuk olabilir veya izin verilmedi."
-            });
-            setCurrentState(AppState.RESULT);
-        };
+          setResult(apiResult);
+          setCurrentState(AppState.RESULT);
 
-        reader.readAsDataURL(file);
-    } catch (err) {
-        console.error("FileReader Error:", err);
-        setResult({
+        } catch (e) {
+          console.error("API Error:", e);
+          setResult({
             success: false,
             imageUrl: "",
-            message: "Fotoğraf çok büyük veya cihaz belleği yetersiz."
+            message: "Görsel işlenirken bir sorun oluştu. İnternet bağlantınızı kontrol edip tekrar deneyin."
+          });
+          setCurrentState(AppState.RESULT);
+        }
+      };
+
+      reader.onerror = () => {
+        setResult({
+          success: false,
+          imageUrl: "",
+          message: "Fotoğraf okunamadı. Dosya bozuk olabilir veya izin verilmedi."
         });
         setCurrentState(AppState.RESULT);
+      };
+
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("FileReader Error:", err);
+      setResult({
+        success: false,
+        imageUrl: "",
+        message: "Fotoğraf çok büyük veya cihaz belleği yetersiz."
+      });
+      setCurrentState(AppState.RESULT);
     }
   };
 
@@ -179,7 +188,7 @@ const App: React.FC = () => {
     setUserPhoto(null);
     setCurrentState(AppState.PHOTO_INPUT);
   };
-  
+
   const handleCancelProcessing = () => {
     // Allows user to abort if it takes too long
     setResult(null);
@@ -191,25 +200,25 @@ const App: React.FC = () => {
     setResult(null);
     setUserPhoto(null);
     const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-    window.history.pushState({path: newUrl}, '', newUrl);
+    window.history.pushState({ path: newUrl }, '', newUrl);
     setCurrentState(AppState.LANDING);
   };
 
   const renderContent = () => {
     if (isLoadingData) {
-        return <Processing />;
+      return <Processing />;
     }
 
     switch (currentState) {
       case AppState.SPLASH:
         return <Splash onComplete={handleSplashComplete} />;
-      
+
       case AppState.LANDING:
         return (
-            <Landing 
-                onMerchantLogin={handleMerchantLoginRequest} 
-                onOpenHistory={() => setCurrentState(AppState.CUSTOMER_HISTORY)}
-            />
+          <Landing
+            onMerchantLogin={handleMerchantLoginRequest}
+            onOpenHistory={() => setCurrentState(AppState.CUSTOMER_HISTORY)}
+          />
         );
 
       case AppState.CUSTOMER_HISTORY:
@@ -217,8 +226,8 @@ const App: React.FC = () => {
 
       case AppState.GARMENT_VIEW:
         return selectedGarment ? (
-          <GarmentView 
-            garment={selectedGarment} 
+          <GarmentView
+            garment={selectedGarment}
             merchantProfile={merchantProfile}
             onContinue={handleGarmentContinue}
             onMerchantClick={handleMerchantLoginRequest}
@@ -234,25 +243,25 @@ const App: React.FC = () => {
 
       case AppState.RESULT:
         return result && selectedGarment ? (
-          <ResultView 
+          <ResultView
             result={result}
             garment={selectedGarment}
-            onRetake={handleRetake} 
-            onTryAnother={handleTryAnother} 
+            onRetake={handleRetake}
+            onTryAnother={handleTryAnother}
           />
         ) : null;
 
       case AppState.MERCHANT_DASHBOARD:
         return (
-            <MerchantDashboard 
-                inventory={inventory}
-                merchantProfile={merchantProfile}
-                onUpdateInventory={setInventory}
-                onUpdateProfile={setMerchantProfile}
-                onBack={() => {
-                    setCurrentState(AppState.LANDING);
-                }} 
-            />
+          <MerchantDashboard
+            inventory={inventory}
+            merchantProfile={merchantProfile}
+            onUpdateInventory={setInventory}
+            onUpdateProfile={setMerchantProfile}
+            onBack={() => {
+              setCurrentState(AppState.LANDING);
+            }}
+          />
         );
 
       default:
