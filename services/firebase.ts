@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDoc, doc, getDocs, setDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDoc, doc, getDocs, setDoc, deleteDoc } from "firebase/firestore";
 import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
 import { Garment, MerchantProfile } from "../types";
 
@@ -8,13 +8,13 @@ import { Garment, MerchantProfile } from "../types";
 // ------------------------------------------------------------------
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBWmMblwY2CCu3Qj0zVs-Iks9VDSn6o4x0",
-  authDomain: "mirrorlyapp.firebaseapp.com",
-  projectId: "mirrorlyapp",
-  storageBucket: "mirrorlyapp.firebasestorage.app",
-  messagingSenderId: "955400146750",
-  appId: "1:955400146750:web:c032bddeee861cac58266f",
-  measurementId: "G-11PLJPMH9V"
+    apiKey: "AIzaSyBWmMblwY2CCu3Qj0zVs-Iks9VDSn6o4x0",
+    authDomain: "mirrorlyapp.firebaseapp.com",
+    projectId: "mirrorlyapp",
+    storageBucket: "mirrorlyapp.firebasestorage.app",
+    messagingSenderId: "955400146750",
+    appId: "1:955400146750:web:c032bddeee861cac58266f",
+    measurementId: "G-11PLJPMH9V"
 };
 
 // ------------------------------------------------------------------
@@ -42,18 +42,18 @@ try {
 // Collection References
 const COLLECTION_GARMENTS = "garments";
 const COLLECTION_PROFILE = "merchant_profiles";
-const PROFILE_DOC_ID = "main_profile"; 
+const PROFILE_DOC_ID = "main_profile";
 
 // Helper to remove undefined fields because Firestore doesn't like them
 // and throws "invalid-argument"
 const cleanData = (data: any) => {
-  const cleaned = { ...data };
-  Object.keys(cleaned).forEach(key => {
-    if (cleaned[key] === undefined) {
-      delete cleaned[key];
-    }
-  });
-  return cleaned;
+    const cleaned = { ...data };
+    Object.keys(cleaned).forEach(key => {
+        if (cleaned[key] === undefined) {
+            delete cleaned[key];
+        }
+    });
+    return cleaned;
 };
 
 /**
@@ -62,9 +62,9 @@ const cleanData = (data: any) => {
 export const uploadImageToStorage = async (base64Data: string, path: string): Promise<string> => {
     if (!storage) {
         console.warn("Storage not initialized, returning raw base64");
-        return base64Data; 
+        return base64Data;
     }
-    
+
     try {
         const storageRef = ref(storage, path);
         // 'data_url' format expects strings starting with "data:image/..."
@@ -90,11 +90,11 @@ export const addGarmentToDb = async (garment: Garment): Promise<string> => {
             const safeName = garment.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
             const fileName = `garments/${Date.now()}_${safeName}`;
             imageUrl = await uploadImageToStorage(imageUrl, fileName);
-            
+
             // Safety check: If upload failed or storage missing, imageUrl might still be base64.
             // Firestore has a 1MB limit, so we shouldn't save base64 there.
             if (imageUrl.startsWith('data:')) {
-                 throw new Error("Görsel yüklenemedi (Storage hatası). Lütfen internet bağlantınızı kontrol edin.");
+                throw new Error("Görsel yüklenemedi (Storage hatası). Lütfen internet bağlantınızı kontrol edin.");
             }
         }
 
@@ -106,7 +106,7 @@ export const addGarmentToDb = async (garment: Garment): Promise<string> => {
         });
 
         const docRef = await addDoc(collection(db, COLLECTION_GARMENTS), garmentData);
-        
+
         return docRef.id;
     } catch (error) {
         console.error("Veritabanı Kayıt Hatası:", error);
@@ -119,7 +119,7 @@ export const addGarmentToDb = async (garment: Garment): Promise<string> => {
  */
 export const getGarmentsFromDb = async (): Promise<Garment[]> => {
     if (!db) return [];
-    
+
     try {
         const querySnapshot = await getDocs(collection(db, COLLECTION_GARMENTS));
         return querySnapshot.docs.map(doc => ({
@@ -170,7 +170,7 @@ export const saveMerchantProfile = async (profile: MerchantProfile): Promise<voi
         const docRef = doc(db, COLLECTION_PROFILE, PROFILE_DOC_ID);
         // Sanitize data
         const profileData = cleanData({ ...profile, logoUrl });
-        
+
         await setDoc(docRef, profileData, { merge: true });
 
     } catch (error) {
@@ -195,6 +195,22 @@ export const getMerchantProfile = async (): Promise<MerchantProfile | null> => {
     } catch (error) {
         console.error("Error getting profile:", error);
         return null;
+    }
+};
+
+/**
+ * Deletes a garment from Firestore.
+ */
+export const deleteGarmentFromDb = async (id: string): Promise<boolean> => {
+    if (!db) return false;
+
+    try {
+        const docRef = doc(db, COLLECTION_GARMENTS, id);
+        await deleteDoc(docRef);
+        return true;
+    } catch (error) {
+        console.error("Error deleting garment:", error);
+        throw error;
     }
 };
 
