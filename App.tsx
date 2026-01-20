@@ -224,11 +224,12 @@ const App: React.FC = () => {
             onContinue={handleGarmentContinue}
             onMerchantClick={handleMerchantLoginRequest}
             onSelectGarment={(g) => setSelectedGarment(g)}
+            onBack={() => setCurrentState(AppState.LANDING)}
           />
         ) : <Landing onMerchantLogin={handleMerchantLoginRequest} onOpenHistory={() => setCurrentState(AppState.CUSTOMER_HISTORY)} />;
 
       case AppState.PHOTO_INPUT:
-        return <PhotoInput onPhotoSelected={handlePhotoSelected} />;
+        return <PhotoInput onPhotoSelected={handlePhotoSelected} onBack={() => setCurrentState(AppState.GARMENT_VIEW)} />;
 
       case AppState.PROCESSING:
         // Pass the cancel handler here

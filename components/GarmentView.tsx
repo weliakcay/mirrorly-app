@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Garment, MerchantProfile } from '../types';
-import { Sparkles, ShoppingBag, Grid3X3, X } from 'lucide-react';
+import { Sparkles, ShoppingBag, Grid3X3, X, ArrowLeft } from 'lucide-react';
 
 interface GarmentViewProps {
   garment: Garment;
@@ -9,6 +9,7 @@ interface GarmentViewProps {
   onContinue: () => void;
   onMerchantClick: () => void;
   onSelectGarment: (garment: Garment) => void;
+  onBack: () => void;
 }
 
 const GarmentView: React.FC<GarmentViewProps> = ({
@@ -17,7 +18,8 @@ const GarmentView: React.FC<GarmentViewProps> = ({
   inventory,
   onContinue,
   onMerchantClick,
-  onSelectGarment
+  onSelectGarment,
+  onBack
 }) => {
   const [showCollection, setShowCollection] = useState(false);
 
@@ -32,6 +34,16 @@ const GarmentView: React.FC<GarmentViewProps> = ({
   return (
     // Added 'overflow-y-auto' and 'hide-scrollbar' to enable scrolling on mobile
     <div className="h-full flex flex-col relative animate-fade-in bg-boutique-cream overflow-y-auto hide-scrollbar">
+
+      {/* Back Button */}
+      <div className="absolute top-4 left-4 z-10">
+        <button
+          onClick={onBack}
+          className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5 text-gray-900" />
+        </button>
+      </div>
 
       {/* Content Wrapper to ensure min-height */}
       <div className="min-h-full flex flex-col">
