@@ -1,8 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { QrCode, Plus, LogOut, Link as LinkIcon, Printer, X, Store, Package, Image as ImageIcon, Upload, Settings, Loader2, Key, CheckCircle, AlertTriangle, Trash2 } from 'lucide-react';
+import { QrCode, Plus, LogOut, Link as LinkIcon, Printer, X, Store, Package, Image as ImageIcon, Upload, Settings, Loader2, Trash2, CreditCard, Coins, Sparkles, Crown, Zap } from 'lucide-react';
 import { Garment, MerchantProfile } from '../types';
 import { addGarmentToDb, saveMerchantProfile, isFirebaseConfigured, deleteGarmentFromDb } from '../services/firebase';
-import { testApiKey } from '../services/geminiService';
 
 interface MerchantDashboardProps {
     inventory: Garment[];
@@ -25,16 +24,17 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
 
-    // Tabs: 'inventory' | 'profile'
-    const [activeTab, setActiveTab] = useState<'inventory' | 'profile'>('inventory');
+    // Tabs: 'inventory' | 'profile' | 'balance'
+    const [activeTab, setActiveTab] = useState<'inventory' | 'profile' | 'balance'>('inventory');
 
     // Sub-states
     const [isAdding, setIsAdding] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [activeQrItem, setActiveQrItem] = useState<Garment | null>(null);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
 
-    // Connection Test State
-    const [isTestingKey, setIsTestingKey] = useState(false);
+    // Delete state
     const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
     // Add Item Form State
@@ -48,7 +48,6 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     // Profile Form State
     const [profileName, setProfileName] = useState(merchantProfile.name);
     const [profileLink, setProfileLink] = useState(merchantProfile.paymentLink || '');
-    const [profileApiKey, setProfileApiKey] = useState(merchantProfile.geminiApiKey || '');
     const [profileLogo, setProfileLogo] = useState<string | null>(merchantProfile.logoUrl || null);
     const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -151,7 +150,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
             name: profileName,
             logoUrl: profileLogo || undefined,
             paymentLink: profileLink,
-            geminiApiKey: profileApiKey.trim() // Force Trim
+            credits: merchantProfile.credits // Preserve existing credits
         };
 
         try {
@@ -161,7 +160,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
             onUpdateProfile(newProfile);
 
-            // PERSISTENCE: Save to LocalStorage as fallback so API Key survives refresh
+            // PERSISTENCE: Save to LocalStorage as fallback
             localStorage.setItem('mirrorly_profile', JSON.stringify(newProfile));
 
             alert("Mağaza bilgileri güncellendi!");
@@ -173,24 +172,10 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         }
     };
 
-    const handleTestConnection = async () => {
-        if (!profileApiKey) {
-            alert("Lütfen önce bir API anahtarı girin.");
-            return;
-        }
-        setIsTestingKey(true);
-        try {
-            const result = await testApiKey(profileApiKey.trim());
-            if (result.success) {
-                alert("✅ " + result.message);
-            } else {
-                alert("❌ " + result.message);
-            }
-        } catch (e) {
-            alert("Hata oluştu.");
-        } finally {
-            setIsTestingKey(false);
-        }
+    // --- Package Selection ---
+    const handleSelectPackage = (packageName: string) => {
+        setSelectedPackage(packageName);
+        setShowPaymentModal(true);
     };
 
     const getProductDeepLink = (itemId: string) => {
@@ -404,22 +389,31 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-4">
+                <div className="flex gap-3">
                     <button
                         onClick={() => setActiveTab('inventory')}
                         className={`pb-2 px-1 text-sm font-medium transition-colors relative ${activeTab === 'inventory' ? 'text-gray-900' : 'text-gray-400'}`}
                     >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                             <Package className="w-4 h-4" /> Ürünler
                         </div>
                         {activeTab === 'inventory' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></div>}
                     </button>
                     <button
+                        onClick={() => setActiveTab('balance')}
+                        className={`pb-2 px-1 text-sm font-medium transition-colors relative ${activeTab === 'balance' ? 'text-gray-900' : 'text-gray-400'}`}
+                    >
+                        <div className="flex items-center gap-1.5">
+                            <Coins className="w-4 h-4" /> Bakiye
+                        </div>
+                        {activeTab === 'balance' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-boutique-gold"></div>}
+                    </button>
+                    <button
                         onClick={() => setActiveTab('profile')}
                         className={`pb-2 px-1 text-sm font-medium transition-colors relative ${activeTab === 'profile' ? 'text-gray-900' : 'text-gray-400'}`}
                     >
-                        <div className="flex items-center gap-2">
-                            <Store className="w-4 h-4" /> Mağaza Bilgileri
+                        <div className="flex items-center gap-1.5">
+                            <Store className="w-4 h-4" /> Mağaza
                         </div>
                         {activeTab === 'profile' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></div>}
                     </button>
@@ -554,6 +548,119 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                         </div>
                     </>
                 )}
+                {/* === BALANCE TAB === */}
+                {activeTab === 'balance' && (
+                    <div className="space-y-6">
+                        {/* Credit Display */}
+                        <div className={`bg-white rounded-2xl p-6 shadow-sm border ${merchantProfile.credits < 20 ? 'border-red-200' : 'border-gray-100'}`}>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Mevcut Bakiye</p>
+                                    <div className="flex items-center gap-2">
+                                        <Coins className={`w-8 h-8 ${merchantProfile.credits < 20 ? 'text-red-400' : 'text-boutique-gold'}`} />
+                                        <span className={`font-serif text-4xl font-bold ${merchantProfile.credits < 20 ? 'text-red-500' : 'text-gray-900'}`}>
+                                            {merchantProfile.credits}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 mt-1">Deneme Kredisi</p>
+                                </div>
+                                {merchantProfile.credits < 20 && (
+                                    <div className="bg-red-50 text-red-600 px-3 py-2 rounded-lg text-xs font-medium">
+                                        Kredi Azalıyor!
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <h3 className="font-serif text-lg text-gray-900">Kredi Paketleri</h3>
+
+                        {/* Pricing Packages */}
+                        <div className="space-y-3">
+                            {/* Starter */}
+                            <div
+                                onClick={() => handleSelectPackage('starter')}
+                                className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                                            <Zap className="w-5 h-5 text-gray-600" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-medium text-gray-900">Starter</h4>
+                                            <p className="text-xs text-gray-500">200 kredi • Küçük butikler için</p>
+                                        </div>
+                                    </div>
+                                    <span className="font-bold text-gray-900">$19<span className="text-xs font-normal text-gray-400">/ay</span></span>
+                                </div>
+                            </div>
+
+                            {/* Growth - Popular */}
+                            <div
+                                onClick={() => handleSelectPackage('growth')}
+                                className="bg-gradient-to-r from-boutique-gold/10 to-yellow-50 rounded-xl p-4 border-2 border-boutique-gold shadow-sm cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all relative"
+                            >
+                                <div className="absolute -top-2 right-4 bg-boutique-gold text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                                    En Popüler
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-boutique-gold/20 rounded-lg flex items-center justify-center">
+                                            <Sparkles className="w-5 h-5 text-boutique-gold" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-medium text-gray-900">Growth</h4>
+                                            <p className="text-xs text-gray-500">500 kredi • <span className="text-green-600 font-medium">%18 tasarruf</span></p>
+                                        </div>
+                                    </div>
+                                    <span className="font-bold text-gray-900">$39<span className="text-xs font-normal text-gray-400">/ay</span></span>
+                                </div>
+                            </div>
+
+                            {/* Pro */}
+                            <div
+                                onClick={() => handleSelectPackage('pro')}
+                                className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                            <Crown className="w-5 h-5 text-purple-600" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-medium text-gray-900">Pro</h4>
+                                            <p className="text-xs text-gray-500">1200 kredi • <span className="text-green-600 font-medium">%30 tasarruf</span></p>
+                                        </div>
+                                    </div>
+                                    <span className="font-bold text-gray-900">$79<span className="text-xs font-normal text-gray-400">/ay</span></span>
+                                </div>
+                            </div>
+
+                            {/* Enterprise */}
+                            <div
+                                onClick={() => handleSelectPackage('enterprise')}
+                                className="bg-gray-900 rounded-xl p-4 shadow-sm cursor-pointer hover:bg-black hover:scale-[1.01] transition-all"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                                            <CreditCard className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-medium text-white">Enterprise</h4>
+                                            <p className="text-xs text-gray-400">3000 kredi • <span className="text-green-400 font-medium">%47 tasarruf</span></p>
+                                        </div>
+                                    </div>
+                                    <span className="font-bold text-white">$149<span className="text-xs font-normal text-gray-400">/ay</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p className="text-[10px] text-gray-400 text-center">
+                            Her müşteri denemesinde 1 kredi kullanılır. Kredi bittiğinde müşteriler deneme yapamaz.
+                        </p>
+                    </div>
+                )}
 
                 {/* === PROFILE TAB === */}
                 {activeTab === 'profile' && (
@@ -600,38 +707,6 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                             </div>
 
                             <div className="space-y-1">
-                                <label className="text-xs text-gray-500 uppercase font-bold ml-1 text-boutique-gold">Google Gemini API Key</label>
-                                <div className="flex gap-2">
-                                    <div className="relative flex-1">
-                                        <Key className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                                        <input
-                                            type="password"
-                                            value={profileApiKey}
-                                            onChange={(e) => setProfileApiKey(e.target.value)}
-                                            placeholder="AIzaSy..."
-                                            className="w-full bg-white border border-gray-200 rounded-lg p-3 pl-9 text-gray-900 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-boutique-gold"
-                                        />
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={handleTestConnection}
-                                        disabled={isTestingKey || !profileApiKey}
-                                        className={`px-4 rounded-lg font-medium text-xs transition-colors border ${isTestingKey ? 'bg-gray-100 text-gray-400 border-gray-100' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
-                                    >
-                                        {isTestingKey ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : (
-                                            "Bağlantıyı Test Et"
-                                        )}
-                                    </button>
-                                </div>
-                                <p className="text-[10px] text-gray-400 ml-1">
-                                    Sanal deneme (Virtual Try-On) için gereklidir.
-                                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="underline ml-1 hover:text-gray-900">Buradan alabilirsiniz.</a>
-                                </p>
-                            </div>
-
-                            <div className="space-y-1">
                                 <label className="text-xs text-gray-500 uppercase font-bold ml-1">Ödeme / Mağaza Linki</label>
                                 <div className="relative">
                                     <Settings className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
@@ -650,15 +725,46 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                                 Değişiklikleri Kaydet
                             </button>
                         </form>
-
-                        <div className="bg-yellow-50 border border-yellow-100 p-4 rounded-xl">
-                            <p className="text-xs text-yellow-800 leading-relaxed">
-                                <strong>İpucu:</strong> API anahtarını girdikten sonra uygulamanın ana sayfasına dönerek sanal deneme özelliğini test edebilirsiniz.
-                            </p>
-                        </div>
                     </div>
                 )}
             </div>
+
+            {/* Payment Modal */}
+            {showPaymentModal && (
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-6">
+                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-serif text-xl text-gray-900">Ödeme</h3>
+                            <button onClick={() => setShowPaymentModal(false)} className="p-2 hover:bg-gray-100 rounded-full">
+                                <X className="w-5 h-5 text-gray-500" />
+                            </button>
+                        </div>
+
+                        <div className="bg-boutique-gold/10 rounded-xl p-4 text-center">
+                            <Coins className="w-12 h-12 text-boutique-gold mx-auto mb-2" />
+                            <p className="text-sm text-gray-600">
+                                <span className="font-bold text-gray-900 capitalize">{selectedPackage}</span> paketi seçildi
+                            </p>
+                        </div>
+
+                        <div className="bg-gray-50 rounded-xl p-4 text-center">
+                            <p className="text-gray-500 text-sm">
+                                🚧 Ödeme sistemi yakında aktif olacak!
+                            </p>
+                            <p className="text-xs text-gray-400 mt-2">
+                                Stripe/iyzico entegrasyonu üzerinde çalışıyoruz.
+                            </p>
+                        </div>
+
+                        <button
+                            onClick={() => setShowPaymentModal(false)}
+                            className="w-full bg-gray-900 text-white py-3 rounded-xl font-medium hover:bg-black transition-colors"
+                        >
+                            Tamam
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

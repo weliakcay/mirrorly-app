@@ -214,4 +214,20 @@ export const deleteGarmentFromDb = async (id: string): Promise<boolean> => {
     }
 };
 
+/**
+ * Updates merchant credits (decrement by 1 or set specific value).
+ */
+export const updateMerchantCredits = async (newCredits: number): Promise<boolean> => {
+    if (!db) return false;
+
+    try {
+        const docRef = doc(db, COLLECTION_PROFILE, PROFILE_DOC_ID);
+        await setDoc(docRef, { credits: newCredits }, { merge: true });
+        return true;
+    } catch (error) {
+        console.error("Error updating credits:", error);
+        return false;
+    }
+};
+
 export const isFirebaseConfigured = () => !!db;

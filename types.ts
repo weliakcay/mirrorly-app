@@ -1,7 +1,7 @@
 
 export enum AppState {
   SPLASH = 'SPLASH',
-  LANDING = 'LANDING', 
+  LANDING = 'LANDING',
   GARMENT_VIEW = 'GARMENT_VIEW',
   PHOTO_INPUT = 'PHOTO_INPUT',
   PROCESSING = 'PROCESSING',
@@ -12,9 +12,9 @@ export enum AppState {
 
 export interface MerchantProfile {
   name: string;
-  logoUrl?: string; 
-  paymentLink?: string; 
-  geminiApiKey?: string; 
+  logoUrl?: string;
+  paymentLink?: string;
+  credits: number; // Deneme kredisi
 }
 
 export interface Garment {
@@ -23,8 +23,8 @@ export interface Garment {
   description: string;
   imageUrl: string;
   price: number;
-  boutiqueName?: string; 
-  shopUrl?: string; 
+  boutiqueName?: string;
+  shopUrl?: string;
 }
 
 export interface ProcessingResult {
@@ -41,7 +41,7 @@ export interface HistoryItem {
 }
 
 export interface UserSession {
-  userPhoto: string | null; 
+  userPhoto: string | null;
   selectedGarment: Garment | null;
   result: ProcessingResult | null;
 }
@@ -69,7 +69,7 @@ export const MOCK_GARMENTS: Garment[] = [
 
 export const DEFAULT_PROFILE: MerchantProfile = {
   name: 'Lumière Boutique',
-  logoUrl: undefined, 
+  logoUrl: undefined,
   paymentLink: '',
-  geminiApiKey: ''
+  credits: 10 // Başlangıç kredisi
 };

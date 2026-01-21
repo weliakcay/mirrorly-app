@@ -9,7 +9,7 @@ import ResultView from './components/ResultView';
 import MerchantDashboard from './components/MerchantDashboard';
 import CustomerHistory from './components/CustomerHistory';
 import { generateTryOnImage } from './services/geminiService';
-import { getGarmentById, getMerchantProfile, isFirebaseConfigured, getGarmentsFromDb } from './services/firebase';
+import { getGarmentById, getMerchantProfile, isFirebaseConfigured, getGarmentsFromDb, updateMerchantCredits } from './services/firebase';
 import { saveToHistory } from './services/historyService';
 
 const App: React.FC = () => {
@@ -102,23 +102,16 @@ const App: React.FC = () => {
   const processImageFile = async (file: File) => {
     if (!selectedGarment) return;
 
-    // --- CRITICAL FIX START: Check API Key Logic ---
-    let activeApiKey = merchantProfile.geminiApiKey;
-
-    if (!activeApiKey && isFirebaseConfigured()) {
-      try {
-        console.log("API Key missing in state. Attempting to fetch fresh profile...");
-        const freshProfile = await getMerchantProfile();
-        if (freshProfile && freshProfile.geminiApiKey) {
-          setMerchantProfile(freshProfile);
-          activeApiKey = freshProfile.geminiApiKey;
-          console.log("API Key successfully retrieved from DB.");
-        }
-      } catch (e) {
-        console.error("Failed to fetch profile in background:", e);
-      }
+    // --- CREDIT CHECK ---
+    if (merchantProfile.credits <= 0) {
+      setResult({
+        success: false,
+        imageUrl: "",
+        message: "Krediniz bitti! Mağaza panelinizden kredi satın alabilirsiniz."
+      });
+      setCurrentState(AppState.RESULT);
+      return;
     }
-    // --- CRITICAL FIX END ---
 
     // Use a try-catch block around the FileReader to handle memory errors
     try {
@@ -128,15 +121,24 @@ const App: React.FC = () => {
         try {
           const base64String = reader.result as string;
 
-          // Call Gemini Service with the confirmed API Key
+          // Call Gemini Service (uses central API key from env)
           const apiResult = await generateTryOnImage(
             base64String,
-            selectedGarment,
-            activeApiKey
+            selectedGarment
           );
 
           if (apiResult.success && apiResult.imageUrl) {
             saveToHistory(selectedGarment, apiResult.imageUrl);
+
+            // Deduct 1 credit on successful try-on
+            const newCredits = merchantProfile.credits - 1;
+            setMerchantProfile(prev => ({ ...prev, credits: newCredits }));
+
+            // Update in Firebase and localStorage
+            if (isFirebaseConfigured()) {
+              await updateMerchantCredits(newCredits);
+            }
+            localStorage.setItem('mirrorly_profile', JSON.stringify({ ...merchantProfile, credits: newCredits }));
           }
 
           setResult(apiResult);
