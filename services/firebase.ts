@@ -178,11 +178,10 @@ export const getGarmentById = async (id: string): Promise<Garment | null> => {
         // Better Approach: Fetch all (expensive?) or assume we store ID as a field.
         // In this project, `addGarmentToDb` stores `...garment` which includes `id`.
 
-        // Strategy: Query collectionGroup using 'id' field
-        // This requires 'id' field in the document to match the Document ID.
-        // We updated addGarment functions to ensure this.
+        // Strategy: Query collectionGroup using FieldPath.documentId()
+        // This is robust and doesn't require a custom index for 'id' field in collectionGroup.
 
-        const q = query(collectionGroup(db, COLLECTION_GARMENTS), where('id', '==', id));
+        const q = query(collectionGroup(db, COLLECTION_GARMENTS), where(documentId(), '==', id));
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
