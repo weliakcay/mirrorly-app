@@ -111,7 +111,11 @@ export const addGarmentToDb = async (garment: Garment): Promise<string> => {
             imageUrl: imageUrl
         });
 
-        const docRef = await addDoc(collection(db, COLLECTION_GARMENTS), garmentData);
+        // Generate ID locally to ensure data.id matches doc.id
+        const docRef = doc(collection(db, COLLECTION_GARMENTS));
+        garmentData.id = docRef.id;
+
+        await setDoc(docRef, garmentData);
 
         return docRef.id;
     } catch (error) {
@@ -174,10 +178,11 @@ export const getGarmentById = async (id: string): Promise<Garment | null> => {
         // Better Approach: Fetch all (expensive?) or assume we store ID as a field.
         // In this project, `addGarmentToDb` stores `...garment` which includes `id`.
 
-        // Strategy: Query collectionGroup using FieldPath.documentId()
-        // This ensures we find the document by its actual Firestore Key (which is what we use in the app URLs)
+        // Strategy: Query collectionGroup using 'id' field
+        // This requires 'id' field in the document to match the Document ID.
+        // We updated addGarment functions to ensure this.
 
-        const q = query(collectionGroup(db, COLLECTION_GARMENTS), where(documentId(), '==', id));
+        const q = query(collectionGroup(db, COLLECTION_GARMENTS), where('id', '==', id));
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
@@ -297,9 +302,16 @@ export const addGarmentToUserInventory = async (uid: string, garment: Garment): 
         }
 
         // 2. Save location: user specific sub-collection
+        // 2. Save location: user specific sub-collection
         const garmentData = cleanData({ ...garment, imageUrl });
+
         const userGarmentsRef = collection(db, COLLECTION_PROFILE, uid, COLLECTION_GARMENTS);
-        const docRef = await addDoc(userGarmentsRef, garmentData);
+        const docRef = doc(userGarmentsRef); // Generate new ref
+
+        // CRITICAL: Set the 'id' field to match the Firestore Document ID
+        garmentData.id = docRef.id;
+
+        await setDoc(docRef, garmentData);
 
         return docRef.id;
 
@@ -318,10 +330,16 @@ export const getUserInventory = async (uid: string): Promise<Garment[]> => {
     try {
         const userGarmentsRef = collection(db, COLLECTION_PROFILE, uid, COLLECTION_GARMENTS);
         const querySnapshot = await getDocs(userGarmentsRef);
-        return querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        } as Garment));
+
+        return querySnapshot.docs.map(doc => {
+            const data = doc.data() as Garment;
+            // Self-healing: If stored ID doesn't match Doc ID, fix it silently? 
+            // Better to just prefer Doc ID for runtime, but for queryability we might need to fix it.
+            return {
+                ...data,
+                id: doc.id
+            };
+        });
     } catch (error) {
         console.error("Error fetching user inventory:", error);
         return [];
