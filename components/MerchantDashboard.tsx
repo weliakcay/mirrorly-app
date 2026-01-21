@@ -427,15 +427,18 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     if (activeQrItem) {
         return (
             <div className="h-full flex flex-col bg-white animate-fade-in relative z-50">
-                <div className="absolute top-4 right-4 no-print">
-                    <button onClick={() => setActiveQrItem(null)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
-                        <X className="w-6 h-6 text-gray-600" />
+                <div className="absolute top-4 right-4 no-print z-50">
+                    <button
+                        onClick={() => setActiveQrItem(null)}
+                        className="p-3 bg-gray-100 rounded-full hover:bg-gray-200 shadow-md transition-all active:scale-95"
+                    >
+                        <X className="w-6 h-6 text-gray-900" />
                     </button>
                 </div>
 
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-6">
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-6 overflow-y-auto">
                     {/* Print Area Wrapper */}
-                    <div className="print-area bg-white p-6 rounded-xl border-4 border-gray-900 flex flex-col items-center">
+                    <div className="print-area bg-white p-6 rounded-xl border-4 border-gray-900 flex flex-col items-center shadow-2xl">
                         <img src={generateQrImage(activeQrItem.id)} alt="QR Code" className="w-64 h-64 mix-blend-multiply" />
                         <div className="mt-4 text-center">
                             <span className="bg-gray-900 text-white px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full">{merchantProfile.name}</span>
@@ -451,12 +454,19 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                         </p>
                     </div>
 
-                    <div className="pt-4 flex gap-4 w-full max-w-xs no-print">
+                    <div className="pt-4 flex flex-col gap-3 w-full max-w-xs no-print">
                         <button
                             onClick={handlePrint}
-                            className="flex-1 bg-gray-900 text-white py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-black"
+                            className="w-full bg-gray-900 text-white py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-black shadow-lg shadow-gray-200"
                         >
                             <Printer className="w-4 h-4" /> Etiketi Yazdır
+                        </button>
+
+                        <button
+                            onClick={() => setActiveQrItem(null)}
+                            className="w-full bg-white text-gray-500 py-3 rounded-lg font-medium border border-gray-200 hover:bg-gray-50 transition-colors"
+                        >
+                            Kapat
                         </button>
                     </div>
                 </div>
