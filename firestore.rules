@@ -11,15 +11,35 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    // Merchants (Mağazalar) koleksiyonu
-    // Her mağaza sadece kendi dökümanını görebilir ve yazabilir
+    // ============================================
+    // PUBLIC ACCESS - CollectionGroup Queries
+    // ============================================
+    // QR kodlarından gelen müşteriler (giriş yapmamış) ürünleri görebilmeli.
+    // Bu kural collectionGroup("garments") sorgularının çalışmasını sağlar.
+    match /{path=**}/garments/{garmentId} {
+      allow read: if true; // Herkes ürünleri görebilir (vitrin)
+    }
+
+    // ============================================
+    // MERCHANT PROFILES - Private Access
+    // ============================================
+    // Mağazalar sadece kendi profillerini ve envanterlerini yönetebilir.
     match /merchant_profiles/{userId} {
       allow read, write: if isAuthenticated() && isOwner(userId);
       
-      // Mağazanın envanteri (Garments alt koleksiyonu)
+      // Mağazanın envanteri (Garments alt koleksiyonu) - YAZMAK için
+      // Okuma zaten yukarıdaki collectionGroup kuralıyla açık.
       match /garments/{garmentId} {
-        allow read, write: if isAuthenticated() && isOwner(userId);
+        allow read: if true; // Fallback (collectionGroup kuralı da çalışır)
+        allow write: if isAuthenticated() && isOwner(userId);
       }
+    }
+    
+    // ============================================
+    // CUSTOMERS - Private Access
+    // ============================================
+    match /customers/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
     }
   }
 }

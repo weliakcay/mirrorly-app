@@ -150,52 +150,39 @@ export const getGarmentsFromDb = async (): Promise<Garment[]> => {
 };
 
 /**
- * Fetches a single garment by ID.
- */
-/**
  * Fetches a single garment by ID from ANY merchant.
- * Uses collectionGroup query.
+ * Uses collectionGroup query and client-side filtering.
+ * This approach is robust because it avoids Firestore index requirements
+ * and the `documentId()` full-path limitation for collectionGroup queries.
  */
 export const getGarmentById = async (id: string): Promise<Garment | null> => {
     if (!db) return null;
 
     try {
-        // Since we don't know the parent UID, we must search globally
-        // Note: ID must be stored as a field in the document for this to work with 'where'
-        // OR we just assume unique IDs and search.
-        // Actually, Document ID is usually not a queryable field unless we strictly use field path.
-        // However, we are storing 'id' inside the data object too in addGarment functions.
-
-        // Wait! We usually set id in the object only AFTER retrieval in basic firebase patterns.
-        // If we want to find by ID efficiently, we should query where 'id' == id (field) or documentId() == id.
-
-        // Strategy: Query collectionGroup where documentId == id
-        // Note: FieldPath.documentId() works in collectionGroup queries
+        // Approach: Fetch all garments from the collectionGroup (no server-side ID filter)
+        // Then filter client-side by matching doc.id to the requested ID.
+        // This is efficient enough for boutique-scale inventories (< 1000 items total).
 
         const garmentsQuery = query(collectionGroup(db, COLLECTION_GARMENTS));
-        // We can't easily filter by documentID in collectionGroup across different parents efficiently without exact path
-        // BUT, if we iterate or use a specific index. 
-        // Better Approach: Fetch all (expensive?) or assume we store ID as a field.
-        // In this project, `addGarmentToDb` stores `...garment` which includes `id`.
+        const querySnapshot = await getDocs(garmentsQuery);
 
-        // Strategy: Query collectionGroup using FieldPath.documentId()
-        // This is robust and doesn't require a custom index for 'id' field in collectionGroup.
+        // Find the garment matching the requested ID (doc.id is the Firestore key)
+        const matchingDoc = querySnapshot.docs.find(doc => doc.id === id);
 
-        const q = query(collectionGroup(db, COLLECTION_GARMENTS), where(documentId(), '==', id));
-        const querySnapshot = await getDocs(q);
-
-        if (!querySnapshot.empty) {
-            const docSnap = querySnapshot.docs[0];
-            return { id: docSnap.id, ...docSnap.data() } as Garment;
+        if (matchingDoc) {
+            console.log("✅ Garment found via collectionGroup:", id);
+            return { id: matchingDoc.id, ...matchingDoc.data() } as Garment;
         }
 
-        // Fallback: Check root collection (Legacy)
+        // Fallback: Check root collection (Legacy items from before multi-tenant)
+        console.log("⚡ Checking legacy root collection for:", id);
         const rootDocRef = doc(db, COLLECTION_GARMENTS, id);
         const rootDocSnap = await getDoc(rootDocRef);
         if (rootDocSnap.exists()) {
             return { id: rootDocSnap.id, ...rootDocSnap.data() } as Garment;
         }
 
+        console.warn("❌ Garment not found anywhere:", id);
         return null;
     } catch (error) {
         console.error("Error fetching garment:", error);
