@@ -371,10 +371,51 @@ export const registerMerchant = async (email: string, pass: string, name: string
         };
 
         // 3. Save to Firestore (merchant_profiles/{uid})
-        await setDoc(doc(db, COLLECTION_PROFILE, user.uid), newProfile);
+        // Use cleanData to remove undefined fields (like logoUrl from DEFAULT_PROFILE)
+        const profileData = cleanData(newProfile);
+        await setDoc(doc(db, COLLECTION_PROFILE, user.uid), profileData);
 
         return newProfile;
     } catch (error: any) {
+        // --- REPAIR FLOW ---
+        // If email exists (due to failed previous attempt), try to sign in and check for profile.
+        if (error.code === 'auth/email-already-in-use') {
+            console.warn("Email exists, checking for orphaned user state...");
+            try {
+                // Try to sign in with provided password
+                const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+                const user = userCredential.user;
+
+                // Check if profile exists
+                const existingProfile = await getDoc(doc(db, COLLECTION_PROFILE, user.uid));
+                if (!existingProfile.exists()) {
+                    console.info("Orphaned user found. Repairing profile...");
+
+                    // Create Merchant Profile (Repair)
+                    const newProfile: MerchantProfile = {
+                        ...DEFAULT_PROFILE,
+                        uid: user.uid,
+                        email: user.email || email,
+                        name: name,
+                        role: 'merchant',
+                        credits: 10
+                    };
+
+                    const profileData = cleanData(newProfile);
+                    await setDoc(doc(db, COLLECTION_PROFILE, user.uid), profileData);
+
+                    return newProfile;
+                } else {
+                    // Profile exists, so it's a genuine "User already exists" error
+                    throw error;
+                }
+            } catch (signinError) {
+                // SignIn failed (wrong password?) or other error -> throw original "email in use"
+                console.error("Repair failed:", signinError);
+                throw error;
+            }
+        }
+
         console.error("Register Merchant Error:", error);
         throw error;
     }
@@ -401,7 +442,9 @@ export const registerCustomer = async (email: string, pass: string): Promise<Cus
         };
 
         // 3. Save to Firestore (customers/{uid})
-        await setDoc(doc(db, "customers", user.uid), newCustomer);
+        // Use cleanData to remove undefined fields
+        const customerData = cleanData(newCustomer);
+        await setDoc(doc(db, "customers", user.uid), customerData);
 
         return newCustomer;
     } catch (error: any) {
