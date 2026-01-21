@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { QrCode, Plus, LogOut, Link as LinkIcon, Printer, X, Store, Package, Image as ImageIcon, Upload, Settings, Loader2, Trash2, CreditCard, Coins, Sparkles, Crown, Zap } from 'lucide-react';
 import { Garment, MerchantProfile } from '../types';
-import { addGarmentToDb, saveMerchantProfile, isFirebaseConfigured, deleteGarmentFromDb } from '../services/firebase';
+import { addGarmentToUserInventory, getUserInventory, deleteGarmentFromUserInventory, saveMerchantProfile, isFirebaseConfigured, loginUser, registerMerchant } from '../services/firebase';
 
 interface MerchantDashboardProps {
     inventory: Garment[];
@@ -23,6 +23,8 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
+    const [authLoading, setAuthLoading] = useState(false);
+    const [authError, setAuthError] = useState('');
 
     // Tabs: 'inventory' | 'profile' | 'balance'
     const [activeTab, setActiveTab] = useState<'inventory' | 'profile' | 'balance'>('inventory');
@@ -51,18 +53,81 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     const [profileLogo, setProfileLogo] = useState<string | null>(merchantProfile.logoUrl || null);
     const logoInputRef = useRef<HTMLInputElement>(null);
 
-    const handleLogin = (e: React.FormEvent) => {
+    // --- Authentication Handlers ---
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (username && password) {
-            setIsLoggedIn(true);
-        } else {
-            // Allow easy access for demo if fields are empty, or enforce check
-            // For UX: Just let them in if they click login for demo purposes
-            if (username === '' && password === '') {
-                setIsLoggedIn(true);
-            } else {
-                setIsLoggedIn(true);
+        setAuthLoading(true);
+        setAuthError('');
+
+        if (username === '' && password === '') {
+            // DEVBY: Allow empty login for quick dev access if needed, OR remove for prod
+            // setIsLoggedIn(true);
+            // return;
+        }
+
+        try {
+            // "username" field is used for email in the login form
+            const { role, profile } = await loginUser(username, password);
+
+            if (role !== 'merchant') {
+                throw new Error("Bu alana sadece mağaza sahipleri erişebilir.");
             }
+
+            // Success
+            if (profile) {
+                onUpdateProfile(profile);
+                setProfileName(profile.name);
+                setProfileLink(profile.paymentLink || '');
+                setProfileLogo(profile.logoUrl || null);
+
+                // Fetch User's Inventory
+                if (profile.uid) {
+                    try {
+                        const userItems = await getUserInventory(profile.uid);
+                        onUpdateInventory(userItems);
+                        // Update cache
+                        localStorage.setItem('mirrorly_inventory', JSON.stringify(userItems));
+                    } catch (err) {
+                        console.error("Failed to load user inventory:", err);
+                    }
+                }
+            }
+            setIsLoggedIn(true);
+
+        } catch (error: any) {
+            console.error("Login failed:", error);
+            let msg = "Giriş yapılamadı.";
+            if (error.code === 'auth/invalid-credential') msg = "E-posta veya şifre hatalı.";
+            else if (error.message) msg = error.message;
+            setAuthError(msg);
+        } finally {
+            setAuthLoading(false);
+        }
+    };
+
+    const handleRegister = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setAuthLoading(true);
+        setAuthError('');
+
+        try {
+            const newProfile = await registerMerchant(email, password, username); // username is Store Name in register form
+
+            // Success
+            onUpdateProfile(newProfile);
+            setProfileName(newProfile.name);
+            setIsLoggedIn(true);
+            alert("Mağaza hesabınız başarıyla oluşturuldu!");
+
+        } catch (error: any) {
+            console.error("Register failed:", error);
+            let msg = "Kayıt oluşturulamadı.";
+            if (error.code === 'auth/email-already-in-use') msg = "Bu e-posta adresi zaten kullanımda.";
+            else if (error.code === 'auth/weak-password') msg = "Şifre çok zayıf (en az 6 karakter).";
+            else if (error.message) msg = error.message;
+            setAuthError(msg);
+        } finally {
+            setAuthLoading(false);
         }
     };
 
@@ -112,9 +177,15 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 shopUrl: safeShopUrl
             };
 
-            if (isFirebaseConfigured()) {
-                const docId = await addGarmentToDb(newItem);
+
+            if (isFirebaseConfigured() && merchantProfile.uid) {
+                // Use User-Specific Inventory Function
+                const docId = await addGarmentToUserInventory(merchantProfile.uid, newItem);
                 newItem.id = docId;
+            } else {
+                // Fallback or offline mode?
+                // For now, if no UID (legacy/demo), we might skip specific DB save or warn
+                if (!merchantProfile.uid) console.warn("No Merchant UID found, saving locally only.");
             }
 
             const updatedInventory = [...inventory, newItem];
@@ -197,8 +268,10 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
         setDeletingItemId(item.id);
         try {
-            if (isFirebaseConfigured()) {
-                await deleteGarmentFromDb(item.id);
+            if (isFirebaseConfigured() && merchantProfile.uid) {
+                await deleteGarmentFromUserInventory(merchantProfile.uid, item.id);
+            } else {
+                console.warn("Delete skipped: No Merchant UID or Firebase not configured.");
             }
             const updatedInventory = inventory.filter(g => g.id !== item.id);
             onUpdateInventory(updatedInventory);
@@ -239,9 +312,17 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                         </button>
                     </div>
 
+                    {/* Error Message */}
+                    {authError && (
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-start gap-2">
+                            <div className="text-red-400 mt-0.5">⚠️</div>
+                            <p className="text-sm text-red-200">{authError}</p>
+                        </div>
+                    )}
+
                     {isRegistering ? (
                         // Registration Form
-                        <form onSubmit={(e) => { e.preventDefault(); setIsLoggedIn(true); }} className="space-y-4">
+                        <form onSubmit={handleRegister} className="space-y-4">
                             <div className="space-y-1">
                                 <label className="text-xs text-gray-500 uppercase tracking-wider ml-1">E-posta</label>
                                 <input
@@ -276,8 +357,12 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                                     required
                                 />
                             </div>
-                            <button type="submit" className="w-full bg-boutique-gold text-gray-900 font-medium py-3 rounded-lg hover:bg-white transition-colors mt-2">
-                                Hesap Oluştur
+                            <button
+                                type="submit"
+                                disabled={authLoading}
+                                className="w-full bg-boutique-gold text-gray-900 font-medium py-3 rounded-lg hover:bg-white transition-colors mt-2 flex justify-center uppercase tracking-wide text-xs"
+                            >
+                                {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Hesap Oluştur"}
                             </button>
                             <p className="text-[10px] text-gray-500 text-center">
                                 Kayıt olarak Kullanım Şartlarını ve Gizlilik Politikasını kabul etmiş olursunuz.
@@ -287,7 +372,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                         // Login Form
                         <form onSubmit={handleLogin} className="space-y-4">
                             <div className="space-y-1">
-                                <label className="text-xs text-gray-500 uppercase tracking-wider ml-1">E-posta veya Kullanıcı Adı</label>
+                                <label className="text-xs text-gray-500 uppercase tracking-wider ml-1">E-posta</label>
                                 <input
                                     type="text"
                                     value={username}
@@ -308,8 +393,12 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                                 />
                             </div>
 
-                            <button type="submit" className="w-full bg-boutique-gold text-gray-900 font-medium py-3 rounded-lg hover:bg-white transition-colors mt-2">
-                                Giriş Yap
+                            <button
+                                type="submit"
+                                disabled={authLoading}
+                                className="w-full bg-boutique-gold text-gray-900 font-medium py-3 rounded-lg hover:bg-white transition-colors mt-2 flex justify-center uppercase tracking-wide text-xs"
+                            >
+                                {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Giriş Yap"}
                             </button>
                         </form>
                     )}

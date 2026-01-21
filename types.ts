@@ -10,11 +10,23 @@ export enum AppState {
   CUSTOMER_HISTORY = 'CUSTOMER_HISTORY', // New State
 }
 
+export type UserRole = 'merchant' | 'customer';
+
 export interface MerchantProfile {
+  uid?: string; // Firebase Auth UID
+  role: 'merchant';
+  email?: string;
   name: string;
   logoUrl?: string;
   paymentLink?: string;
   credits: number; // Deneme kredisi
+}
+
+export interface CustomerProfile {
+  uid: string;
+  role: 'customer';
+  email: string;
+  createdAt: number;
 }
 
 export interface Garment {
@@ -68,6 +80,7 @@ export const MOCK_GARMENTS: Garment[] = [
 ];
 
 export const DEFAULT_PROFILE: MerchantProfile = {
+  role: 'merchant',
   name: 'Lumière Boutique',
   logoUrl: undefined,
   paymentLink: '',

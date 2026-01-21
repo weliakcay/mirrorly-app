@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Yardımcı fonksiyonlar
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Merchants (Mağazalar) koleksiyonu
+    // Her mağaza sadece kendi dökümanını görebilir ve yazabilir
+    match /merchant_profiles/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+      
+      // Mağazanın envanteri (Garments alt koleksiyonu)
+      match /garments/{garmentId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
+    }
+  }
+}
