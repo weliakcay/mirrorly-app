@@ -171,13 +171,15 @@ export const generateTryOnImage = async (
 ): Promise<ProcessingResult> => {
   try {
     // Use central API key from environment
-    const apiKey = process.env.API_KEY;
+    // Vite requires VITE_ prefix for client-side env vars
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-    if (!apiKey) {
+    if (!apiKey || apiKey === 'BURAYA_API_KEY_YAPISTIRIN') {
+      console.error("Gemini API Key eksik veya hatalı!");
       return {
         success: false,
         imageUrl: "",
-        message: "Sistem yapılandırma hatası. Lütfen yönetici ile iletişime geçin."
+        message: "Gemini API anahtarı yapılandırılmamış. Lütfen yönetici ile iletişime geçin."
       };
     }
 

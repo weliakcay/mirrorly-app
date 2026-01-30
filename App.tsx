@@ -24,25 +24,30 @@ const App: React.FC = () => {
   const [result, setResult] = useState<ProcessingResult | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
-  // Initial Data Fetch
+  // Initial Data Fetch - Only load from localStorage for cached state
+  // Firebase data is loaded after user authentication in MerchantDashboard
   useEffect(() => {
     const fetchInitialData = async () => {
-      // 1. Load Profile
-      if (isFirebaseConfigured()) {
-        const profile = await getMerchantProfile();
-        if (profile) setMerchantProfile(profile);
-
-        // 2. Load Inventory (for dashboard mainly)
-        const items = await getGarmentsFromDb();
-        if (items.length > 0) setInventory(items);
-      } else {
-        // Fallback to local storage if firebase not set up
-        const savedInv = localStorage.getItem('mirrorly_inventory');
-        if (savedInv) setInventory(JSON.parse(savedInv));
-
-        const savedProf = localStorage.getItem('mirrorly_profile');
-        if (savedProf) setMerchantProfile(JSON.parse(savedProf));
+      // Load from localStorage as cache/fallback (no auth required)
+      const savedInv = localStorage.getItem('mirrorly_inventory');
+      if (savedInv) {
+        try {
+          setInventory(JSON.parse(savedInv));
+        } catch (e) {
+          console.warn("Could not parse cached inventory");
+        }
       }
+
+      const savedProf = localStorage.getItem('mirrorly_profile');
+      if (savedProf) {
+        try {
+          setMerchantProfile(JSON.parse(savedProf));
+        } catch (e) {
+          console.warn("Could not parse cached profile");
+        }
+      }
+      // Note: Firebase data (profile + inventory) will be fetched 
+      // after successful login in MerchantDashboard component
     };
     fetchInitialData();
   }, []);
