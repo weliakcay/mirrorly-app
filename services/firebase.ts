@@ -154,10 +154,13 @@ export const saveMerchantProfile = async (profile: MerchantProfile): Promise<voi
     ...toPublicMerchantProfile(mergedProfile),
   });
 
-  await Promise.all([
-    setDoc(doc(db, COLLECTION_PRIVATE_PROFILE, profile.uid), privateProfileData, { merge: true }),
-    setDoc(doc(db, COLLECTION_PUBLIC_PROFILE, profile.uid), publicProfileData, { merge: true }),
-  ]);
+  await setDoc(doc(db, COLLECTION_PRIVATE_PROFILE, profile.uid), privateProfileData, { merge: true });
+
+  try {
+    await setDoc(doc(db, COLLECTION_PUBLIC_PROFILE, profile.uid), publicProfileData, { merge: true });
+  } catch (error: any) {
+    console.warn("merchant_public write skipped:", error?.message || error);
+  }
 };
 
 export const getMerchantPublicProfileByUid = async (
@@ -165,35 +168,58 @@ export const getMerchantPublicProfileByUid = async (
 ): Promise<MerchantPublicProfile | null> => {
   if (!db || !uid) return null;
 
-  const publicDoc = await getDoc(doc(db, COLLECTION_PUBLIC_PROFILE, uid));
-  if (publicDoc.exists()) {
-    return cleanData({
-      uid,
-      ...publicDoc.data(),
-    }) as MerchantPublicProfile;
+  try {
+    const publicDoc = await getDoc(doc(db, COLLECTION_PUBLIC_PROFILE, uid));
+    if (publicDoc.exists()) {
+      return cleanData({
+        uid,
+        ...publicDoc.data(),
+      }) as MerchantPublicProfile;
+    }
+  } catch (error: any) {
+    console.warn("merchant_public read skipped:", error?.message || error);
   }
 
-  const privateDoc = await getDoc(doc(db, COLLECTION_PRIVATE_PROFILE, uid));
-  if (!privateDoc.exists()) return null;
+  if (auth?.currentUser?.uid !== uid) {
+    return null;
+  }
 
-  const fallback = mergeMerchantDocs(uid, privateDoc.data() as MerchantProfile, null);
-  return fallback ? toPublicMerchantProfile(fallback) : null;
+  try {
+    const privateDoc = await getDoc(doc(db, COLLECTION_PRIVATE_PROFILE, uid));
+    if (!privateDoc.exists()) return null;
+
+    const fallback = mergeMerchantDocs(uid, privateDoc.data() as MerchantProfile, null);
+    return fallback ? toPublicMerchantProfile(fallback) : null;
+  } catch (error: any) {
+    console.warn("merchant private fallback skipped:", error?.message || error);
+    return null;
+  }
 };
 
 export const getMerchantProfileByUid = async (uid: string): Promise<MerchantProfile | null> => {
   if (!db || !uid) return null;
 
-  const [privateDoc, publicDoc] = await Promise.all([
-    getDoc(doc(db, COLLECTION_PRIVATE_PROFILE, uid)),
-    getDoc(doc(db, COLLECTION_PUBLIC_PROFILE, uid)),
-  ]);
+  let privateDoc: any = null;
+  let publicDoc: any = null;
 
-  if (!privateDoc.exists() && !publicDoc.exists()) return null;
+  try {
+    privateDoc = await getDoc(doc(db, COLLECTION_PRIVATE_PROFILE, uid));
+  } catch (error: any) {
+    console.warn("merchant private read failed:", error?.message || error);
+  }
+
+  try {
+    publicDoc = await getDoc(doc(db, COLLECTION_PUBLIC_PROFILE, uid));
+  } catch (error: any) {
+    console.warn("merchant public read skipped:", error?.message || error);
+  }
+
+  if ((!privateDoc || !privateDoc.exists()) && (!publicDoc || !publicDoc.exists())) return null;
 
   return mergeMerchantDocs(
     uid,
-    privateDoc.exists() ? (privateDoc.data() as Partial<MerchantProfile>) : null,
-    publicDoc.exists() ? (publicDoc.data() as Partial<MerchantPublicProfile>) : null
+    privateDoc?.exists() ? (privateDoc.data() as Partial<MerchantProfile>) : null,
+    publicDoc?.exists() ? (publicDoc.data() as Partial<MerchantPublicProfile>) : null
   );
 };
 
