@@ -1,9 +1,10 @@
 {
   "name": "mirrorly-app",
   "version": "1.0.0",
-  "description": "AI-powered virtual try-on experience for boutiques using Google Gemini API.",
+  "description": "AI-powered virtual try-on experience for boutiques using Kie.ai and Firebase.",
   "main": "index.tsx",
   "scripts": {
+    "dev": "vite",
     "start": "vite",
     "build": "vite build",
     "preview": "vite preview"
@@ -19,11 +20,11 @@
   "author": "Mirrorly Team",
   "license": "MIT",
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "firebase": "^10.8.0",
+    "firebase-admin": "^13.7.0",
     "lucide-react": "^0.344.0",
-    "@google/genai": "*",
-    "firebase": "^10.8.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

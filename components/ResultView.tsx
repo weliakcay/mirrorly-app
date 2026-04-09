@@ -1,17 +1,64 @@
 import React, { useState } from 'react';
-import { ProcessingResult, Garment } from '../types';
-import { Share2, RefreshCw, ShoppingBag, Download, X, MessageCircle, Instagram, Twitter, Link2, Check } from 'lucide-react';
+import {
+  Check,
+  Download,
+  Instagram,
+  Link2,
+  MessageCircle,
+  RefreshCw,
+  Share2,
+  ShoppingBag,
+  Twitter,
+  X,
+} from 'lucide-react';
+import { Garment, MerchantPublicProfile, ProcessingResult } from '../types';
 
 interface ResultViewProps {
   result: ProcessingResult;
   garment: Garment;
+  merchantProfile: MerchantPublicProfile | null;
   onRetake: () => void;
   onTryAnother: () => void;
 }
 
-const ResultView: React.FC<ResultViewProps> = ({ result, garment, onRetake, onTryAnother }) => {
+const buildWhatsAppHref = (phone: string, garmentName: string) => {
+  const sanitizedPhone = phone.replace(/[^\d]/g, '');
+  const text = encodeURIComponent(`${garmentName} urunu hakkinda bilgi almak istiyorum.`);
+  return sanitizedPhone ? `https://wa.me/${sanitizedPhone}?text=${text}` : '';
+};
+
+const resolvePurchaseAction = (
+  garment: Garment,
+  merchantProfile: MerchantPublicProfile | null
+): { label: string; href?: string } => {
+  if (garment.shopUrl) {
+    return { label: 'Online Satin Al', href: garment.shopUrl };
+  }
+
+  if (merchantProfile?.defaultShopUrl) {
+    return { label: 'Online Satin Al', href: merchantProfile.defaultShopUrl };
+  }
+
+  if (merchantProfile?.whatsappNumber) {
+    return {
+      label: 'Magaza ile Iletisim',
+      href: buildWhatsAppHref(merchantProfile.whatsappNumber, garment.name),
+    };
+  }
+
+  return { label: 'Bilgi Al' };
+};
+
+const ResultView: React.FC<ResultViewProps> = ({
+  result,
+  garment,
+  merchantProfile,
+  onRetake,
+  onTryAnother,
+}) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const purchaseAction = resolvePurchaseAction(garment, merchantProfile);
 
   if (!result.success) {
     return (
@@ -29,14 +76,14 @@ const ResultView: React.FC<ResultViewProps> = ({ result, garment, onRetake, onTr
   }
 
   const handleBuy = () => {
-    if (garment.shopUrl) {
-      window.open(garment.shopUrl, '_blank');
-    } else {
-      alert('This item is available in-store only. Please ask an associate.');
+    if (!purchaseAction.href) {
+      alert('Bu urun icin henuz online satis veya iletisim bilgisi eklenmemis.');
+      return;
     }
+
+    window.open(purchaseAction.href, '_blank', 'noopener,noreferrer');
   };
 
-  // Download image function
   const handleDownload = async () => {
     try {
       const link = document.createElement('a');
@@ -48,48 +95,36 @@ const ResultView: React.FC<ResultViewProps> = ({ result, garment, onRetake, onTr
       setShowShareModal(false);
     } catch (error) {
       console.error('Download failed:', error);
-      alert('İndirme başarısız oldu. Lütfen görsel üzerinde sağ tıklayıp kaydedin.');
+      alert('Indirme basarisiz oldu. Lutfen tekrar deneyin.');
     }
   };
 
-  // Native share (Web Share API)
   const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        // Convert base64 to blob for sharing
-        const response = await fetch(result.imageUrl);
-        const blob = await response.blob();
-        const file = new File([blob], 'mirrorly-tryon.png', { type: 'image/png' });
-
-        await navigator.share({
-          title: `${garment.name} - Virtual Try-On`,
-          text: `Check out how I look in this ${garment.name}! ✨ Powered by Mirrorly`,
-          files: [file]
-        });
-        setShowShareModal(false);
-      } catch (error: any) {
-        if (error.name !== 'AbortError') {
-          console.error('Share failed:', error);
-          // Fallback to showing modal if native share fails
-        }
-      }
-    } else {
-      // Show modal for non-supporting browsers
+    if (!navigator.share) {
       setShowShareModal(true);
+      return;
+    }
+
+    try {
+      const response = await fetch(result.imageUrl);
+      const blob = await response.blob();
+      const file = new File([blob], 'mirrorly-tryon.png', { type: 'image/png' });
+
+      await navigator.share({
+        title: `${garment.name} - Mirrorly`,
+        text: `Bu gorunumu Mirrorly ile olusturdum: ${garment.name}`,
+        files: [file],
+      });
+      setShowShareModal(false);
+    } catch (error: any) {
+      if (error?.name !== 'AbortError') {
+        setShowShareModal(true);
+      }
     }
   };
 
-  // Social share handlers
-  const shareText = encodeURIComponent(`Check out how I look in this ${garment.name}! ✨ Powered by Mirrorly`);
+  const shareText = encodeURIComponent(`Mirrorly ile ${garment.name} denedim.`);
   const shareUrl = encodeURIComponent(window.location.href);
-
-  const handleWhatsApp = () => {
-    window.open(`https://wa.me/?text=${shareText}%20${shareUrl}`, '_blank');
-  };
-
-  const handleTwitter = () => {
-    window.open(`https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`, '_blank');
-  };
 
   const handleCopyLink = async () => {
     try {
@@ -103,21 +138,12 @@ const ResultView: React.FC<ResultViewProps> = ({ result, garment, onRetake, onTr
 
   return (
     <div className="h-full flex flex-col bg-boutique-cream animate-fade-in relative">
-
-      {/* Hero Image */}
       <div className="flex-1 relative overflow-hidden bg-gray-100">
-        <img
-          src={result.imageUrl}
-          alt="Virtual Try-On Result"
-          className="w-full h-full object-cover"
-        />
-        {/* Subtle Gradient for controls visibility */}
-        <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-boutique-cream via-boutique-cream/90 to-transparent"></div>
+        <img src={result.imageUrl} alt="Virtual Try-On Result" className="w-full h-full object-cover" />
+        <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-boutique-cream via-boutique-cream/90 to-transparent" />
       </div>
 
-      {/* Controls Overlay (Sticky Bottom) */}
       <div className="absolute bottom-0 w-full px-6 pb-8 pt-4">
-
         <div className="flex items-center justify-center gap-4 mb-8">
           <button
             onClick={onRetake}
@@ -131,12 +157,10 @@ const ResultView: React.FC<ResultViewProps> = ({ result, garment, onRetake, onTr
 
           <button
             onClick={handleBuy}
-            className="flex-1 max-w-[200px] h-14 bg-gray-900 text-white rounded-full shadow-xl flex items-center justify-center gap-2 hover:bg-black transition-colors"
+            className="flex-1 max-w-[220px] h-14 bg-gray-900 text-white rounded-full shadow-xl flex items-center justify-center gap-2 hover:bg-black transition-colors"
           >
             <ShoppingBag className="w-5 h-5" />
-            <span className="font-sans font-medium">
-              {garment.shopUrl ? 'Buy Online' : 'In Boutique'}
-            </span>
+            <span className="font-sans font-medium">{purchaseAction.label}</span>
           </button>
 
           <button
@@ -151,17 +175,18 @@ const ResultView: React.FC<ResultViewProps> = ({ result, garment, onRetake, onTr
         </div>
 
         <div className="text-center">
-          <button onClick={onTryAnother} className="text-xs text-gray-400 font-sans tracking-wide uppercase hover:text-gray-600">
+          <button
+            onClick={onTryAnother}
+            className="text-xs text-gray-400 font-sans tracking-wide uppercase hover:text-gray-600"
+          >
             Powered by Mirrorly
           </button>
         </div>
       </div>
 
-      {/* Share Modal */}
       {showShareModal && (
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-end justify-center z-50 animate-fade-in">
           <div className="w-full max-w-md bg-white rounded-t-3xl p-6 pb-10 space-y-6">
-            {/* Header */}
             <div className="flex items-center justify-between">
               <h3 className="font-serif text-xl text-gray-900">Share Your Look</h3>
               <button
@@ -172,7 +197,6 @@ const ResultView: React.FC<ResultViewProps> = ({ result, garment, onRetake, onTr
               </button>
             </div>
 
-            {/* Download Button - Primary */}
             <button
               onClick={handleDownload}
               className="w-full flex items-center justify-center gap-3 bg-gray-900 text-white py-4 rounded-xl font-medium hover:bg-black transition-colors"
@@ -181,10 +205,9 @@ const ResultView: React.FC<ResultViewProps> = ({ result, garment, onRetake, onTr
               Download Image
             </button>
 
-            {/* Social Share Options */}
             <div className="grid grid-cols-3 gap-4">
               <button
-                onClick={handleWhatsApp}
+                onClick={() => window.open(`https://wa.me/?text=${shareText}%20${shareUrl}`, '_blank')}
                 className="flex flex-col items-center gap-2 p-4 bg-green-50 hover:bg-green-100 rounded-xl transition-colors"
               >
                 <MessageCircle className="w-6 h-6 text-green-600" />
@@ -193,9 +216,8 @@ const ResultView: React.FC<ResultViewProps> = ({ result, garment, onRetake, onTr
 
               <button
                 onClick={() => {
-                  // Instagram requires opening the app - download first
                   handleDownload();
-                  alert('Görsel indirildi. Instagram uygulamasını açıp story olarak paylaşabilirsiniz.');
+                  alert('Gorsel indirildi. Instagram uygulamasinda paylasabilirsiniz.');
                 }}
                 className="flex flex-col items-center gap-2 p-4 bg-pink-50 hover:bg-pink-100 rounded-xl transition-colors"
               >
@@ -204,7 +226,12 @@ const ResultView: React.FC<ResultViewProps> = ({ result, garment, onRetake, onTr
               </button>
 
               <button
-                onClick={handleTwitter}
+                onClick={() =>
+                  window.open(
+                    `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`,
+                    '_blank'
+                  )
+                }
                 className="flex flex-col items-center gap-2 p-4 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors"
               >
                 <Twitter className="w-6 h-6 text-blue-500" />
@@ -212,7 +239,6 @@ const ResultView: React.FC<ResultViewProps> = ({ result, garment, onRetake, onTr
               </button>
             </div>
 
-            {/* Copy Link */}
             <button
               onClick={handleCopyLink}
               className="w-full flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors"
@@ -232,7 +258,6 @@ const ResultView: React.FC<ResultViewProps> = ({ result, garment, onRetake, onTr
           </div>
         </div>
       )}
-
     </div>
   );
 };

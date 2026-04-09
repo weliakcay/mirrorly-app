@@ -1,4 +1,3 @@
-
 export enum AppState {
   SPLASH = 'SPLASH',
   LANDING = 'LANDING',
@@ -11,15 +10,24 @@ export enum AppState {
 }
 
 export type UserRole = 'merchant' | 'customer';
+export type ModelPreset = 'economy' | 'balanced' | 'premium';
 
-export interface MerchantProfile {
-  uid?: string; // Firebase Auth UID
-  role: 'merchant';
-  email?: string;
+export interface MerchantPublicProfile {
+  uid: string;
   name: string;
   logoUrl?: string;
-  paymentLink?: string;
-  credits: number; // Deneme kredisi
+  description?: string;
+  instagramUrl?: string;
+  defaultShopUrl?: string;
+  whatsappNumber?: string;
+}
+
+export interface MerchantProfile extends MerchantPublicProfile {
+  role: 'merchant';
+  email?: string;
+  credits: number;
+  modelPreset: ModelPreset;
+  status?: 'active' | 'pending';
 }
 
 export interface CustomerProfile {
@@ -31,6 +39,7 @@ export interface CustomerProfile {
 
 export interface Garment {
   id: string;
+  merchantUid: string;
   name: string;
   description: string;
   imageUrl: string;
@@ -43,6 +52,7 @@ export interface ProcessingResult {
   imageUrl: string;
   success: boolean;
   message?: string;
+  remainingCredits?: number;
 }
 
 export interface HistoryItem {
@@ -62,6 +72,7 @@ export interface UserSession {
 export const MOCK_GARMENTS: Garment[] = [
   {
     id: 'g1',
+    merchantUid: 'demo-merchant',
     name: 'Silk Evening Gown',
     description: 'A midnight blue silk gown with elegant draping.',
     imageUrl: 'https://picsum.photos/600/800?random=1',
@@ -71,6 +82,7 @@ export const MOCK_GARMENTS: Garment[] = [
   },
   {
     id: 'g2',
+    merchantUid: 'demo-merchant',
     name: 'Cashmere Trench Coat',
     description: 'Classic beige trench coat, 100% cashmere.',
     imageUrl: 'https://picsum.photos/600/800?random=2',
@@ -79,10 +91,43 @@ export const MOCK_GARMENTS: Garment[] = [
   }
 ];
 
+export const MODEL_PRESET_OPTIONS: Array<{
+  value: ModelPreset;
+  label: string;
+  description: string;
+  badge: string;
+}> = [
+  {
+    value: 'economy',
+    label: 'Ekonomik',
+    description: 'Daha uygun maliyetli, günlük kullanım için yeterli kalite.',
+    badge: 'Uygun fiyat',
+  },
+  {
+    value: 'balanced',
+    label: 'Dengeli',
+    description: 'Kalite ve hız arasında en güvenli varsayılan seçim.',
+    badge: 'Önerilen',
+  },
+  {
+    value: 'premium',
+    label: 'Premium',
+    description: 'En iyi kaliteyi hedefler, maliyeti daha yüksektir.',
+    badge: 'En yüksek kalite',
+  },
+];
+
 export const DEFAULT_PROFILE: MerchantProfile = {
+  uid: '',
   role: 'merchant',
+  email: '',
   name: 'Lumière Boutique',
   logoUrl: undefined,
-  paymentLink: '',
-  credits: 10 // Başlangıç kredisi
+  description: '',
+  instagramUrl: '',
+  defaultShopUrl: '',
+  whatsappNumber: '',
+  credits: 10,
+  modelPreset: 'balanced',
+  status: 'active',
 };

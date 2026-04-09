@@ -1,5 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { AppState, Garment, MOCK_GARMENTS, ProcessingResult, MerchantProfile, DEFAULT_PROFILE } from './types';
+import React, { useEffect, useState } from 'react';
+import {
+  AppState,
+  DEFAULT_PROFILE,
+  Garment,
+  MerchantProfile,
+  MerchantPublicProfile,
+  ProcessingResult,
+} from './types';
 import Splash from './components/Splash';
 import Landing from './components/Landing';
 import GarmentView from './components/GarmentView';
@@ -8,58 +15,67 @@ import Processing from './components/Processing';
 import ResultView from './components/ResultView';
 import MerchantDashboard from './components/MerchantDashboard';
 import CustomerHistory from './components/CustomerHistory';
-import { generateTryOnImage } from './services/geminiService';
-import { getGarmentById, getMerchantProfile, isFirebaseConfigured, getGarmentsFromDb, updateMerchantCredits } from './services/firebase';
+import { generateTryOnImage } from './services/tryOnService';
+import {
+  getGarmentById,
+  getGarmentsByMerchant,
+  getMerchantPublicProfileByUid,
+  isFirebaseConfigured,
+} from './services/firebase';
 import { saveToHistory } from './services/historyService';
 
+const buildFallbackMerchant = (
+  garment: Garment,
+  merchantProfile: MerchantProfile
+): MerchantPublicProfile => ({
+  uid: garment.merchantUid || merchantProfile.uid || 'unknown-merchant',
+  name: garment.boutiqueName || merchantProfile.name || 'Mirrorly Boutique',
+  logoUrl: merchantProfile.uid === garment.merchantUid ? merchantProfile.logoUrl : undefined,
+  description: merchantProfile.uid === garment.merchantUid ? merchantProfile.description : undefined,
+  instagramUrl: merchantProfile.uid === garment.merchantUid ? merchantProfile.instagramUrl : undefined,
+  defaultShopUrl:
+    garment.shopUrl ||
+    (merchantProfile.uid === garment.merchantUid ? merchantProfile.defaultShopUrl : undefined),
+  whatsappNumber:
+    merchantProfile.uid === garment.merchantUid ? merchantProfile.whatsappNumber : undefined,
+});
+
 const App: React.FC = () => {
-  // Application State
   const [currentState, setCurrentState] = useState<AppState>(AppState.SPLASH);
 
-  // Data State
-  const [inventory, setInventory] = useState<Garment[]>([]);
+  const [merchantInventory, setMerchantInventory] = useState<Garment[]>([]);
+  const [collectionInventory, setCollectionInventory] = useState<Garment[]>([]);
   const [merchantProfile, setMerchantProfile] = useState<MerchantProfile>(DEFAULT_PROFILE);
+  const [selectedMerchant, setSelectedMerchant] = useState<MerchantPublicProfile | null>(null);
   const [selectedGarment, setSelectedGarment] = useState<Garment | null>(null);
   const [userPhoto, setUserPhoto] = useState<File | null>(null);
   const [result, setResult] = useState<ProcessingResult | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
-  // Initial Data Fetch - Only load from localStorage for cached state
-  // Firebase data is loaded after user authentication in MerchantDashboard
   useEffect(() => {
-    const fetchInitialData = async () => {
-      // Load from localStorage as cache/fallback (no auth required)
-      const savedInv = localStorage.getItem('mirrorly_inventory');
-      if (savedInv) {
-        try {
-          setInventory(JSON.parse(savedInv));
-        } catch (e) {
-          console.warn("Could not parse cached inventory");
-        }
+    const savedInv = localStorage.getItem('mirrorly_inventory');
+    if (savedInv) {
+      try {
+        setMerchantInventory(JSON.parse(savedInv));
+      } catch {
+        console.warn('Could not parse cached inventory');
       }
+    }
 
-      const savedProf = localStorage.getItem('mirrorly_profile');
-      if (savedProf) {
-        try {
-          setMerchantProfile(JSON.parse(savedProf));
-        } catch (e) {
-          console.warn("Could not parse cached profile");
-        }
+    const savedProf = localStorage.getItem('mirrorly_profile');
+    if (savedProf) {
+      try {
+        setMerchantProfile({ ...DEFAULT_PROFILE, ...JSON.parse(savedProf) });
+      } catch {
+        console.warn('Could not parse cached profile');
       }
-      // Note: Firebase data (profile + inventory) will be fetched 
-      // after successful login in MerchantDashboard component
-    };
-    fetchInitialData();
+    }
   }, []);
 
-  // Transitions
-  const handleSplashComplete = async () => {
-    const params = new URLSearchParams(window.location.search);
-    const garmentId = params.get('id');
+  const loadGarmentExperience = async (garmentId: string) => {
+    setIsLoadingData(true);
 
-    if (garmentId) {
-      setIsLoadingData(true);
-
+    try {
       let garment: Garment | null = null;
 
       if (isFirebaseConfigured()) {
@@ -67,20 +83,55 @@ const App: React.FC = () => {
       }
 
       if (!garment) {
-        garment = inventory.find(g => g.id === garmentId) || null;
+        garment = merchantInventory.find((item) => item.id === garmentId) || null;
       }
 
-      setIsLoadingData(false);
-
-      if (garment) {
-        setSelectedGarment(garment);
-        setCurrentState(AppState.GARMENT_VIEW);
-      } else {
+      if (!garment) {
         setCurrentState(AppState.LANDING);
+        return;
       }
-    } else {
-      setCurrentState(AppState.LANDING);
+
+      let merchant = buildFallbackMerchant(garment, merchantProfile);
+      let sameMerchantInventory = merchantInventory.filter(
+        (item) => item.merchantUid === garment?.merchantUid
+      );
+
+      if (isFirebaseConfigured() && garment.merchantUid) {
+        const [publicProfile, merchantItems] = await Promise.all([
+          getMerchantPublicProfileByUid(garment.merchantUid),
+          getGarmentsByMerchant(garment.merchantUid),
+        ]);
+
+        if (publicProfile) {
+          merchant = publicProfile;
+        }
+
+        if (merchantItems.length > 0) {
+          sameMerchantInventory = merchantItems;
+        }
+      }
+
+      setSelectedGarment(garment);
+      setSelectedMerchant(merchant);
+      setCollectionInventory(
+        sameMerchantInventory.length > 0 ? sameMerchantInventory : [garment]
+      );
+      setCurrentState(AppState.GARMENT_VIEW);
+    } finally {
+      setIsLoadingData(false);
     }
+  };
+
+  const handleSplashComplete = async () => {
+    const params = new URLSearchParams(window.location.search);
+    const garmentId = params.get('id');
+
+    if (garmentId) {
+      await loadGarmentExperience(garmentId);
+      return;
+    }
+
+    setCurrentState(AppState.LANDING);
   };
 
   const handleGarmentContinue = () => {
@@ -94,88 +145,61 @@ const App: React.FC = () => {
   const handlePhotoSelected = (file: File) => {
     if (!selectedGarment) return;
 
-    // 1. CRITICAL FIX: Update state FIRST to show loading screen immediately
     setUserPhoto(file);
     setCurrentState(AppState.PROCESSING);
 
-    // 2. Add a delay to allow UI to repaint "Processing" screen before heavy JS starts
     setTimeout(() => {
       processImageFile(file);
-    }, 500);
+    }, 350);
   };
 
   const processImageFile = async (file: File) => {
     if (!selectedGarment) return;
 
-    // --- CREDIT CHECK ---
-    if (merchantProfile.credits <= 0) {
-      setResult({
-        success: false,
-        imageUrl: "",
-        message: "Krediniz bitti! Mağaza panelinizden kredi satın alabilirsiniz."
-      });
-      setCurrentState(AppState.RESULT);
-      return;
-    }
-
-    // Use a try-catch block around the FileReader to handle memory errors
     try {
       const reader = new FileReader();
 
       reader.onloadend = async () => {
-        try {
-          const base64String = reader.result as string;
+        const base64String = reader.result as string;
+        const apiResult = await generateTryOnImage(base64String, selectedGarment.id);
 
-          // Call Gemini Service (uses central API key from env)
-          const apiResult = await generateTryOnImage(
-            base64String,
-            selectedGarment
-          );
+        if (apiResult.success && apiResult.imageUrl) {
+          saveToHistory(selectedGarment, apiResult.imageUrl);
 
-          if (apiResult.success && apiResult.imageUrl) {
-            saveToHistory(selectedGarment, apiResult.imageUrl);
-
-            // Deduct 1 credit on successful try-on
-            const newCredits = merchantProfile.credits - 1;
-            setMerchantProfile(prev => ({ ...prev, credits: newCredits }));
-
-            // Update in Firebase and localStorage
-            if (isFirebaseConfigured()) {
-              await updateMerchantCredits(newCredits);
-            }
-            localStorage.setItem('mirrorly_profile', JSON.stringify({ ...merchantProfile, credits: newCredits }));
+          if (
+            typeof apiResult.remainingCredits === 'number' &&
+            merchantProfile.uid &&
+            merchantProfile.uid === selectedGarment.merchantUid
+          ) {
+            const updatedProfile = {
+              ...merchantProfile,
+              credits: apiResult.remainingCredits,
+            };
+            setMerchantProfile(updatedProfile);
+            localStorage.setItem('mirrorly_profile', JSON.stringify(updatedProfile));
           }
-
-          setResult(apiResult);
-          setCurrentState(AppState.RESULT);
-
-        } catch (e) {
-          console.error("API Error:", e);
-          setResult({
-            success: false,
-            imageUrl: "",
-            message: "Görsel işlenirken bir sorun oluştu. İnternet bağlantınızı kontrol edip tekrar deneyin."
-          });
-          setCurrentState(AppState.RESULT);
         }
+
+        setResult(apiResult);
+        setCurrentState(AppState.RESULT);
       };
 
       reader.onerror = () => {
         setResult({
           success: false,
-          imageUrl: "",
-          message: "Fotoğraf okunamadı. Dosya bozuk olabilir veya izin verilmedi."
+          imageUrl: '',
+          message: 'Fotoğraf okunamadı. Lütfen tekrar deneyin.',
         });
         setCurrentState(AppState.RESULT);
       };
 
       reader.readAsDataURL(file);
-    } catch (err) {
-      console.error("FileReader Error:", err);
+    } catch (error) {
+      console.error('Try-on flow error:', error);
       setResult({
         success: false,
-        imageUrl: "",
-        message: "Fotoğraf çok büyük veya cihaz belleği yetersiz."
+        imageUrl: '',
+        message: 'Görsel işlenirken bir sorun oluştu. Lütfen tekrar deneyin.',
       });
       setCurrentState(AppState.RESULT);
     }
@@ -188,7 +212,6 @@ const App: React.FC = () => {
   };
 
   const handleCancelProcessing = () => {
-    // Allows user to abort if it takes too long
     setResult(null);
     setUserPhoto(null);
     setCurrentState(AppState.PHOTO_INPUT);
@@ -197,7 +220,10 @@ const App: React.FC = () => {
   const handleTryAnother = () => {
     setResult(null);
     setUserPhoto(null);
-    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+    setSelectedGarment(null);
+    setSelectedMerchant(null);
+    setCollectionInventory([]);
+    const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
     window.history.pushState({ path: newUrl }, '', newUrl);
     setCurrentState(AppState.LANDING);
   };
@@ -226,20 +252,29 @@ const App: React.FC = () => {
         return selectedGarment ? (
           <GarmentView
             garment={selectedGarment}
-            merchantProfile={merchantProfile}
-            inventory={inventory}
+            merchantProfile={selectedMerchant || buildFallbackMerchant(selectedGarment, merchantProfile)}
+            inventory={collectionInventory}
             onContinue={handleGarmentContinue}
             onMerchantClick={handleMerchantLoginRequest}
-            onSelectGarment={(g) => setSelectedGarment(g)}
+            onSelectGarment={setSelectedGarment}
             onBack={() => setCurrentState(AppState.LANDING)}
           />
-        ) : <Landing onMerchantLogin={handleMerchantLoginRequest} onOpenHistory={() => setCurrentState(AppState.CUSTOMER_HISTORY)} />;
+        ) : (
+          <Landing
+            onMerchantLogin={handleMerchantLoginRequest}
+            onOpenHistory={() => setCurrentState(AppState.CUSTOMER_HISTORY)}
+          />
+        );
 
       case AppState.PHOTO_INPUT:
-        return <PhotoInput onPhotoSelected={handlePhotoSelected} onBack={() => setCurrentState(AppState.GARMENT_VIEW)} />;
+        return (
+          <PhotoInput
+            onPhotoSelected={handlePhotoSelected}
+            onBack={() => setCurrentState(AppState.GARMENT_VIEW)}
+          />
+        );
 
       case AppState.PROCESSING:
-        // Pass the cancel handler here
         return <Processing onCancel={handleCancelProcessing} />;
 
       case AppState.RESULT:
@@ -247,6 +282,9 @@ const App: React.FC = () => {
           <ResultView
             result={result}
             garment={selectedGarment}
+            merchantProfile={
+              selectedMerchant || buildFallbackMerchant(selectedGarment, merchantProfile)
+            }
             onRetake={handleRetake}
             onTryAnother={handleTryAnother}
           />
@@ -255,9 +293,9 @@ const App: React.FC = () => {
       case AppState.MERCHANT_DASHBOARD:
         return (
           <MerchantDashboard
-            inventory={inventory}
+            inventory={merchantInventory}
             merchantProfile={merchantProfile}
-            onUpdateInventory={setInventory}
+            onUpdateInventory={setMerchantInventory}
             onUpdateProfile={setMerchantProfile}
             onBack={() => {
               setCurrentState(AppState.LANDING);

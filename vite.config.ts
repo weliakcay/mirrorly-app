@@ -1,23 +1,53 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { handleTryOnRequest } from './server/tryOnService';
+
+const readJsonBody = async (req: any) => {
+  const chunks: Buffer[] = [];
+
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+
+  const raw = Buffer.concat(chunks).toString('utf8');
+  return raw ? JSON.parse(raw) : {};
+};
+
+const devApiPlugin = () => ({
+  name: 'mirrorly-dev-api',
+  configureServer(server: any) {
+    server.middlewares.use('/api/try-on', async (req: any, res: any, next: any) => {
+      if (req.method !== 'POST') {
+        next();
+        return;
+      }
+
+      try {
+        const payload = await readJsonBody(req);
+        const response = await handleTryOnRequest(payload);
+        res.statusCode = response.status;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(response.body));
+      } catch (error: any) {
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(
+          JSON.stringify({
+            success: false,
+            imageUrl: '',
+            message: error?.message || 'Local API hatası oluştu.',
+          })
+        );
+      }
+    });
+  },
+});
 
 export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the current working directory.
-  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
-  const env = loadEnv(mode, (process as any).cwd(), '');
+  const env = loadEnv(mode, process.cwd(), '');
+  Object.assign(process.env, env);
+
   return {
-    plugins: [react()],
-    define: {
-      // Polyfill process.env usage for the browser
-      'process.env.API_KEY': JSON.stringify(env.API_KEY),
-      'process.env.FIREBASE_API_KEY': JSON.stringify(env.FIREBASE_API_KEY),
-      'process.env.FIREBASE_AUTH_DOMAIN': JSON.stringify(env.FIREBASE_AUTH_DOMAIN),
-      'process.env.FIREBASE_PROJECT_ID': JSON.stringify(env.FIREBASE_PROJECT_ID),
-      'process.env.FIREBASE_STORAGE_BUCKET': JSON.stringify(env.FIREBASE_STORAGE_BUCKET),
-      'process.env.FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(env.FIREBASE_MESSAGING_SENDER_ID),
-      'process.env.FIREBASE_APP_ID': JSON.stringify(env.FIREBASE_APP_ID),
-      // Gemini API Key for virtual try-on
-      'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
-    },
+    plugins: [react(), devApiPlugin()],
   };
 });
