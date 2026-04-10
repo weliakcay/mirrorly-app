@@ -9,13 +9,19 @@ const PRESET_CONFIG = {
   },
   balanced: {
     type: "market",
-    model: process.env.KIE_MODEL_BALANCED || "grok-imagine/image-to-image",
+    model: process.env.KIE_MODEL_BALANCED || "google/nano-banana-edit",
   },
   premium: {
     type: "gpt4o",
-    model: "gpt4o-image",
+    model: process.env.KIE_MODEL_PREMIUM || "gpt4o-image",
   },
 };
+
+const GOOGLE_BILLING_DISABLED_PATTERNS = [
+  "billing account for the owning project is disabled",
+  "accountdisabled",
+  "billing account",
+];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -28,17 +34,25 @@ const getKieApiKey = () => {
 };
 
 const buildPrompt = (garmentName, garmentDescription) => `
-Create a photorealistic virtual try-on image.
+Create one single photorealistic virtual try-on image.
 
-Image 1 is the person. Image 2 is the garment.
+Image 1: the person photo. Keep this as the base image.
+Image 2: the garment reference (${garmentName}). Use it only as the clothing reference.
 
-Goals:
-- Put the garment (${garmentName}) on the person naturally.
-- Preserve the person's face, hair, skin tone, pose, and body proportions.
-- Replace the original clothing only where needed.
-- Keep the garment details accurate to the reference image.
-- Match lighting and shadows to the original scene.
-- Return a clean, realistic final image only.
+Strict instructions:
+- Dress the person in image 1 with the garment from image 2.
+- Preserve the person's face, hair, body proportions, pose, skin tone, camera angle, and background.
+- Preserve the garment's cut, color, texture, fabric details, and silhouette from the reference.
+- Replace only the relevant clothing area. Do not unnecessarily change uncovered body parts.
+- Match lighting, folds, shadows, and perspective naturally.
+- Output only one final edited image.
+
+Do not:
+- do not place the garment beside the person
+- do not create a collage, split screen, moodboard, before/after, or picture-in-picture
+- do not show the original garment as a floating item, corner card, or extra object
+- do not duplicate the person
+- do not change the scene into a fashion poster unless required by the original image
 
 Garment details: ${garmentDescription || garmentName}
 `;
@@ -61,6 +75,11 @@ const kieFetch = async (path, init) => {
   }
 
   return payload;
+};
+
+const isGoogleBillingDisabledError = (error) => {
+  const message = String(error?.message || "").toLowerCase();
+  return GOOGLE_BILLING_DISABLED_PATTERNS.some((pattern) => message.includes(pattern));
 };
 
 const createMarketTask = async (model, userImageUrl, garmentImageUrl, prompt) => {
@@ -168,6 +187,20 @@ export const generateTryOnWithKie = async ({
     return poll4oTask(taskId);
   }
 
-  const taskId = await createMarketTask(config.model, userImageUrl, garmentImageUrl, prompt);
-  return pollMarketTask(taskId);
+  try {
+    const taskId = await createMarketTask(config.model, userImageUrl, garmentImageUrl, prompt);
+    return pollMarketTask(taskId);
+  } catch (error) {
+    const isGoogleModel = String(config.model || "").startsWith("google/");
+
+    if (isGoogleModel && isGoogleBillingDisabledError(error)) {
+      console.warn(
+        `Kie Google modeli kullanılamadı (${config.model}). Premium fallback deneniyor.`
+      );
+      const fallbackTaskId = await create4oTask(userImageUrl, garmentImageUrl, prompt);
+      return poll4oTask(fallbackTaskId);
+    }
+
+    throw error;
+  }
 };
