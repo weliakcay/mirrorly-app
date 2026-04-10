@@ -60,12 +60,21 @@ export const generateTryOnImage = async (
 
     clearTimeout(timeoutId);
 
-    const payload = await response.json().catch(() => null);
+    const rawText = await response.text();
+    let payload: any = null;
+
+    if (rawText) {
+      try {
+        payload = JSON.parse(rawText);
+      } catch {
+        payload = null;
+      }
+    }
     if (!payload) {
       return {
         success: false,
         imageUrl: "",
-        message: "Sunucudan geçerli bir yanıt alınamadı.",
+        message: rawText || "Sunucudan geçerli bir yanıt alınamadı.",
       };
     }
 
