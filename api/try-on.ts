@@ -1,48 +1,39 @@
-const readJsonBody = async (req: any) => {
-  if (req.body) {
-    return typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-  }
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 
-  const chunks: Buffer[] = [];
-
-  for await (const chunk of req) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-
-  const raw = Buffer.concat(chunks).toString("utf8");
+const readJsonBody = async (request: Request) => {
+  const raw = await request.text();
   return raw ? JSON.parse(raw) : {};
 };
 
-export default async function handler(req: any, res: any) {
+export async function GET() {
+  return json({
+    success: true,
+    message: "Mirrorly try-on API is reachable.",
+  });
+}
+
+export async function POST(request: Request) {
   try {
-    if (req.method === "GET") {
-      res.status(200).json({
-        success: true,
-        message: "Mirrorly try-on API is reachable.",
-      });
-      return;
-    }
-
-    if (req.method !== "POST") {
-      res.status(405).json({
-        success: false,
-        imageUrl: "",
-        message: "Method not allowed.",
-      });
-      return;
-    }
-
-    const payload = await readJsonBody(req);
+    const payload = await readJsonBody(request);
     const { handleTryOnRequest } = await import("../server/tryOnService");
     const response = await handleTryOnRequest(payload);
 
-    res.status(response.status).json(response.body);
+    return json(response.body, response.status);
   } catch (error: any) {
     console.error("API route failed:", error);
-    res.status(500).json({
-      success: false,
-      imageUrl: "",
-      message: error?.message || "Try-on route error.",
-    });
+    return json(
+      {
+        success: false,
+        imageUrl: "",
+        message: error?.message || "Try-on route error.",
+      },
+      500
+    );
   }
 }
