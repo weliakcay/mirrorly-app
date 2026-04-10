@@ -6,11 +6,11 @@ const POLL_INTERVAL_MS = 2500;
 const PRESET_CONFIG = {
   economy: {
     type: "market",
-    model: process.env.KIE_MODEL_ECONOMY || "grok-imagine/image-to-image",
+    model: process.env.KIE_MODEL_ECONOMY || "flux-2/pro-image-to-image",
   },
   balanced: {
     type: "market",
-    model: process.env.KIE_MODEL_BALANCED || "grok-imagine/image-to-image",
+    model: process.env.KIE_MODEL_BALANCED || "flux-2/pro-image-to-image",
   },
   premium: {
     type: "gpt4o",
@@ -19,7 +19,7 @@ const PRESET_CONFIG = {
 };
 
 const MARKET_FALLBACK_MODEL =
-  process.env.KIE_MODEL_MARKET_FALLBACK || "grok-imagine/image-to-image";
+  process.env.KIE_MODEL_MARKET_FALLBACK || "flux-2/flex-image-to-image";
 
 const GOOGLE_BILLING_DISABLED_PATTERNS = [
   "billing account for the owning project is disabled",
@@ -60,6 +60,8 @@ Do not:
 
 Garment details: ${garmentDescription || garmentName}
 `;
+
+const isFlux2ImageEditModel = (model) => String(model || "").startsWith("flux-2/");
 
 const kieFetch = async (path, init) => {
   const response = await fetch(`${KIE_API_BASE}${path}`, {
@@ -125,16 +127,26 @@ const isGoogleBillingDisabledError = (error) => {
 };
 
 const createMarketTask = async (model, userImageUrl, garmentImageUrl, prompt) => {
-  const payload = await kieFetch("/api/v1/jobs/createTask", {
-    method: "POST",
-    body: JSON.stringify({
-      model,
-      input: {
+  const input = isFlux2ImageEditModel(model)
+    ? {
+        input_urls: [userImageUrl, garmentImageUrl],
+        prompt,
+        aspect_ratio: "2:3",
+        resolution: "1K",
+        nsfw_checker: false,
+      }
+    : {
         prompt,
         image_urls: [userImageUrl, garmentImageUrl],
         output_format: "png",
         image_size: "2:3",
-      },
+      };
+
+  const payload = await kieFetch("/api/v1/jobs/createTask", {
+    method: "POST",
+    body: JSON.stringify({
+      model,
+      input,
     }),
   });
 
