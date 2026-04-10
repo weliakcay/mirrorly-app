@@ -5,17 +5,20 @@ const POLL_INTERVAL_MS = 2500;
 const PRESET_CONFIG = {
   economy: {
     type: "market",
-    model: process.env.KIE_MODEL_ECONOMY || "google/nano-banana-edit",
+    model: process.env.KIE_MODEL_ECONOMY || "grok-imagine/image-to-image",
   },
   balanced: {
     type: "market",
-    model: process.env.KIE_MODEL_BALANCED || "google/nano-banana-edit",
+    model: process.env.KIE_MODEL_BALANCED || "grok-imagine/image-to-image",
   },
   premium: {
     type: "gpt4o",
     model: process.env.KIE_MODEL_PREMIUM || "gpt4o-image",
   },
 };
+
+const MARKET_FALLBACK_MODEL =
+  process.env.KIE_MODEL_MARKET_FALLBACK || "grok-imagine/image-to-image";
 
 const GOOGLE_BILLING_DISABLED_PATTERNS = [
   "billing account for the owning project is disabled",
@@ -144,6 +147,21 @@ const create4oTask = async (userImageUrl, garmentImageUrl, prompt) => {
   return payload.data.taskId;
 };
 
+const tryPremiumFallback = async (userImageUrl, garmentImageUrl, prompt) => {
+  const fallbackTaskId = await create4oTask(userImageUrl, garmentImageUrl, prompt);
+  return poll4oTask(fallbackTaskId);
+};
+
+const tryMarketFallback = async (userImageUrl, garmentImageUrl, prompt) => {
+  const fallbackTaskId = await createMarketTask(
+    MARKET_FALLBACK_MODEL,
+    userImageUrl,
+    garmentImageUrl,
+    prompt
+  );
+  return pollMarketTask(fallbackTaskId);
+};
+
 const poll4oTask = async (taskId) => {
   const startedAt = Date.now();
 
@@ -183,22 +201,33 @@ export const generateTryOnWithKie = async ({
   const config = PRESET_CONFIG[preset] || PRESET_CONFIG.balanced;
 
   if (config.type === "gpt4o") {
-    const taskId = await create4oTask(userImageUrl, garmentImageUrl, prompt);
-    return poll4oTask(taskId);
+    try {
+      const taskId = await create4oTask(userImageUrl, garmentImageUrl, prompt);
+      return poll4oTask(taskId);
+    } catch (error) {
+      if (isGoogleBillingDisabledError(error)) {
+        console.warn("Premium model billing hatasi verdi, market fallback deneniyor.");
+        return tryMarketFallback(userImageUrl, garmentImageUrl, prompt);
+      }
+
+      throw error;
+    }
   }
 
   try {
     const taskId = await createMarketTask(config.model, userImageUrl, garmentImageUrl, prompt);
     return pollMarketTask(taskId);
   } catch (error) {
-    const isGoogleModel = String(config.model || "").startsWith("google/");
-
-    if (isGoogleModel && isGoogleBillingDisabledError(error)) {
+    if (isGoogleBillingDisabledError(error)) {
       console.warn(
-        `Kie Google modeli kullanılamadı (${config.model}). Premium fallback deneniyor.`
+        `Kie market modeli kullanilamadi (${config.model}). Premium fallback deneniyor.`
       );
-      const fallbackTaskId = await create4oTask(userImageUrl, garmentImageUrl, prompt);
-      return poll4oTask(fallbackTaskId);
+      try {
+        return await tryPremiumFallback(userImageUrl, garmentImageUrl, prompt);
+      } catch (premiumError) {
+        console.warn("Premium fallback de basarisiz oldu, market fallback deneniyor.");
+        return tryMarketFallback(userImageUrl, garmentImageUrl, prompt);
+      }
     }
 
     throw error;
