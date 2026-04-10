@@ -1,5 +1,8 @@
 import { ProcessingResult } from "../types";
 
+const TRY_ON_MODE = String(import.meta.env.VITE_TRYON_MODE || "live").toLowerCase();
+const ENABLE_DEMO_TRYON_FALLBACK = TRY_ON_MODE === "demo";
+
 const resizeImage = (base64Str: string, maxWidth = 960): Promise<string> => {
   return new Promise((resolve) => {
     const img = new Image();
@@ -109,19 +112,34 @@ const createDemoPreviewImage = async (
   ctx.fillStyle = bottomGradient;
   ctx.fillRect(0, outputHeight * 0.52, outputWidth, outputHeight * 0.48);
 
-  const badgeX = 48;
-  const badgeY = 44;
-  const badgeWidth = 210;
-  const badgeHeight = 48;
-  drawRoundedRect(ctx, badgeX, badgeY, badgeWidth, badgeHeight, 24);
-  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  const badgeX = 42;
+  const badgeY = 38;
+  const badgeHeight = 42;
+  const badgeWidth = 150;
+  drawRoundedRect(ctx, badgeX, badgeY, badgeWidth, badgeHeight, 21);
+  ctx.fillStyle = "rgba(255,255,255,0.82)";
   ctx.fill();
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(badgeX + 22, badgeY + badgeHeight / 2, 12, 0, Math.PI * 2);
   ctx.fillStyle = "#111827";
-  ctx.font = "600 22px sans-serif";
-  ctx.fillText("Mirrorly Demo", badgeX + 28, badgeY + 31);
+  ctx.fill();
+  ctx.fillStyle = "#f8fafc";
+  ctx.font = "italic 700 16px serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("M", badgeX + 22, badgeY + badgeHeight / 2 + 1);
+  ctx.restore();
+
+  ctx.fillStyle = "#111827";
+  ctx.font = "italic 600 18px serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText("Mirrorly", badgeX + 42, badgeY + 27);
 
   if (garmentImage) {
-    const cardWidth = Math.min(300, outputWidth * 0.28);
+    const cardWidth = Math.min(250, outputWidth * 0.24);
     const cardHeight = cardWidth * 1.28;
     const cardX = outputWidth - cardWidth - 42;
     const cardY = 42;
@@ -142,44 +160,28 @@ const createDemoPreviewImage = async (
     ctx.restore();
   }
 
-  const contentX = 48;
-  const contentY = outputHeight - 250;
-  const contentWidth = outputWidth - 96;
+  const ctaText = "Logosuz sonuc icin giris yap";
+  ctx.font = "500 24px sans-serif";
+  const ctaWidth = Math.min(outputWidth - 92, ctx.measureText(ctaText).width + 64);
+  const ctaHeight = 52;
+  const ctaX = (outputWidth - ctaWidth) / 2;
+  const ctaY = outputHeight - 108;
 
-  ctx.fillStyle = "#f3f4f6";
-  ctx.font = "700 54px serif";
-  ctx.fillText("Onizleme hazir", contentX, contentY);
+  drawRoundedRect(ctx, ctaX, ctaY, ctaWidth, ctaHeight, 26);
+  ctx.fillStyle = "rgba(255,255,255,0.14)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.26)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
 
-  ctx.fillStyle = "rgba(243, 244, 246, 0.92)";
-  ctx.font = "400 28px sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.96)";
+  ctx.font = "500 24px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(ctaText, outputWidth / 2, ctaY + ctaHeight / 2 + 1);
 
-  const description =
-    "Canli AI baglantisi tamamlanana kadar sonuc akisini kapatmamak icin hazirlanan demo goruntusu.";
-  const words = description.split(" ");
-  const lines: string[] = [];
-  let currentLine = "";
-
-  for (const word of words) {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    if (ctx.measureText(testLine).width > contentWidth && currentLine) {
-      lines.push(currentLine);
-      currentLine = word;
-    } else {
-      currentLine = testLine;
-    }
-  }
-
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-
-  lines.slice(0, 2).forEach((line, index) => {
-    ctx.fillText(line, contentX, contentY + 52 + index * 36);
-  });
-
-  ctx.fillStyle = "#d4af37";
-  ctx.font = "600 30px sans-serif";
-  ctx.fillText(garmentName, contentX, contentY + 145);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
 
   return canvas.toDataURL("image/jpeg", 0.9);
 };
@@ -234,6 +236,14 @@ export const generateTryOnImage = async (
       }
     }
     if (!payload) {
+      if (!ENABLE_DEMO_TRYON_FALLBACK) {
+        return {
+          success: false,
+          imageUrl: "",
+          message: rawText || "Sunucudan gecerli bir yanit alinamadi.",
+        };
+      }
+
       const demoImageUrl = await createDemoPreviewImage(
         optimizedPhoto,
         garmentImageUrl,
@@ -249,7 +259,10 @@ export const generateTryOnImage = async (
     }
 
     if (!response.ok || payload.success === false) {
-      if (shouldFallbackToDemo(response.status, payload.message)) {
+      if (
+        ENABLE_DEMO_TRYON_FALLBACK &&
+        shouldFallbackToDemo(response.status, payload.message)
+      ) {
         const demoImageUrl = await createDemoPreviewImage(
           optimizedPhoto,
           garmentImageUrl,
@@ -264,18 +277,34 @@ export const generateTryOnImage = async (
         };
       }
 
-      return {
-        success: false,
-        imageUrl: "",
-        message: payload.message || "Try-on işlemi tamamlanamadı.",
-      };
-    }
+        return {
+          success: false,
+          imageUrl: "",
+          message: payload.message || "Try-on islemi tamamlanamadi.",
+        };
+      }
 
     return {
       ...(payload as ProcessingResult),
       mode: "live",
     };
   } catch (error: any) {
+    if (!ENABLE_DEMO_TRYON_FALLBACK) {
+      if (error?.name === "AbortError") {
+        return {
+          success: false,
+          imageUrl: "",
+          message: "Islem zaman asimina ugradi. Lutfen tekrar deneyin.",
+        };
+      }
+
+      return {
+        success: false,
+        imageUrl: "",
+        message: error?.message || "Try-on servisine ulasilamadi.",
+      };
+    }
+
     const demoImageUrl = await createDemoPreviewImage(
       userPhotoBase64,
       garmentImageUrl,
