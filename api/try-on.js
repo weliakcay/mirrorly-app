@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     }
 
     const payload = await readJsonBody(req);
-    const { handleTryOnRequest } = await import("../server/tryOnService.ts");
+    const { handleTryOnRequest } = await import("../server/tryOnService.js");
     const response = await handleTryOnRequest(payload);
 
     res.status(response.status).json(response.body);

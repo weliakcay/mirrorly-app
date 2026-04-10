@@ -1,6 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import { handleTryOnRequest } from './server/tryOnService';
+import { handleTryOnRequest } from './server/tryOnService.js';
 
 const readJsonBody = async (req: any) => {
   const chunks: Buffer[] = [];
