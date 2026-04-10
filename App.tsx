@@ -161,7 +161,12 @@ const App: React.FC = () => {
 
       reader.onloadend = async () => {
         const base64String = reader.result as string;
-        const apiResult = await generateTryOnImage(base64String, selectedGarment.id);
+        const apiResult = await generateTryOnImage(
+          base64String,
+          selectedGarment.id,
+          selectedGarment.imageUrl,
+          selectedGarment.name
+        );
 
         if (apiResult.success && apiResult.imageUrl) {
           saveToHistory(selectedGarment, apiResult.imageUrl);

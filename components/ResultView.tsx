@@ -140,10 +140,26 @@ const ResultView: React.FC<ResultViewProps> = ({
     <div className="h-full flex flex-col bg-boutique-cream animate-fade-in relative">
       <div className="flex-1 relative overflow-hidden bg-gray-100">
         <img src={result.imageUrl} alt="Virtual Try-On Result" className="w-full h-full object-cover" />
+        {result.mode === 'demo' && (
+          <div className="absolute top-4 left-4 px-4 py-2 rounded-full bg-white/88 backdrop-blur-md shadow-sm">
+            <span className="text-[11px] uppercase tracking-[0.22em] text-gray-700">
+              Demo Preview
+            </span>
+          </div>
+        )}
         <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-boutique-cream via-boutique-cream/90 to-transparent" />
       </div>
 
       <div className="absolute bottom-0 w-full px-6 pb-8 pt-4">
+        {result.mode === 'demo' && (
+          <div className="mb-4 mx-auto max-w-sm rounded-2xl bg-white/82 backdrop-blur-md px-4 py-3 text-center shadow-sm">
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Bu gorsel demo onizlemedir. Gercek AI giydirme servisi baglandiginda ayni akista
+              canli sonuc gosterilecek.
+            </p>
+          </div>
+        )}
+
         <div className="flex items-center justify-center gap-4 mb-8">
           <button
             onClick={onRetake}

@@ -53,6 +53,7 @@ export interface ProcessingResult {
   success: boolean;
   message?: string;
   remainingCredits?: number;
+  mode?: 'live' | 'demo';
 }
 
 export interface HistoryItem {
