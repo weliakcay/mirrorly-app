@@ -71,6 +71,65 @@ const cleanData = <T extends Record<string, any>>(data: T): T => {
   return cleaned;
 };
 
+const readMimeTypeFromDataUrl = (dataUrl: string) => {
+  const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/);
+  return match?.[1] || "image/jpeg";
+};
+
+const optimizeImageDataUrl = async (
+  dataUrl: string,
+  options?: {
+    maxDimension?: number;
+    quality?: number;
+    outputMimeType?: string;
+  }
+) => {
+  if (!dataUrl.startsWith("data:")) return dataUrl;
+
+  const {
+    maxDimension = 1280,
+    quality = 0.82,
+    outputMimeType = "image/jpeg",
+  } = options || {};
+
+  return new Promise<string>((resolve) => {
+    const image = new Image();
+    image.src = dataUrl;
+
+    image.onload = () => {
+      let width = image.width;
+      let height = image.height;
+
+      if (width > maxDimension || height > maxDimension) {
+        if (width >= height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(dataUrl);
+        return;
+      }
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(image, 0, 0, width, height);
+      resolve(canvas.toDataURL(outputMimeType, quality));
+    };
+
+    image.onerror = () => resolve(dataUrl);
+  });
+};
+
 const toPublicMerchantProfile = (profile: MerchantProfile): MerchantPublicProfile => ({
   uid: profile.uid,
   name: profile.name,
@@ -114,11 +173,22 @@ const uploadImageIfNeeded = async (base64OrUrl: string, path: string): Promise<s
   if (!base64OrUrl) return base64OrUrl;
   if (!base64OrUrl.startsWith("data:")) return base64OrUrl;
 
-  const uploaded = await uploadImageToStorage(base64OrUrl, path);
-  if (uploaded.startsWith("data:")) {
-    throw new Error("Görsel yüklenemedi. Lütfen tekrar deneyin.");
+  const optimizedFallback = await optimizeImageDataUrl(base64OrUrl, {
+    maxDimension: path.includes("/branding/") ? 512 : 1280,
+    quality: path.includes("/branding/") ? 0.9 : 0.8,
+    outputMimeType: path.includes("/branding/") ? readMimeTypeFromDataUrl(base64OrUrl) : "image/jpeg",
+  });
+
+  try {
+    const uploaded = await uploadImageToStorage(optimizedFallback, path);
+    if (!uploaded.startsWith("data:")) {
+      return uploaded;
+    }
+  } catch (error: any) {
+    console.warn("Storage upload fallback activated:", error?.code || error?.message || error);
   }
-  return uploaded;
+
+  return optimizedFallback;
 };
 
 export const saveMerchantProfile = async (profile: MerchantProfile): Promise<void> => {
