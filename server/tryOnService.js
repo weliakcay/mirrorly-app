@@ -1,43 +1,19 @@
-import { getAdminDb, getAdminStorage } from "./firebaseAdmin.js";
-import { generateTryOnWithKie } from "./kie.js";
+import { getAdminDb } from "./firebaseAdmin.js";
+import { generateTryOnWithKie, uploadBase64FileToKie } from "./kie.js";
 
 const COLLECTION_PRIVATE_PROFILE = "merchant_profiles";
 const COLLECTION_GARMENTS = "garments";
 const DEFAULT_MODEL_PRESET = "balanced";
 
-const parseDataUrl = (dataUrl) => {
-  const match = dataUrl.match(/^data:(.+);base64,(.+)$/);
-  if (!match) {
-    throw new Error("Geçersiz görsel verisi.");
-  }
-
-  return {
-    contentType: match[1],
-    buffer: Buffer.from(match[2], "base64"),
-  };
-};
-
 const sanitizeFilename = (value) =>
   value.replace(/[^a-z0-9]/gi, "_").toLowerCase() || "mirrorly";
 
-const uploadTempImage = async ({ dataUrl, path }) => {
-  const bucket = getAdminStorage();
-  const { buffer, contentType } = parseDataUrl(dataUrl);
-  const file = bucket.file(path);
-
-  await file.save(buffer, {
-    contentType,
-    metadata: {
-      cacheControl: "private, max-age=900",
-    },
+const uploadDataUrlToKie = async ({ dataUrl, uploadPath, fileName }) => {
+  return uploadBase64FileToKie({
+    base64Data: dataUrl,
+    uploadPath,
+    fileName,
   });
-
-  const [signedUrl] = await file.getSignedUrl({
-    action: "read",
-    expires: Date.now() + 15 * 60 * 1000,
-  });
-
-  return { file, signedUrl };
 };
 
 const readResultAsDataUrl = async (url) => {
@@ -89,16 +65,15 @@ const normalizeGarmentImage = async (garment) => {
     return { imageUrl: garment.imageUrl, cleanup: async () => {} };
   }
 
-  const temp = await uploadTempImage({
+  const imageUrl = await uploadDataUrlToKie({
     dataUrl: garment.imageUrl,
-    path: `mirrorly-temp/garments/${garment.merchantUid}/${Date.now()}_${sanitizeFilename(garment.name)}.png`,
+    uploadPath: `mirrorly-temp/garments/${garment.merchantUid}`,
+    fileName: `${Date.now()}_${sanitizeFilename(garment.name)}.png`,
   });
 
   return {
-    imageUrl: temp.signedUrl,
-    cleanup: async () => {
-      await temp.file.delete().catch(() => undefined);
-    },
+    imageUrl,
+    cleanup: async () => {},
   };
 };
 
@@ -153,9 +128,10 @@ export const handleTryOnRequest = async (payload) => {
       };
     }
 
-    const userTemp = await uploadTempImage({
+    const userImageUrl = await uploadDataUrlToKie({
       dataUrl: userPhotoDataUrl,
-      path: `mirrorly-temp/try-on/${garment.merchantUid}/${Date.now()}_${sanitizeFilename(garmentId)}.png`,
+      uploadPath: `mirrorly-temp/try-on/${garment.merchantUid}`,
+      fileName: `${Date.now()}_${sanitizeFilename(garmentId)}.png`,
     });
     const garmentTemp = await normalizeGarmentImage(garment);
 
@@ -165,7 +141,7 @@ export const handleTryOnRequest = async (payload) => {
         garmentDescription: garment.description,
         garmentImageUrl: garmentTemp.imageUrl,
         preset: merchant.modelPreset || DEFAULT_MODEL_PRESET,
-        userImageUrl: userTemp.signedUrl,
+        userImageUrl,
       });
 
       const imageUrl = await readResultAsDataUrl(resultUrl);
@@ -181,10 +157,7 @@ export const handleTryOnRequest = async (payload) => {
         },
       };
     } finally {
-      await Promise.all([
-        userTemp.file.delete().catch(() => undefined),
-        garmentTemp.cleanup(),
-      ]);
+      await garmentTemp.cleanup();
     }
   } catch (error) {
     console.error("Try-on API Error:", error);

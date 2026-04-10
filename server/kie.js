@@ -1,4 +1,5 @@
 const KIE_API_BASE = "https://api.kie.ai";
+const KIE_UPLOAD_API_BASE = "https://kieai.redpandaai.co";
 const DEFAULT_TIMEOUT_MS = 90000;
 const POLL_INTERVAL_MS = 2500;
 
@@ -78,6 +79,44 @@ const kieFetch = async (path, init) => {
   }
 
   return payload;
+};
+
+const kieUploadFetch = async (path, init) => {
+  const response = await fetch(`${KIE_UPLOAD_API_BASE}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${getKieApiKey()}`,
+      "Content-Type": "application/json",
+      ...(init?.headers || {}),
+    },
+  });
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || !payload || payload.success !== true) {
+    const message =
+      payload?.msg || payload?.errorMessage || `Kie upload hatasi (${response.status})`;
+    throw new Error(message);
+  }
+
+  return payload;
+};
+
+export const uploadBase64FileToKie = async ({ base64Data, uploadPath, fileName }) => {
+  const payload = await kieUploadFetch("/api/file-base64-upload", {
+    method: "POST",
+    body: JSON.stringify({
+      base64Data,
+      uploadPath,
+      fileName,
+    }),
+  });
+
+  const downloadUrl = payload?.data?.downloadUrl;
+  if (!downloadUrl) {
+    throw new Error("Kie upload gecici dosya baglantisi donmedi.");
+  }
+
+  return downloadUrl;
 };
 
 const isGoogleBillingDisabledError = (error) => {
