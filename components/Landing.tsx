@@ -1,13 +1,18 @@
 
 import React from 'react';
-import { Scan, Sparkles, History } from 'lucide-react';
+import { Scan, Sparkles, History, Chrome } from 'lucide-react';
 
 interface LandingProps {
   onMerchantLogin: () => void;
   onOpenHistory: () => void;
+  onCustomerLogin: () => void;
 }
 
-const Landing: React.FC<LandingProps> = ({ onMerchantLogin, onOpenHistory }) => {
+const Landing: React.FC<LandingProps> = ({
+  onMerchantLogin,
+  onOpenHistory,
+  onCustomerLogin,
+}) => {
   return (
     <div className="h-full flex flex-col items-center justify-center bg-boutique-cream relative animate-fade-in px-6">
 
@@ -38,6 +43,19 @@ const Landing: React.FC<LandingProps> = ({ onMerchantLogin, onOpenHistory }) => 
         <div className="text-left">
           <span className="block font-serif text-lg text-gray-900 leading-none">My Reflections</span>
           <span className="text-[10px] text-gray-400 uppercase tracking-wider">View Past Try-Ons</span>
+        </div>
+      </button>
+
+      <button
+        onClick={onCustomerLogin}
+        className="mt-4 flex items-center gap-3 px-6 py-4 bg-gray-900 text-white rounded-xl shadow-lg hover:bg-black transition-all active:scale-95"
+      >
+        <Chrome className="w-5 h-5" />
+        <div className="text-left">
+          <span className="block font-serif text-lg leading-none">Google ile Giris</span>
+          <span className="text-[10px] text-white/60 uppercase tracking-wider">
+            V2 hesabini ac
+          </span>
         </div>
       </button>
 

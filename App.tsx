@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
   AppState,
+  CustomerProfile,
   DEFAULT_PROFILE,
+  CatalogItem,
+  FavoriteItem,
   Garment,
+  HistoryItem,
   MerchantProfile,
   MerchantPublicProfile,
   ProcessingResult,
@@ -15,14 +19,29 @@ import Processing from './components/Processing';
 import ResultView from './components/ResultView';
 import MerchantDashboard from './components/MerchantDashboard';
 import CustomerHistory from './components/CustomerHistory';
+import CustomerAuth from './components/CustomerAuth';
+import CustomerAccount from './components/CustomerAccount';
+import DiscoverFeed from './components/DiscoverFeed';
+import FavoritesView from './components/FavoritesView';
 import { generateTryOnImage } from './services/tryOnService';
 import {
+  addCustomerFavorite,
+  clearCustomerHistoryItems,
+  consumeGoogleRedirectCustomer,
+  getCustomerFavorites,
+  getCustomerHistoryItems,
+  getCurrentCustomerProfile,
   getGarmentById,
   getGarmentsByMerchant,
+  getPublicCatalog,
   getMerchantPublicProfileByUid,
   isFirebaseConfigured,
+  logoutUser,
+  removeCustomerFavorite,
+  saveCustomerHistoryItem,
+  signInCustomerWithGoogle,
 } from './services/firebase';
-import { saveToHistory } from './services/historyService';
+import { clearHistory, getHistory, saveToHistory } from './services/historyService';
 
 const buildFallbackMerchant = (
   garment: Garment,
@@ -41,11 +60,16 @@ const buildFallbackMerchant = (
 });
 
 const App: React.FC = () => {
+  const CUSTOMER_PROFILE_KEY = 'mirrorly_customer_profile';
   const [currentState, setCurrentState] = useState<AppState>(AppState.SPLASH);
 
   const [merchantInventory, setMerchantInventory] = useState<Garment[]>([]);
   const [collectionInventory, setCollectionInventory] = useState<Garment[]>([]);
   const [merchantProfile, setMerchantProfile] = useState<MerchantProfile>(DEFAULT_PROFILE);
+  const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);
+  const [discoverCatalog, setDiscoverCatalog] = useState<CatalogItem[]>([]);
+  const [customerFavorites, setCustomerFavorites] = useState<FavoriteItem[]>([]);
+  const [customerHistoryItems, setCustomerHistoryItems] = useState<HistoryItem[]>([]);
   const [selectedMerchant, setSelectedMerchant] = useState<MerchantPublicProfile | null>(null);
   const [selectedGarment, setSelectedGarment] = useState<Garment | null>(null);
   const [userPhoto, setUserPhoto] = useState<File | null>(null);
@@ -70,6 +94,53 @@ const App: React.FC = () => {
         console.warn('Could not parse cached profile');
       }
     }
+
+    const savedCustomer = localStorage.getItem(CUSTOMER_PROFILE_KEY);
+    if (savedCustomer) {
+      try {
+        setCustomerProfile(JSON.parse(savedCustomer));
+      } catch {
+        console.warn('Could not parse cached customer profile');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const bootstrapCustomerAuth = async () => {
+      if (!isFirebaseConfigured()) return;
+
+      try {
+        const redirectProfile = await consumeGoogleRedirectCustomer();
+        if (redirectProfile) {
+          setCustomerProfile(redirectProfile);
+          localStorage.setItem(CUSTOMER_PROFILE_KEY, JSON.stringify(redirectProfile));
+          const [favorites, history] = await Promise.all([
+            getCustomerFavorites(redirectProfile.uid),
+            getCustomerHistoryItems(redirectProfile.uid),
+          ]);
+          setCustomerFavorites(favorites);
+          setCustomerHistoryItems(history);
+          setCurrentState(AppState.CUSTOMER_ACCOUNT);
+          return;
+        }
+
+        const existingCustomer = await getCurrentCustomerProfile();
+        if (existingCustomer) {
+          setCustomerProfile(existingCustomer);
+          localStorage.setItem(CUSTOMER_PROFILE_KEY, JSON.stringify(existingCustomer));
+          const [favorites, history] = await Promise.all([
+            getCustomerFavorites(existingCustomer.uid),
+            getCustomerHistoryItems(existingCustomer.uid),
+          ]);
+          setCustomerFavorites(favorites);
+          setCustomerHistoryItems(history);
+        }
+      } catch (error) {
+        console.warn('Customer auth bootstrap skipped:', error);
+      }
+    };
+
+    bootstrapCustomerAuth();
   }, []);
 
   const loadGarmentExperience = async (garmentId: string) => {
@@ -142,6 +213,122 @@ const App: React.FC = () => {
     setCurrentState(AppState.MERCHANT_DASHBOARD);
   };
 
+  const handleCustomerLoginRequest = () => {
+    setCurrentState(AppState.CUSTOMER_AUTH);
+  };
+
+  const handleGoogleCustomerSignIn = async () => {
+    const profile = await signInCustomerWithGoogle();
+    if (!profile) {
+      return;
+    }
+
+    setCustomerProfile(profile);
+    localStorage.setItem(CUSTOMER_PROFILE_KEY, JSON.stringify(profile));
+    const [favorites, history] = await Promise.all([
+      getCustomerFavorites(profile.uid),
+      getCustomerHistoryItems(profile.uid),
+    ]);
+    setCustomerFavorites(favorites);
+    setCustomerHistoryItems(history);
+    setCurrentState(AppState.CUSTOMER_ACCOUNT);
+  };
+
+  const handleCustomerLogout = async () => {
+    await logoutUser();
+    setCustomerProfile(null);
+    setCustomerFavorites([]);
+    setCustomerHistoryItems([]);
+    localStorage.removeItem(CUSTOMER_PROFILE_KEY);
+    setCurrentState(AppState.LANDING);
+  };
+
+  const handleOpenDiscover = async () => {
+    setIsLoadingData(true);
+
+    try {
+      if (!isFirebaseConfigured()) {
+        setDiscoverCatalog([]);
+        setCurrentState(AppState.DISCOVER);
+        return;
+      }
+
+      const catalog = await getPublicCatalog();
+      setDiscoverCatalog(catalog);
+      setCurrentState(AppState.DISCOVER);
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  const handleSelectCatalogItem = async (item: CatalogItem) => {
+    const nextUrl = `${window.location.pathname}?id=${encodeURIComponent(item.garment.id)}`;
+    window.history.pushState({ path: nextUrl }, '', nextUrl);
+    await loadGarmentExperience(item.garment.id);
+  };
+
+  const favoriteIds = new Set(customerFavorites.map((item) => item.garment.id));
+
+  const buildCatalogItemFromSelection = (): CatalogItem | null => {
+    if (!selectedGarment || !selectedMerchant) return null;
+    return {
+      garment: selectedGarment,
+      merchant: selectedMerchant,
+    };
+  };
+
+  const handleToggleFavorite = async (item: CatalogItem) => {
+    if (!customerProfile) {
+      setCurrentState(AppState.CUSTOMER_AUTH);
+      return;
+    }
+
+    const alreadyFavorited = favoriteIds.has(item.garment.id);
+
+    if (alreadyFavorited) {
+      await removeCustomerFavorite(customerProfile.uid, item.garment.id);
+      setCustomerFavorites((current) =>
+        current.filter((favorite) => favorite.garment.id !== item.garment.id)
+      );
+      return;
+    }
+
+    const favorite = await addCustomerFavorite(customerProfile.uid, item);
+    if (!favorite) return;
+
+    setCustomerFavorites((current) => [favorite, ...current.filter((entry) => entry.id !== favorite.id)]);
+  };
+
+  const handleOpenHistory = async () => {
+    if (!customerProfile || !isFirebaseConfigured()) {
+      setCurrentState(AppState.CUSTOMER_HISTORY);
+      return;
+    }
+
+    const items = await getCustomerHistoryItems(customerProfile.uid);
+    setCustomerHistoryItems(items);
+    setCurrentState(AppState.CUSTOMER_HISTORY);
+  };
+
+  const handleClearCloudHistory = async () => {
+    if (!customerProfile) return;
+
+    await clearCustomerHistoryItems(customerProfile.uid);
+    setCustomerHistoryItems([]);
+    clearHistory();
+  };
+
+  const handleOpenFavorites = async () => {
+    if (!customerProfile) {
+      setCurrentState(AppState.CUSTOMER_AUTH);
+      return;
+    }
+
+    const items = await getCustomerFavorites(customerProfile.uid);
+    setCustomerFavorites(items);
+    setCurrentState(AppState.FAVORITES);
+  };
+
   const handlePhotoSelected = (file: File) => {
     if (!selectedGarment) return;
 
@@ -170,6 +357,23 @@ const App: React.FC = () => {
 
         if (apiResult.success && apiResult.imageUrl) {
           saveToHistory(selectedGarment, apiResult.imageUrl);
+          const localHistory = getHistory();
+          setCustomerHistoryItems(localHistory);
+
+          if (customerProfile) {
+            const savedCloudItem = await saveCustomerHistoryItem(
+              customerProfile.uid,
+              selectedGarment,
+              apiResult.imageUrl
+            );
+
+            if (savedCloudItem) {
+              setCustomerHistoryItems((current) => {
+                const next = [savedCloudItem, ...current.filter((item) => item.id !== savedCloudItem.id)];
+                return next.sort((a, b) => b.timestamp - a.timestamp);
+              });
+            }
+          }
 
           if (
             typeof apiResult.remainingCredits === 'number' &&
@@ -246,12 +450,68 @@ const App: React.FC = () => {
         return (
           <Landing
             onMerchantLogin={handleMerchantLoginRequest}
-            onOpenHistory={() => setCurrentState(AppState.CUSTOMER_HISTORY)}
+            onOpenHistory={handleOpenHistory}
+            onCustomerLogin={handleCustomerLoginRequest}
           />
         );
 
       case AppState.CUSTOMER_HISTORY:
-        return <CustomerHistory onBack={() => setCurrentState(AppState.LANDING)} />;
+        return (
+          <CustomerHistory
+            onBack={() => setCurrentState(customerProfile ? AppState.CUSTOMER_ACCOUNT : AppState.LANDING)}
+            onLogin={handleCustomerLoginRequest}
+            items={customerProfile ? customerHistoryItems : undefined}
+            isCloudMode={!!customerProfile}
+            onClearCloud={handleClearCloudHistory}
+          />
+        );
+
+      case AppState.CUSTOMER_AUTH:
+        return (
+          <CustomerAuth
+            onBack={() => setCurrentState(AppState.LANDING)}
+            onGoogleSignIn={handleGoogleCustomerSignIn}
+          />
+        );
+
+      case AppState.CUSTOMER_ACCOUNT:
+        return customerProfile ? (
+          <CustomerAccount
+            customerProfile={customerProfile}
+            onBack={() => setCurrentState(AppState.LANDING)}
+            onOpenDiscover={handleOpenDiscover}
+            onOpenFavorites={handleOpenFavorites}
+            onOpenHistory={handleOpenHistory}
+            onLogout={handleCustomerLogout}
+          />
+        ) : (
+          <Landing
+            onMerchantLogin={handleMerchantLoginRequest}
+            onOpenHistory={handleOpenHistory}
+            onCustomerLogin={handleCustomerLoginRequest}
+          />
+        );
+
+      case AppState.DISCOVER:
+        return (
+          <DiscoverFeed
+            items={discoverCatalog}
+            favoriteIds={favoriteIds}
+            onBack={() => setCurrentState(AppState.CUSTOMER_ACCOUNT)}
+            onSelectItem={handleSelectCatalogItem}
+            onToggleFavorite={handleToggleFavorite}
+          />
+        );
+
+      case AppState.FAVORITES:
+        return (
+          <FavoritesView
+            items={customerFavorites}
+            onBack={() => setCurrentState(AppState.CUSTOMER_ACCOUNT)}
+            onSelectItem={(item) => handleSelectCatalogItem(item)}
+            onRemove={(item) => handleToggleFavorite(item)}
+          />
+        );
 
       case AppState.GARMENT_VIEW:
         return selectedGarment ? (
@@ -259,15 +519,23 @@ const App: React.FC = () => {
             garment={selectedGarment}
             merchantProfile={selectedMerchant || buildFallbackMerchant(selectedGarment, merchantProfile)}
             inventory={collectionInventory}
+            isFavorited={favoriteIds.has(selectedGarment.id)}
             onContinue={handleGarmentContinue}
             onMerchantClick={handleMerchantLoginRequest}
+            onToggleFavorite={() => {
+              const currentItem = buildCatalogItemFromSelection();
+              if (currentItem) {
+                void handleToggleFavorite(currentItem);
+              }
+            }}
             onSelectGarment={setSelectedGarment}
             onBack={() => setCurrentState(AppState.LANDING)}
           />
         ) : (
           <Landing
             onMerchantLogin={handleMerchantLoginRequest}
-            onOpenHistory={() => setCurrentState(AppState.CUSTOMER_HISTORY)}
+            onOpenHistory={handleOpenHistory}
+            onCustomerLogin={handleCustomerLoginRequest}
           />
         );
 

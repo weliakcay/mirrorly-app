@@ -1,12 +1,16 @@
 export enum AppState {
   SPLASH = 'SPLASH',
   LANDING = 'LANDING',
+  DISCOVER = 'DISCOVER',
   GARMENT_VIEW = 'GARMENT_VIEW',
   PHOTO_INPUT = 'PHOTO_INPUT',
   PROCESSING = 'PROCESSING',
   RESULT = 'RESULT',
   MERCHANT_DASHBOARD = 'MERCHANT_DASHBOARD',
-  CUSTOMER_HISTORY = 'CUSTOMER_HISTORY', // New State
+  CUSTOMER_HISTORY = 'CUSTOMER_HISTORY',
+  CUSTOMER_AUTH = 'CUSTOMER_AUTH',
+  CUSTOMER_ACCOUNT = 'CUSTOMER_ACCOUNT',
+  FAVORITES = 'FAVORITES',
 }
 
 export type UserRole = 'merchant' | 'customer';
@@ -34,7 +38,10 @@ export interface CustomerProfile {
   uid: string;
   role: 'customer';
   email: string;
+  displayName?: string;
+  photoURL?: string;
   createdAt: number;
+  updatedAt: number;
 }
 
 export interface Garment {
@@ -61,6 +68,16 @@ export interface HistoryItem {
   timestamp: number;
   garment: Garment;
   resultImageUrl: string;
+}
+
+export interface CatalogItem {
+  garment: Garment;
+  merchant: MerchantPublicProfile;
+}
+
+export interface FavoriteItem extends CatalogItem {
+  id: string;
+  createdAt: number;
 }
 
 export interface UserSession {

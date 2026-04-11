@@ -27,8 +27,16 @@ service cloud.firestore {
       allow read: if true;
     }
 
-    match /customers/{userId} {
+    match /customer_profiles/{userId} {
       allow read, write: if isOwner(userId);
+
+      match /history/{historyId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /favorites/{favoriteId} {
+        allow read, write: if isOwner(userId);
+      }
     }
   }
 }

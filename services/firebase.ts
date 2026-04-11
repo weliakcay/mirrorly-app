@@ -13,14 +13,21 @@ import {
 import { getStorage, getDownloadURL, ref, uploadString } from "firebase/storage";
 import {
   createUserWithEmailAndPassword,
+  getRedirectResult,
+  GoogleAuthProvider,
   getAuth,
+  signInWithPopup,
+  signInWithRedirect,
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
 import {
+  CatalogItem,
   CustomerProfile,
   DEFAULT_PROFILE,
+  FavoriteItem,
   Garment,
+  HistoryItem,
   MerchantProfile,
   MerchantPublicProfile,
   UserRole,
@@ -60,6 +67,9 @@ export { auth, db, storage };
 const COLLECTION_PRIVATE_PROFILE = "merchant_profiles";
 const COLLECTION_PUBLIC_PROFILE = "merchant_public";
 const COLLECTION_GARMENTS = "garments";
+const COLLECTION_CUSTOMER_PROFILE = "customer_profiles";
+const COLLECTION_CUSTOMER_HISTORY = "history";
+const COLLECTION_CUSTOMER_FAVORITES = "favorites";
 
 const cleanData = <T extends Record<string, any>>(data: T): T => {
   const cleaned = { ...data };
@@ -156,6 +166,34 @@ const mergeMerchantDocs = (
     credits: typeof privateDoc?.credits === "number" ? privateDoc.credits : DEFAULT_PROFILE.credits,
     modelPreset: privateDoc?.modelPreset || DEFAULT_PROFILE.modelPreset,
   }) as MerchantProfile;
+};
+
+const googleProvider = auth
+  ? new GoogleAuthProvider()
+  : null;
+
+if (googleProvider) {
+  googleProvider.setCustomParameters({
+    prompt: "select_account",
+  });
+}
+
+const upsertCustomerProfile = async (profile: CustomerProfile): Promise<CustomerProfile> => {
+  if (!db) throw new Error("Firebase initialized değil.");
+
+  const normalizedProfile: CustomerProfile = cleanData({
+    ...profile,
+    role: "customer",
+    updatedAt: Date.now(),
+  }) as CustomerProfile;
+
+  await setDoc(
+    doc(db, COLLECTION_CUSTOMER_PROFILE, normalizedProfile.uid),
+    normalizedProfile,
+    { merge: true }
+  );
+
+  return normalizedProfile;
 };
 
 export const uploadImageToStorage = async (base64Data: string, path: string): Promise<string> => {
@@ -381,6 +419,123 @@ export const getGarmentById = async (id: string): Promise<Garment | null> => {
   }
 };
 
+export const getPublicCatalog = async (): Promise<CatalogItem[]> => {
+  const garments = await getGarmentsFromDb();
+  if (garments.length === 0) return [];
+
+  const uniqueMerchantIds = [...new Set(garments.map((garment) => garment.merchantUid).filter(Boolean))];
+  const merchantEntries = await Promise.all(
+    uniqueMerchantIds.map(async (uid) => [uid, await getMerchantPublicProfileByUid(uid)] as const)
+  );
+
+  const merchantMap = new Map<string, MerchantPublicProfile | null>(merchantEntries);
+
+  return garments
+    .map((garment) => {
+      const merchant =
+        merchantMap.get(garment.merchantUid) ||
+        ({
+          uid: garment.merchantUid || 'unknown-merchant',
+          name: garment.boutiqueName || 'Mirrorly Boutique',
+        } as MerchantPublicProfile);
+
+      return {
+        garment,
+        merchant,
+      };
+    })
+    .filter((item) => !!item.merchant?.name)
+    .sort((a, b) => a.garment.name.localeCompare(b.garment.name));
+};
+
+export const saveCustomerHistoryItem = async (
+  uid: string,
+  garment: Garment,
+  resultImageUrl: string
+): Promise<HistoryItem | null> => {
+  if (!db || !uid) return null;
+
+  const historyRef = collection(db, COLLECTION_CUSTOMER_PROFILE, uid, COLLECTION_CUSTOMER_HISTORY);
+  const docRef = doc(historyRef);
+  const historyItem: HistoryItem = {
+    id: docRef.id,
+    timestamp: Date.now(),
+    garment,
+    resultImageUrl,
+  };
+
+  await setDoc(docRef, cleanData(historyItem));
+  return historyItem;
+};
+
+export const getCustomerHistoryItems = async (uid: string): Promise<HistoryItem[]> => {
+  if (!db || !uid) return [];
+
+  const historyRef = collection(db, COLLECTION_CUSTOMER_PROFILE, uid, COLLECTION_CUSTOMER_HISTORY);
+  const snapshot = await getDocs(historyRef);
+
+  return snapshot.docs
+    .map((item) => cleanData(item.data() as HistoryItem) as HistoryItem)
+    .sort((a, b) => b.timestamp - a.timestamp);
+};
+
+export const clearCustomerHistoryItems = async (uid: string): Promise<void> => {
+  if (!db || !uid) return;
+
+  const historyRef = collection(db, COLLECTION_CUSTOMER_PROFILE, uid, COLLECTION_CUSTOMER_HISTORY);
+  const snapshot = await getDocs(historyRef);
+  await Promise.all(snapshot.docs.map((entry) => deleteDoc(entry.ref)));
+};
+
+export const getCustomerFavorites = async (uid: string): Promise<FavoriteItem[]> => {
+  if (!db || !uid) return [];
+
+  const favoritesRef = collection(
+    db,
+    COLLECTION_CUSTOMER_PROFILE,
+    uid,
+    COLLECTION_CUSTOMER_FAVORITES
+  );
+  const snapshot = await getDocs(favoritesRef);
+
+  return snapshot.docs
+    .map((entry) => cleanData(entry.data() as FavoriteItem) as FavoriteItem)
+    .sort((a, b) => b.createdAt - a.createdAt);
+};
+
+export const addCustomerFavorite = async (
+  uid: string,
+  item: CatalogItem
+): Promise<FavoriteItem | null> => {
+  if (!db || !uid) return null;
+
+  const favoriteRef = doc(
+    db,
+    COLLECTION_CUSTOMER_PROFILE,
+    uid,
+    COLLECTION_CUSTOMER_FAVORITES,
+    item.garment.id
+  );
+
+  const favorite: FavoriteItem = {
+    id: item.garment.id,
+    createdAt: Date.now(),
+    garment: item.garment,
+    merchant: item.merchant,
+  };
+
+  await setDoc(favoriteRef, cleanData(favorite), { merge: true });
+  return favorite;
+};
+
+export const removeCustomerFavorite = async (uid: string, garmentId: string): Promise<void> => {
+  if (!db || !uid || !garmentId) return;
+
+  await deleteDoc(
+    doc(db, COLLECTION_CUSTOMER_PROFILE, uid, COLLECTION_CUSTOMER_FAVORITES, garmentId)
+  );
+};
+
 export const deleteGarmentFromUserInventory = async (uid: string, itemId: string): Promise<boolean> => {
   if (!db) return false;
 
@@ -461,11 +616,73 @@ export const registerCustomer = async (email: string, pass: string): Promise<Cus
     uid: user.uid,
     role: "customer",
     email: user.email || email,
+    displayName: user.displayName || "",
+    photoURL: user.photoURL || "",
     createdAt: Date.now(),
+    updatedAt: Date.now(),
   };
 
-  await setDoc(doc(db, "customers", user.uid), cleanData(newCustomer));
-  return newCustomer;
+  return upsertCustomerProfile(newCustomer);
+};
+
+export const getCustomerProfileByUid = async (uid: string): Promise<CustomerProfile | null> => {
+  if (!db || !uid) return null;
+
+  const customerDoc = await getDoc(doc(db, COLLECTION_CUSTOMER_PROFILE, uid));
+  if (!customerDoc.exists()) {
+    return null;
+  }
+
+  return cleanData(customerDoc.data() as CustomerProfile) as CustomerProfile;
+};
+
+export const getCurrentCustomerProfile = async (): Promise<CustomerProfile | null> => {
+  if (!auth?.currentUser?.uid) return null;
+  return getCustomerProfileByUid(auth.currentUser.uid);
+};
+
+const isMobileBrowser = () =>
+  typeof window !== "undefined" &&
+  /android|iphone|ipad|ipod/i.test(window.navigator.userAgent);
+
+const mapGoogleUserToCustomerProfile = async (user: any): Promise<CustomerProfile> => {
+  const existing = await getCustomerProfileByUid(user.uid);
+  const now = Date.now();
+
+  return upsertCustomerProfile({
+    uid: user.uid,
+    role: "customer",
+    email: user.email || existing?.email || "",
+    displayName: user.displayName || existing?.displayName || "",
+    photoURL: user.photoURL || existing?.photoURL || "",
+    createdAt: existing?.createdAt || now,
+    updatedAt: now,
+  });
+};
+
+export const signInCustomerWithGoogle = async (): Promise<CustomerProfile | null> => {
+  if (!auth || !googleProvider) {
+    throw new Error("Google girisi icin Firebase hazir degil.");
+  }
+
+  if (isMobileBrowser()) {
+    await signInWithRedirect(auth, googleProvider);
+    return null;
+  }
+
+  const userCredential = await signInWithPopup(auth, googleProvider);
+  return mapGoogleUserToCustomerProfile(userCredential.user);
+};
+
+export const consumeGoogleRedirectCustomer = async (): Promise<CustomerProfile | null> => {
+  if (!auth || !googleProvider) return null;
+
+  const result = await getRedirectResult(auth);
+  if (!result?.user) {
+    return null;
+  }
+
+  return mapGoogleUserToCustomerProfile(result.user);
 };
 
 export const loginUser = async (
@@ -482,9 +699,9 @@ export const loginUser = async (
     return { user, role: "merchant", profile: merchantProfile };
   }
 
-  const customerDoc = await getDoc(doc(db, "customers", user.uid));
-  if (customerDoc.exists()) {
-    return { user, role: "customer", profile: customerDoc.data() as CustomerProfile };
+  const customerProfile = await getCustomerProfileByUid(user.uid);
+  if (customerProfile) {
+    return { user, role: "customer", profile: customerProfile };
   }
 
   throw new Error("Kullanıcı profili bulunamadı.");

@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Garment, MerchantPublicProfile } from '../types';
-import { ArrowLeft, Grid3X3, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, Grid3X3, Heart, Sparkles, X } from 'lucide-react';
 
 interface GarmentViewProps {
   garment: Garment;
   merchantProfile: MerchantPublicProfile;
   inventory: Garment[];
+  isFavorited?: boolean;
   onContinue: () => void;
   onMerchantClick: () => void;
+  onToggleFavorite?: () => void;
   onSelectGarment: (garment: Garment) => void;
   onBack: () => void;
 }
@@ -16,8 +18,10 @@ const GarmentView: React.FC<GarmentViewProps> = ({
   garment,
   merchantProfile,
   inventory,
+  isFavorited = false,
   onContinue,
   onMerchantClick,
+  onToggleFavorite,
   onSelectGarment,
   onBack,
 }) => {
@@ -66,6 +70,16 @@ const GarmentView: React.FC<GarmentViewProps> = ({
                 {merchantProfile.name}
               </span>
             </div>
+            {onToggleFavorite && (
+              <button
+                onClick={onToggleFavorite}
+                className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/88 backdrop-blur-md shadow-sm flex items-center justify-center"
+              >
+                <Heart
+                  className={`w-5 h-5 ${isFavorited ? 'fill-rose-500 text-rose-500' : 'text-gray-600'}`}
+                />
+              </button>
+            )}
             <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent p-6 pt-24 text-left">
               <h3 className="text-white font-serif text-3xl leading-tight mb-1">{garment.name}</h3>
               <p className="text-gray-200 font-sans text-sm font-light leading-relaxed opacity-90 mb-3 line-clamp-3">

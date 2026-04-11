@@ -6,26 +6,50 @@ import { getHistory, clearHistory } from '../services/historyService';
 
 interface CustomerHistoryProps {
     onBack: () => void;
+    onLogin?: () => void;
+    items?: HistoryItem[];
+    isCloudMode?: boolean;
+    onClearCloud?: () => Promise<void>;
 }
 
-const CustomerHistory: React.FC<CustomerHistoryProps> = ({ onBack }) => {
+const CustomerHistory: React.FC<CustomerHistoryProps> = ({
+    onBack,
+    onLogin,
+    items: controlledItems,
+    isCloudMode = false,
+    onClearCloud,
+}) => {
     const [items, setItems] = useState<HistoryItem[]>([]);
     const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
 
     useEffect(() => {
+        if (controlledItems) {
+            setItems(controlledItems);
+            return;
+        }
+
         setItems(getHistory());
-    }, []);
+    }, [controlledItems]);
 
     const formatDate = (timestamp: number) => {
         return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(timestamp));
     };
 
-    const handleClear = () => {
-        if (confirm("Are you sure you want to clear your history?")) {
-            clearHistory();
+    const handleClear = async () => {
+        if (!confirm("Are you sure you want to clear your history?")) {
+            return;
+        }
+
+        if (isCloudMode && onClearCloud) {
+            await onClearCloud();
             setItems([]);
             setSelectedItem(null);
+            return;
         }
+
+        clearHistory();
+        setItems([]);
+        setSelectedItem(null);
     }
 
     // Detail View (Modal-ish)
@@ -80,12 +104,14 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({ onBack }) => {
                 <button onClick={onBack} className="p-2 -ml-2 text-gray-500 hover:text-gray-900">
                     <ArrowLeft className="w-6 h-6" />
                 </button>
-                <h2 className="font-serif text-xl text-gray-900">My Reflections</h2>
+                <h2 className="font-serif text-xl text-gray-900">
+                    {isCloudMode ? 'Cloud Reflections' : 'My Reflections'}
+                </h2>
                 <button
-                    onClick={() => alert("Müşteri hesapları çok yakında! Şimdilik geçmişiniz cihazınızda saklanıyor.")}
+                    onClick={() => onLogin?.()}
                     className="text-xs font-medium text-boutique-gold hover:text-gray-900 transition-colors"
                 >
-                    Giriş Yap
+                    {isCloudMode ? 'Hesapta' : 'Giriş Yap'}
                 </button>
             </div>
 
