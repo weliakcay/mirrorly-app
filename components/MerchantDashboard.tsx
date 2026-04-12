@@ -8,6 +8,7 @@ import {
   LogOut,
   MessageCircle,
   Package,
+  Pencil,
   Plus,
   Printer,
   QrCode,
@@ -27,6 +28,7 @@ import {
   loginUser,
   registerMerchant,
   saveMerchantProfile,
+  updateGarmentInUserInventory,
 } from '../services/firebase';
 
 interface MerchantDashboardProps {
@@ -35,6 +37,7 @@ interface MerchantDashboardProps {
   onUpdateInventory: (newInventory: Garment[]) => void;
   onUpdateProfile: (newProfile: MerchantProfile) => void;
   onBack: () => void;
+  onCustomerLogin: () => void;
 }
 
 const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
@@ -43,6 +46,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   onUpdateInventory,
   onUpdateProfile,
   onBack,
+  onCustomerLogin,
 }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -53,7 +57,8 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   const [authError, setAuthError] = useState('');
 
   const [activeTab, setActiveTab] = useState<'inventory' | 'profile' | 'balance'>('inventory');
-  const [isAdding, setIsAdding] = useState(false);
+  const [itemEditorMode, setItemEditorMode] = useState<'create' | 'edit' | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [activeQrItem, setActiveQrItem] = useState<Garment | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
@@ -84,6 +89,36 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     setProfileShopUrl(profile.defaultShopUrl || '');
     setProfileWhatsapp(profile.whatsappNumber || '');
     setProfileModelPreset(profile.modelPreset || 'balanced');
+  };
+
+  const resetItemForm = () => {
+    setNewItemName('');
+    setNewItemDesc('');
+    setNewItemPrice('');
+    setNewItemShopUrl('');
+    setNewItemImage(null);
+    setEditingItemId(null);
+    setItemEditorMode(null);
+  };
+
+  const openCreateItemForm = () => {
+    resetItemForm();
+    setItemEditorMode('create');
+  };
+
+  const openEditItemForm = (item: Garment) => {
+    setNewItemName(item.name);
+    setNewItemDesc(item.description);
+    setNewItemPrice(String(item.price));
+    setNewItemShopUrl(item.shopUrl || '');
+    setNewItemImage(item.imageUrl);
+    setEditingItemId(item.id);
+    setItemEditorMode('edit');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const closeItemEditor = () => {
+    resetItemForm();
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -169,7 +204,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const handleAddItem = async (e: React.FormEvent) => {
+  const handleSubmitItem = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!newItemImage) {
@@ -186,28 +221,30 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
     try {
       const item: Garment = {
-        id: crypto.randomUUID(),
+        id: editingItemId || crypto.randomUUID(),
         merchantUid: merchantProfile.uid,
         name: newItemName,
         description: newItemDesc || 'Exclusive Piece',
         imageUrl: newItemImage,
         price: parseFloat(newItemPrice) || 0,
         boutiqueName: merchantProfile.name,
-        shopUrl: newItemShopUrl || merchantProfile.defaultShopUrl || '',
+        shopUrl: newItemShopUrl.trim(),
       };
 
-      const docId = await addGarmentToUserInventory(merchantProfile.uid, item);
-      const createdItem = { ...item, id: docId };
-      const updatedInventory = [...inventory, createdItem];
+      let updatedInventory: Garment[];
+
+      if (itemEditorMode === 'edit' && editingItemId) {
+        await updateGarmentInUserInventory(merchantProfile.uid, item);
+        updatedInventory = inventory.map((garment) => (garment.id === editingItemId ? item : garment));
+      } else {
+        const docId = await addGarmentToUserInventory(merchantProfile.uid, item);
+        const createdItem = { ...item, id: docId };
+        updatedInventory = [...inventory, createdItem];
+      }
+
       onUpdateInventory(updatedInventory);
       localStorage.setItem('mirrorly_inventory', JSON.stringify(updatedInventory));
-
-      setNewItemName('');
-      setNewItemDesc('');
-      setNewItemPrice('');
-      setNewItemShopUrl('');
-      setNewItemImage(null);
-      setIsAdding(false);
+      closeItemEditor();
     } catch (error: any) {
       alert(error?.message || 'Urun kaydedilemedi.');
     } finally {
@@ -383,10 +420,10 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
           </div>
 
           <button
-            onClick={() => alert('Musteri hesabi girisi ana ekrandaki Google butonundan aciliyor.')}
+            onClick={onCustomerLogin}
             className="w-full bg-white text-gray-900 font-medium py-3 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            Musteri Girisini Gor
+            Musteri Girisine Gec
           </button>
 
           <button onClick={onBack} className="w-full text-xs text-gray-500 hover:text-white mt-4">
@@ -466,7 +503,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               onClick={() => setActiveQrItem(null)}
               className="w-full bg-white text-gray-500 py-3 rounded-lg font-medium border border-gray-200 hover:bg-gray-50 transition-colors"
             >
-              Kapat
+              Panele Don
             </button>
           </div>
         </div>
@@ -519,22 +556,23 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               <div>
                 <h3 className="font-sans font-medium text-gray-900">Envanter Listesi</h3>
                 <p className="text-xs text-gray-400 mt-1">
-                  Her urun icin benzersiz bir QR otomatik olusturulur.
+                  Her urun icin benzersiz bir QR otomatik olusturulur. Kartlara dokunarak urun
+                  detaylarini guncelleyebilirsin.
                 </p>
               </div>
               <button
-                onClick={() => setIsAdding((value) => !value)}
+                onClick={() => (itemEditorMode ? closeItemEditor() : openCreateItemForm())}
                 className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                  isAdding ? 'bg-gray-200 text-gray-600 rotate-45' : 'bg-boutique-gold text-white'
+                  itemEditorMode ? 'bg-gray-200 text-gray-600 rotate-45' : 'bg-boutique-gold text-white'
                 }`}
               >
                 <Plus className="w-5 h-5" />
               </button>
             </div>
 
-            {isAdding && (
+            {itemEditorMode && (
               <form
-                onSubmit={handleAddItem}
+                onSubmit={handleSubmitItem}
                 className="bg-white p-5 rounded-xl shadow-md mb-6 space-y-4 border border-gray-100 relative"
               >
                 {isSaving && (
@@ -545,6 +583,26 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                     </div>
                   </div>
                 )}
+
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h4 className="font-medium text-gray-900">
+                      {itemEditorMode === 'edit' ? 'Urunu Duzenle' : 'Yeni Urun Ekle'}
+                    </h4>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {itemEditorMode === 'edit'
+                        ? 'Karttaki bilgileri guncelleyip yeniden kaydedebilirsin.'
+                        : 'QR olusmadan once urun detaylarini tamamla.'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeItemEditor}
+                    className="text-xs text-gray-500 hover:text-gray-900"
+                  >
+                    Vazgec
+                  </button>
+                </div>
 
                 <div
                   onClick={() => fileInputRef.current?.click()}
@@ -611,7 +669,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   type="submit"
                   className="w-full bg-gray-900 text-white py-3 rounded-lg text-sm font-medium"
                 >
-                  Envantere Ekle
+                  {itemEditorMode === 'edit' ? 'Degisiklikleri Kaydet' : 'Envantere Ekle'}
                 </button>
               </form>
             )}
@@ -629,9 +687,10 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               {inventory.map((item) => (
                 <div
                   key={item.id}
+                  onClick={() => openEditItemForm(item)}
                   className={`bg-white p-3 rounded-xl shadow-sm border border-gray-50 flex items-center gap-4 ${
                     deletingItemId === item.id ? 'opacity-50' : ''
-                  }`}
+                  } cursor-pointer transition-all hover:border-gray-200 hover:shadow-md`}
                 >
                   <img
                     src={item.imageUrl}
@@ -645,14 +704,30 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   </div>
                   <div className="flex flex-col gap-2">
                     <button
-                      onClick={() => setActiveQrItem(item)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setActiveQrItem(item);
+                      }}
                       className="p-2 bg-gray-50 rounded-lg hover:bg-gray-900 hover:text-white text-gray-600 transition-colors"
                       title="QR Olustur"
                     >
                       <QrCode className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={() => handleDeleteItem(item)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openEditItemForm(item);
+                      }}
+                      className="p-2 bg-amber-50 rounded-lg hover:bg-amber-500 hover:text-white text-amber-500 transition-colors"
+                      title="Urunu Duzenle"
+                    >
+                      <Pencil className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDeleteItem(item);
+                      }}
                       disabled={deletingItemId === item.id}
                       className="p-2 bg-red-50 rounded-lg hover:bg-red-500 hover:text-white text-red-400 transition-colors disabled:opacity-50"
                       title="Urunu Sil"

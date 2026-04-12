@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import {
+  ArrowLeft,
   Check,
   Download,
+  Home,
   Instagram,
   Link2,
   MessageCircle,
@@ -18,7 +20,7 @@ interface ResultViewProps {
   garment: Garment;
   merchantProfile: MerchantPublicProfile | null;
   onRetake: () => void;
-  onTryAnother: () => void;
+  onHome: () => void;
 }
 
 const buildWhatsAppHref = (phone: string, garmentName: string) => {
@@ -54,7 +56,7 @@ const ResultView: React.FC<ResultViewProps> = ({
   garment,
   merchantProfile,
   onRetake,
-  onTryAnother,
+  onHome,
 }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -63,6 +65,21 @@ const ResultView: React.FC<ResultViewProps> = ({
   if (!result.success) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-boutique-cream">
+        <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
+          <button
+            onClick={onRetake}
+            className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-900" />
+          </button>
+
+          <button
+            onClick={onHome}
+            className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
+          >
+            <Home className="w-5 h-5 text-gray-900" />
+          </button>
+        </div>
         <h3 className="font-serif text-2xl text-gray-900 mb-4">The mirror is foggy.</h3>
         <p className="text-gray-600 mb-8">{result.message}</p>
         <button
@@ -138,6 +155,22 @@ const ResultView: React.FC<ResultViewProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-boutique-cream animate-fade-in relative">
+      <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between">
+        <button
+          onClick={onRetake}
+          className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5 text-gray-900" />
+        </button>
+
+        <button
+          onClick={onHome}
+          className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
+        >
+          <Home className="w-5 h-5 text-gray-900" />
+        </button>
+      </div>
+
       <div className="flex-1 relative overflow-hidden bg-gray-100">
         <img src={result.imageUrl} alt="Virtual Try-On Result" className="w-full h-full object-cover" />
         {result.mode === 'demo' && (
@@ -192,10 +225,10 @@ const ResultView: React.FC<ResultViewProps> = ({
 
         <div className="text-center">
           <button
-            onClick={onTryAnother}
+            onClick={onHome}
             className="text-xs text-gray-400 font-sans tracking-wide uppercase hover:text-gray-600"
           >
-            Powered by Mirrorly
+            Ana Ekrana Don
           </button>
         </div>
       </div>

@@ -1,12 +1,13 @@
 import React, { useRef } from 'react';
-import { Camera, Upload, ArrowLeft } from 'lucide-react';
+import { Camera, Upload, ArrowLeft, Home } from 'lucide-react';
 
 interface PhotoInputProps {
   onPhotoSelected: (file: File) => void;
   onBack: () => void;
+  onHome: () => void;
 }
 
-const PhotoInput: React.FC<PhotoInputProps> = ({ onPhotoSelected, onBack }) => {
+const PhotoInput: React.FC<PhotoInputProps> = ({ onPhotoSelected, onBack, onHome }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,12 +29,19 @@ const PhotoInput: React.FC<PhotoInputProps> = ({ onPhotoSelected, onBack }) => {
     <div className="h-full flex flex-col items-center justify-center px-6 bg-boutique-cream animate-fade-in relative">
 
       {/* Back Button */}
-      <div className="absolute top-4 left-4 z-10">
+      <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
         <button
           onClick={onBack}
           className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
         >
           <ArrowLeft className="w-5 h-5 text-gray-900" />
+        </button>
+
+        <button
+          onClick={onHome}
+          className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
+        >
+          <Home className="w-5 h-5 text-gray-900" />
         </button>
       </div>
 

@@ -32,23 +32,9 @@ const Landing: React.FC<LandingProps> = ({
         </p>
       </div>
 
-      {/* User History Button - Prominent */}
-      <button
-        onClick={onOpenHistory}
-        className="flex items-center gap-3 px-6 py-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 group"
-      >
-        <div className="p-2 bg-gray-50 rounded-full group-hover:bg-gray-100">
-          <History className="w-5 h-5 text-gray-700" />
-        </div>
-        <div className="text-left">
-          <span className="block font-serif text-lg text-gray-900 leading-none">Deneme Gecmisi</span>
-          <span className="text-[10px] text-gray-400 uppercase tracking-wider">Son gorunumlerini ac</span>
-        </div>
-      </button>
-
       <button
         onClick={onCustomerLogin}
-        className="mt-4 flex items-center gap-3 px-6 py-4 bg-gray-900 text-white rounded-xl shadow-lg hover:bg-black transition-all active:scale-95"
+        className="flex items-center gap-3 px-6 py-4 bg-gray-900 text-white rounded-xl shadow-lg hover:bg-black transition-all active:scale-95"
       >
         <Chrome className="w-5 h-5" />
         <div className="text-left">
@@ -59,13 +45,26 @@ const Landing: React.FC<LandingProps> = ({
         </div>
       </button>
 
+      <button
+        onClick={onOpenHistory}
+        className="mt-4 flex items-center gap-3 px-6 py-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 group"
+      >
+        <div className="p-2 bg-gray-50 rounded-full group-hover:bg-gray-100">
+          <History className="w-5 h-5 text-gray-700" />
+        </div>
+        <div className="text-left">
+          <span className="block font-serif text-lg text-gray-900 leading-none">Deneme Gecmisi</span>
+          <span className="text-[10px] text-gray-400 uppercase tracking-wider">Son gorunumlerini ac</span>
+        </div>
+      </button>
+
       {/* Discrete Merchant Entry */}
       <div className="mt-8 text-center">
         <button
           onClick={onMerchantLogin}
           className="text-[10px] text-gray-400 hover:text-gray-600 transition-colors tracking-widest uppercase font-sans p-4"
         >
-          Merchant Entrance
+          Magaza Girisi
         </button>
       </div>
     </div>

@@ -394,6 +394,31 @@ export const addGarmentToUserInventory = async (uid: string, garment: Garment): 
   return docRef.id;
 };
 
+export const updateGarmentInUserInventory = async (
+  uid: string,
+  garment: Garment
+): Promise<void> => {
+  if (!db) return;
+  if (!uid) throw new Error("Magaza kimligi bulunamadi.");
+  if (!garment.id) throw new Error("Urun kimligi bulunamadi.");
+
+  let imageUrl = garment.imageUrl;
+  if (imageUrl.startsWith("data:")) {
+    const safeName = garment.name.replace(/[^a-z0-9]/gi, "_").toLowerCase() || "garment";
+    imageUrl = await uploadImageIfNeeded(imageUrl, `users/${uid}/garments/${Date.now()}_${safeName}`);
+  }
+
+  const garmentRef = doc(db, COLLECTION_PRIVATE_PROFILE, uid, COLLECTION_GARMENTS, garment.id);
+  const garmentData = cleanData({
+    ...garment,
+    id: garment.id,
+    merchantUid: uid,
+    imageUrl,
+  });
+
+  await setDoc(garmentRef, garmentData, { merge: true });
+};
+
 export const getUserInventory = async (uid: string): Promise<Garment[]> => {
   if (!db || !uid) return [];
 

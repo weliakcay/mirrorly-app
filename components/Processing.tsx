@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Sparkles, XCircle } from 'lucide-react';
+import { ArrowLeft, Home, Sparkles, XCircle } from 'lucide-react';
 
 interface ProcessingProps {
   onCancel?: () => void;
+  onBack?: () => void;
+  onHome?: () => void;
 }
 
 const MESSAGES = [
@@ -12,7 +14,7 @@ const MESSAGES = [
   "Almost ready..."
 ];
 
-const Processing: React.FC<ProcessingProps> = ({ onCancel }) => {
+const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome }) => {
   const [messageIndex, setMessageIndex] = useState(0);
   const [showCancel, setShowCancel] = useState(false);
 
@@ -35,6 +37,21 @@ const Processing: React.FC<ProcessingProps> = ({ onCancel }) => {
 
   return (
     <div className="fixed inset-0 bg-boutique-cream flex flex-col items-center justify-center z-40 animate-fade-in px-8">
+      <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
+        <button
+          onClick={onBack || onCancel}
+          className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5 text-gray-900" />
+        </button>
+
+        <button
+          onClick={onHome}
+          className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
+        >
+          <Home className="w-5 h-5 text-gray-900" />
+        </button>
+      </div>
       
       {/* Abstract Mirror Animation */}
       <div className="relative w-64 h-80 mb-12">

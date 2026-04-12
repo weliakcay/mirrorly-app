@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Garment, MerchantPublicProfile } from '../types';
-import { ArrowLeft, Grid3X3, Heart, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, Grid3X3, Heart, Home, Sparkles, X } from 'lucide-react';
 
 interface GarmentViewProps {
   garment: Garment;
@@ -12,6 +12,7 @@ interface GarmentViewProps {
   onToggleFavorite?: () => void;
   onSelectGarment: (garment: Garment) => void;
   onBack: () => void;
+  onHome: () => void;
 }
 
 const GarmentView: React.FC<GarmentViewProps> = ({
@@ -24,18 +25,26 @@ const GarmentView: React.FC<GarmentViewProps> = ({
   onToggleFavorite,
   onSelectGarment,
   onBack,
+  onHome,
 }) => {
   const [showCollection, setShowCollection] = useState(false);
   const otherItems = inventory.filter((item) => item.id !== garment.id);
 
   return (
     <div className="h-full flex flex-col relative animate-fade-in bg-boutique-cream overflow-y-auto hide-scrollbar">
-      <div className="absolute top-4 left-4 z-10">
+      <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
         <button
           onClick={onBack}
           className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
         >
           <ArrowLeft className="w-5 h-5 text-gray-900" />
+        </button>
+
+        <button
+          onClick={onHome}
+          className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
+        >
+          <Home className="w-5 h-5 text-gray-900" />
         </button>
       </div>
 
@@ -128,7 +137,7 @@ const GarmentView: React.FC<GarmentViewProps> = ({
             onClick={onMerchantClick}
             className="text-[10px] text-gray-300 hover:text-gray-500 transition-colors tracking-widest uppercase font-sans border-b border-transparent hover:border-gray-300"
           >
-            Owner Access
+            Magaza Girisi
           </button>
         </div>
       </div>

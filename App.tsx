@@ -62,6 +62,7 @@ const buildFallbackMerchant = (
 const App: React.FC = () => {
   const CUSTOMER_PROFILE_KEY = 'mirrorly_customer_profile';
   const [currentState, setCurrentState] = useState<AppState>(AppState.SPLASH);
+  const [experienceOriginState, setExperienceOriginState] = useState<AppState>(AppState.LANDING);
 
   const [merchantInventory, setMerchantInventory] = useState<Garment[]>([]);
   const [collectionInventory, setCollectionInventory] = useState<Garment[]>([]);
@@ -143,8 +144,36 @@ const App: React.FC = () => {
     bootstrapCustomerAuth();
   }, []);
 
-  const loadGarmentExperience = async (garmentId: string) => {
+  const resetExperienceState = () => {
+    setResult(null);
+    setUserPhoto(null);
+    setSelectedGarment(null);
+    setSelectedMerchant(null);
+    setCollectionInventory([]);
+  };
+
+  const goToLanding = () => {
+    resetExperienceState();
+    const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
+    window.history.pushState({ path: newUrl }, '', newUrl);
+    setCurrentState(AppState.LANDING);
+  };
+
+  const returnFromGarmentView = () => {
+    if (experienceOriginState === AppState.DISCOVER || experienceOriginState === AppState.FAVORITES) {
+      setCurrentState(experienceOriginState);
+      return;
+    }
+
+    goToLanding();
+  };
+
+  const loadGarmentExperience = async (
+    garmentId: string,
+    originState: AppState = AppState.LANDING
+  ) => {
     setIsLoadingData(true);
+    setExperienceOriginState(originState);
 
     try {
       let garment: Garment | null = null;
@@ -198,7 +227,7 @@ const App: React.FC = () => {
     const garmentId = params.get('id');
 
     if (garmentId) {
-      await loadGarmentExperience(garmentId);
+      await loadGarmentExperience(garmentId, AppState.LANDING);
       return;
     }
 
@@ -264,7 +293,7 @@ const App: React.FC = () => {
   const handleSelectCatalogItem = async (item: CatalogItem) => {
     const nextUrl = `${window.location.pathname}?id=${encodeURIComponent(item.garment.id)}`;
     window.history.pushState({ path: nextUrl }, '', nextUrl);
-    await loadGarmentExperience(item.garment.id);
+    await loadGarmentExperience(item.garment.id, currentState);
   };
 
   const favoriteIds = new Set(customerFavorites.map((item) => item.garment.id));
@@ -427,14 +456,7 @@ const App: React.FC = () => {
   };
 
   const handleTryAnother = () => {
-    setResult(null);
-    setUserPhoto(null);
-    setSelectedGarment(null);
-    setSelectedMerchant(null);
-    setCollectionInventory([]);
-    const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
-    window.history.pushState({ path: newUrl }, '', newUrl);
-    setCurrentState(AppState.LANDING);
+    goToLanding();
   };
 
   const renderContent = () => {
@@ -529,7 +551,8 @@ const App: React.FC = () => {
               }
             }}
             onSelectGarment={setSelectedGarment}
-            onBack={() => setCurrentState(AppState.LANDING)}
+            onBack={returnFromGarmentView}
+            onHome={goToLanding}
           />
         ) : (
           <Landing
@@ -544,11 +567,12 @@ const App: React.FC = () => {
           <PhotoInput
             onPhotoSelected={handlePhotoSelected}
             onBack={() => setCurrentState(AppState.GARMENT_VIEW)}
+            onHome={goToLanding}
           />
         );
 
       case AppState.PROCESSING:
-        return <Processing onCancel={handleCancelProcessing} />;
+        return <Processing onCancel={handleCancelProcessing} onBack={handleCancelProcessing} onHome={goToLanding} />;
 
       case AppState.RESULT:
         return result && selectedGarment ? (
@@ -559,7 +583,7 @@ const App: React.FC = () => {
               selectedMerchant || buildFallbackMerchant(selectedGarment, merchantProfile)
             }
             onRetake={handleRetake}
-            onTryAnother={handleTryAnother}
+            onHome={goToLanding}
           />
         ) : null;
 
@@ -570,6 +594,7 @@ const App: React.FC = () => {
             merchantProfile={merchantProfile}
             onUpdateInventory={setMerchantInventory}
             onUpdateProfile={setMerchantProfile}
+            onCustomerLogin={handleCustomerLoginRequest}
             onBack={() => {
               setCurrentState(AppState.LANDING);
             }}
