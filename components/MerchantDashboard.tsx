@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import {
+  ArrowLeft,
   Coins,
   Image as ImageIcon,
   Instagram,
@@ -439,13 +440,24 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
     return (
       <div className="h-full flex flex-col bg-white animate-fade-in relative z-50">
-        <div className="absolute top-4 right-4 no-print z-50">
-          <button
-            onClick={() => setActiveQrItem(null)}
-            className="p-3 bg-gray-100 rounded-full hover:bg-gray-200 shadow-md transition-all active:scale-95"
-          >
-            <X className="w-6 h-6 text-gray-900" />
-          </button>
+        <div className="no-print sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 px-4 py-4">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setActiveQrItem(null)}
+              className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Panele Don
+            </button>
+
+            <button
+              onClick={() => setActiveQrItem(null)}
+              className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 shadow-sm transition-all active:scale-95"
+              title="Kapat"
+            >
+              <X className="w-5 h-5 text-gray-900" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-6 overflow-y-auto">
