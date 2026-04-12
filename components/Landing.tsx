@@ -6,12 +6,14 @@ interface LandingProps {
   onMerchantLogin: () => void;
   onOpenHistory: () => void;
   onCustomerLogin: () => void;
+  isCustomerLoggedIn?: boolean;
 }
 
 const Landing: React.FC<LandingProps> = ({
   onMerchantLogin,
   onOpenHistory,
   onCustomerLogin,
+  isCustomerLoggedIn = false,
 }) => {
   return (
     <div className="h-full flex flex-col items-center justify-center bg-boutique-cream relative animate-fade-in px-6">
@@ -38,9 +40,11 @@ const Landing: React.FC<LandingProps> = ({
       >
         <Chrome className="w-5 h-5" />
         <div className="text-left">
-          <span className="block font-serif text-lg leading-none">Hesabina Gir</span>
+          <span className="block font-serif text-lg leading-none">
+            {isCustomerLoggedIn ? 'Hesabim' : 'Hesabina Gir'}
+          </span>
           <span className="text-[10px] text-white/60 uppercase tracking-wider">
-            Favoriler ve kesfet
+            {isCustomerLoggedIn ? 'Kesfet ve favoriler' : 'Favoriler ve kesfet'}
           </span>
         </div>
       </button>

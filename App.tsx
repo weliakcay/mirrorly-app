@@ -61,6 +61,7 @@ const buildFallbackMerchant = (
 
 const App: React.FC = () => {
   const CUSTOMER_PROFILE_KEY = 'mirrorly_customer_profile';
+  const CUSTOMER_POST_AUTH_TARGET_KEY = 'mirrorly_customer_post_auth_target';
   const [currentState, setCurrentState] = useState<AppState>(AppState.SPLASH);
   const [experienceOriginState, setExperienceOriginState] = useState<AppState>(AppState.LANDING);
 
@@ -106,6 +107,17 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const consumeCustomerPostAuthTarget = () => {
+    const savedTarget = localStorage.getItem(CUSTOMER_POST_AUTH_TARGET_KEY);
+    localStorage.removeItem(CUSTOMER_POST_AUTH_TARGET_KEY);
+
+    if (savedTarget === AppState.DISCOVER) {
+      return AppState.DISCOVER;
+    }
+
+    return AppState.CUSTOMER_ACCOUNT;
+  };
+
   useEffect(() => {
     const bootstrapCustomerAuth = async () => {
       if (!isFirebaseConfigured()) return;
@@ -121,7 +133,7 @@ const App: React.FC = () => {
           ]);
           setCustomerFavorites(favorites);
           setCustomerHistoryItems(history);
-          setCurrentState(AppState.CUSTOMER_ACCOUNT);
+          setCurrentState(consumeCustomerPostAuthTarget());
           return;
         }
 
@@ -135,6 +147,11 @@ const App: React.FC = () => {
           ]);
           setCustomerFavorites(favorites);
           setCustomerHistoryItems(history);
+
+          const pendingTarget = localStorage.getItem(CUSTOMER_POST_AUTH_TARGET_KEY);
+          if (pendingTarget) {
+            setCurrentState(consumeCustomerPostAuthTarget());
+          }
         }
       } catch (error) {
         console.warn('Customer auth bootstrap skipped:', error);
@@ -243,6 +260,12 @@ const App: React.FC = () => {
   };
 
   const handleCustomerLoginRequest = () => {
+    if (customerProfile) {
+      setCurrentState(AppState.CUSTOMER_ACCOUNT);
+      return;
+    }
+
+    localStorage.setItem(CUSTOMER_POST_AUTH_TARGET_KEY, AppState.CUSTOMER_ACCOUNT);
     setCurrentState(AppState.CUSTOMER_AUTH);
   };
 
@@ -260,7 +283,7 @@ const App: React.FC = () => {
     ]);
     setCustomerFavorites(favorites);
     setCustomerHistoryItems(history);
-    setCurrentState(AppState.CUSTOMER_ACCOUNT);
+    setCurrentState(consumeCustomerPostAuthTarget());
   };
 
   const handleCustomerLogout = async () => {
@@ -474,6 +497,7 @@ const App: React.FC = () => {
             onMerchantLogin={handleMerchantLoginRequest}
             onOpenHistory={handleOpenHistory}
             onCustomerLogin={handleCustomerLoginRequest}
+            isCustomerLoggedIn={!!customerProfile}
           />
         );
 
@@ -511,6 +535,7 @@ const App: React.FC = () => {
             onMerchantLogin={handleMerchantLoginRequest}
             onOpenHistory={handleOpenHistory}
             onCustomerLogin={handleCustomerLoginRequest}
+            isCustomerLoggedIn={!!customerProfile}
           />
         );
 
@@ -559,6 +584,7 @@ const App: React.FC = () => {
             onMerchantLogin={handleMerchantLoginRequest}
             onOpenHistory={handleOpenHistory}
             onCustomerLogin={handleCustomerLoginRequest}
+            isCustomerLoggedIn={!!customerProfile}
           />
         );
 
