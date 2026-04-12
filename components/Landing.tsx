@@ -41,8 +41,8 @@ const Landing: React.FC<LandingProps> = ({
           <History className="w-5 h-5 text-gray-700" />
         </div>
         <div className="text-left">
-          <span className="block font-serif text-lg text-gray-900 leading-none">My Reflections</span>
-          <span className="text-[10px] text-gray-400 uppercase tracking-wider">View Past Try-Ons</span>
+          <span className="block font-serif text-lg text-gray-900 leading-none">Deneme Gecmisi</span>
+          <span className="text-[10px] text-gray-400 uppercase tracking-wider">Son gorunumlerini ac</span>
         </div>
       </button>
 
@@ -52,9 +52,9 @@ const Landing: React.FC<LandingProps> = ({
       >
         <Chrome className="w-5 h-5" />
         <div className="text-left">
-          <span className="block font-serif text-lg leading-none">Google ile Giris</span>
+          <span className="block font-serif text-lg leading-none">Hesabina Gir</span>
           <span className="text-[10px] text-white/60 uppercase tracking-wider">
-            V2 hesabini ac
+            Favoriler ve kesfet
           </span>
         </div>
       </button>

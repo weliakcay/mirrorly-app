@@ -61,7 +61,7 @@ const CustomerAccount: React.FC<CustomerAccountProps> = ({
 
             <div>
               <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400 mb-1">
-                Customer Account
+                Hesabim
               </p>
               <h2 className="font-serif text-2xl text-gray-900">
                 {customerProfile.displayName || 'Mirrorly Member'}
@@ -82,8 +82,8 @@ const CustomerAccount: React.FC<CustomerAccountProps> = ({
               <History className="w-5 h-5 text-gray-700" />
             </div>
             <div>
-              <h3 className="font-serif text-xl text-gray-900">Reflections</h3>
-              <p className="text-sm text-gray-500">Cihazindaki denemeleri gor</p>
+              <h3 className="font-serif text-xl text-gray-900">Deneme Gecmisi</h3>
+              <p className="text-sm text-gray-500">Kayitli son gorunumlerini gor</p>
             </div>
           </div>
           <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -98,9 +98,7 @@ const CustomerAccount: React.FC<CustomerAccountProps> = ({
               <Compass className="w-5 h-5 text-boutique-gold" />
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-[0.28em] text-white/45 mb-2">
-                Discover
-              </p>
+              <p className="text-[11px] uppercase tracking-[0.28em] text-white/45 mb-2">Kesfet</p>
               <h3 className="font-serif text-xl mb-2">Butikleri gezmeye basla</h3>
               <p className="text-sm text-white/70 leading-relaxed">
                 Giris yapan kullanici artik QR disinda da urun gezebiliyor. Kesfet akisini ac.
@@ -121,8 +119,8 @@ const CustomerAccount: React.FC<CustomerAccountProps> = ({
 
           <div className="rounded-[1.5rem] bg-white/72 border border-white px-4 py-5">
             <Sparkles className="w-5 h-5 text-gray-700 mb-3" />
-            <p className="font-serif text-lg text-gray-900">Promptlu Varyasyon</p>
-            <p className="text-xs text-gray-500 mt-1">Kredi sistemiyle gelecek</p>
+            <p className="font-serif text-lg text-gray-900">Stil Varyasyonlari</p>
+            <p className="text-xs text-gray-500 mt-1">Yakinda</p>
           </div>
         </div>
       </div>

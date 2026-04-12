@@ -71,6 +71,32 @@ const COLLECTION_CUSTOMER_PROFILE = "customer_profiles";
 const COLLECTION_CUSTOMER_HISTORY = "history";
 const COLLECTION_CUSTOMER_FAVORITES = "favorites";
 
+const isPermissionError = (error: any) => {
+  const text = `${error?.code || ""} ${error?.message || ""}`.toLowerCase();
+  return (
+    text.includes("permission") ||
+    text.includes("insufficient") ||
+    text.includes("unauthorized")
+  );
+};
+
+const mapAuthErrorMessage = (error: any) => {
+  const code = String(error?.code || "");
+
+  switch (code) {
+    case "auth/unauthorized-domain":
+      return "Bu alan adi Firebase Google girisi icin yetkilendirilmemis.";
+    case "auth/operation-not-allowed":
+      return "Firebase tarafinda Google girisi henuz aktif degil.";
+    case "auth/popup-blocked":
+      return "Popup engellendi. Tekrar deneyin veya ayni linki yeni sekmede acin.";
+    case "auth/popup-closed-by-user":
+      return "Google giris penceresi kapatildi.";
+    default:
+      return error?.message || "Google girisi basarisiz oldu.";
+  }
+};
+
 const cleanData = <T extends Record<string, any>>(data: T): T => {
   const cleaned = { ...data };
   Object.keys(cleaned).forEach((key) => {
@@ -187,11 +213,20 @@ const upsertCustomerProfile = async (profile: CustomerProfile): Promise<Customer
     updatedAt: Date.now(),
   }) as CustomerProfile;
 
-  await setDoc(
-    doc(db, COLLECTION_CUSTOMER_PROFILE, normalizedProfile.uid),
-    normalizedProfile,
-    { merge: true }
-  );
+  try {
+    await setDoc(
+      doc(db, COLLECTION_CUSTOMER_PROFILE, normalizedProfile.uid),
+      normalizedProfile,
+      { merge: true }
+    );
+  } catch (error: any) {
+    if (isPermissionError(error)) {
+      console.warn("customer profile write skipped:", error?.message || error);
+      return normalizedProfile;
+    }
+
+    throw error;
+  }
 
   return normalizedProfile;
 };
@@ -464,43 +499,79 @@ export const saveCustomerHistoryItem = async (
     resultImageUrl,
   };
 
-  await setDoc(docRef, cleanData(historyItem));
+  try {
+    await setDoc(docRef, cleanData(historyItem));
+  } catch (error: any) {
+    if (isPermissionError(error)) {
+      console.warn("customer history write skipped:", error?.message || error);
+      return historyItem;
+    }
+
+    throw error;
+  }
   return historyItem;
 };
 
 export const getCustomerHistoryItems = async (uid: string): Promise<HistoryItem[]> => {
   if (!db || !uid) return [];
 
-  const historyRef = collection(db, COLLECTION_CUSTOMER_PROFILE, uid, COLLECTION_CUSTOMER_HISTORY);
-  const snapshot = await getDocs(historyRef);
+  try {
+    const historyRef = collection(db, COLLECTION_CUSTOMER_PROFILE, uid, COLLECTION_CUSTOMER_HISTORY);
+    const snapshot = await getDocs(historyRef);
 
-  return snapshot.docs
-    .map((item) => cleanData(item.data() as HistoryItem) as HistoryItem)
-    .sort((a, b) => b.timestamp - a.timestamp);
+    return snapshot.docs
+      .map((item) => cleanData(item.data() as HistoryItem) as HistoryItem)
+      .sort((a, b) => b.timestamp - a.timestamp);
+  } catch (error: any) {
+    if (isPermissionError(error)) {
+      console.warn("customer history read skipped:", error?.message || error);
+      return [];
+    }
+
+    throw error;
+  }
 };
 
 export const clearCustomerHistoryItems = async (uid: string): Promise<void> => {
   if (!db || !uid) return;
 
-  const historyRef = collection(db, COLLECTION_CUSTOMER_PROFILE, uid, COLLECTION_CUSTOMER_HISTORY);
-  const snapshot = await getDocs(historyRef);
-  await Promise.all(snapshot.docs.map((entry) => deleteDoc(entry.ref)));
+  try {
+    const historyRef = collection(db, COLLECTION_CUSTOMER_PROFILE, uid, COLLECTION_CUSTOMER_HISTORY);
+    const snapshot = await getDocs(historyRef);
+    await Promise.all(snapshot.docs.map((entry) => deleteDoc(entry.ref)));
+  } catch (error: any) {
+    if (isPermissionError(error)) {
+      console.warn("customer history clear skipped:", error?.message || error);
+      return;
+    }
+
+    throw error;
+  }
 };
 
 export const getCustomerFavorites = async (uid: string): Promise<FavoriteItem[]> => {
   if (!db || !uid) return [];
 
-  const favoritesRef = collection(
-    db,
-    COLLECTION_CUSTOMER_PROFILE,
-    uid,
-    COLLECTION_CUSTOMER_FAVORITES
-  );
-  const snapshot = await getDocs(favoritesRef);
+  try {
+    const favoritesRef = collection(
+      db,
+      COLLECTION_CUSTOMER_PROFILE,
+      uid,
+      COLLECTION_CUSTOMER_FAVORITES
+    );
+    const snapshot = await getDocs(favoritesRef);
 
-  return snapshot.docs
-    .map((entry) => cleanData(entry.data() as FavoriteItem) as FavoriteItem)
-    .sort((a, b) => b.createdAt - a.createdAt);
+    return snapshot.docs
+      .map((entry) => cleanData(entry.data() as FavoriteItem) as FavoriteItem)
+      .sort((a, b) => b.createdAt - a.createdAt);
+  } catch (error: any) {
+    if (isPermissionError(error)) {
+      console.warn("customer favorites read skipped:", error?.message || error);
+      return [];
+    }
+
+    throw error;
+  }
 };
 
 export const addCustomerFavorite = async (
@@ -524,16 +595,34 @@ export const addCustomerFavorite = async (
     merchant: item.merchant,
   };
 
-  await setDoc(favoriteRef, cleanData(favorite), { merge: true });
+  try {
+    await setDoc(favoriteRef, cleanData(favorite), { merge: true });
+  } catch (error: any) {
+    if (isPermissionError(error)) {
+      console.warn("customer favorite write skipped:", error?.message || error);
+      return favorite;
+    }
+
+    throw error;
+  }
   return favorite;
 };
 
 export const removeCustomerFavorite = async (uid: string, garmentId: string): Promise<void> => {
   if (!db || !uid || !garmentId) return;
 
-  await deleteDoc(
-    doc(db, COLLECTION_CUSTOMER_PROFILE, uid, COLLECTION_CUSTOMER_FAVORITES, garmentId)
-  );
+  try {
+    await deleteDoc(
+      doc(db, COLLECTION_CUSTOMER_PROFILE, uid, COLLECTION_CUSTOMER_FAVORITES, garmentId)
+    );
+  } catch (error: any) {
+    if (isPermissionError(error)) {
+      console.warn("customer favorite delete skipped:", error?.message || error);
+      return;
+    }
+
+    throw error;
+  }
 };
 
 export const deleteGarmentFromUserInventory = async (uid: string, itemId: string): Promise<boolean> => {
@@ -628,12 +717,21 @@ export const registerCustomer = async (email: string, pass: string): Promise<Cus
 export const getCustomerProfileByUid = async (uid: string): Promise<CustomerProfile | null> => {
   if (!db || !uid) return null;
 
-  const customerDoc = await getDoc(doc(db, COLLECTION_CUSTOMER_PROFILE, uid));
-  if (!customerDoc.exists()) {
-    return null;
-  }
+  try {
+    const customerDoc = await getDoc(doc(db, COLLECTION_CUSTOMER_PROFILE, uid));
+    if (!customerDoc.exists()) {
+      return null;
+    }
 
-  return cleanData(customerDoc.data() as CustomerProfile) as CustomerProfile;
+    return cleanData(customerDoc.data() as CustomerProfile) as CustomerProfile;
+  } catch (error: any) {
+    if (isPermissionError(error)) {
+      console.warn("customer profile read skipped:", error?.message || error);
+      return null;
+    }
+
+    throw error;
+  }
 };
 
 export const getCurrentCustomerProfile = async (): Promise<CustomerProfile | null> => {
@@ -670,8 +768,17 @@ export const signInCustomerWithGoogle = async (): Promise<CustomerProfile | null
     return null;
   }
 
-  const userCredential = await signInWithPopup(auth, googleProvider);
-  return mapGoogleUserToCustomerProfile(userCredential.user);
+  try {
+    const userCredential = await signInWithPopup(auth, googleProvider);
+    return mapGoogleUserToCustomerProfile(userCredential.user);
+  } catch (error: any) {
+    if (error?.code === "auth/popup-blocked") {
+      await signInWithRedirect(auth, googleProvider);
+      return null;
+    }
+
+    throw new Error(mapAuthErrorMessage(error));
+  }
 };
 
 export const consumeGoogleRedirectCustomer = async (): Promise<CustomerProfile | null> => {

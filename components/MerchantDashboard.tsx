@@ -383,10 +383,10 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
           </div>
 
           <button
-            onClick={() => alert('Google/Apple girisi V2 ile aktif olacak.')}
+            onClick={() => alert('Musteri hesabi girisi ana ekrandaki Google butonundan aciliyor.')}
             className="w-full bg-white text-gray-900 font-medium py-3 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            Google / Apple ile Devam Et
+            Musteri Girisini Gor
           </button>
 
           <button onClick={onBack} className="w-full text-xs text-gray-500 hover:text-white mt-4">

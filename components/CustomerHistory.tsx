@@ -84,13 +84,20 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
                             if (selectedItem.garment.shopUrl) {
                                 window.open(selectedItem.garment.shopUrl, '_blank');
                             } else {
-                                alert("This item is available in-store only.");
+                                alert("Bu urun su anda sadece magaza icinde gorunuyor.");
                             }
                         }}
                         className="w-full bg-gray-900 text-white py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-black transition-colors"
                     >
                         <ShoppingBag className="w-5 h-5" />
-                        {selectedItem.garment.shopUrl ? 'Buy Online Now' : 'Find in Boutique'}
+                        {selectedItem.garment.shopUrl ? 'Online Incele' : 'Magazada Sor'}
+                    </button>
+
+                    <button
+                        onClick={() => setSelectedItem(null)}
+                        className="w-full mt-3 py-3 rounded-xl border border-gray-200 text-sm text-gray-500 hover:text-gray-900 hover:border-gray-300 transition-colors"
+                    >
+                        Gecmise Don
                     </button>
                 </div>
             </div>
@@ -105,21 +112,25 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
                     <ArrowLeft className="w-6 h-6" />
                 </button>
                 <h2 className="font-serif text-xl text-gray-900">
-                    {isCloudMode ? 'Cloud Reflections' : 'My Reflections'}
+                    {isCloudMode ? 'Deneme Gecmisi' : 'Son Denemeler'}
                 </h2>
-                <button
-                    onClick={() => onLogin?.()}
-                    className="text-xs font-medium text-boutique-gold hover:text-gray-900 transition-colors"
-                >
-                    {isCloudMode ? 'Hesapta' : 'Giriş Yap'}
-                </button>
+                {isCloudMode ? (
+                    <span className="text-[11px] uppercase tracking-[0.2em] text-gray-400">Bulutta</span>
+                ) : (
+                    <button
+                        onClick={() => onLogin?.()}
+                        className="text-xs font-medium text-boutique-gold hover:text-gray-900 transition-colors"
+                    >
+                        Giris Yap
+                    </button>
+                )}
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 hide-scrollbar">
                 {items.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center opacity-50 space-y-4">
                         <Calendar className="w-12 h-12 text-gray-300" />
-                        <p className="font-serif text-xl text-gray-400">The mirror hasn't seen you yet.</p>
+                        <p className="font-serif text-xl text-gray-400">Henuz kayitli bir deneme yok.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 gap-4">
@@ -147,7 +158,7 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
             {items.length > 0 && (
                 <div className="p-6 text-center">
                     <button onClick={handleClear} className="text-xs text-red-300 hover:text-red-500 flex items-center justify-center gap-1 mx-auto transition-colors">
-                        <Trash2 className="w-3 h-3" /> Clear History
+                        <Trash2 className="w-3 h-3" /> Gecmisi Temizle
                     </button>
                 </div>
             )}

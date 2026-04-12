@@ -40,12 +40,12 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({ onBack, onGoogleSignIn }) =
               <ShieldCheck className="w-9 h-9 text-gray-900" />
             </div>
             <p className="text-[11px] uppercase tracking-[0.32em] text-gray-400 mb-3">
-              Mirrorly Account
+              Mirrorly
             </p>
             <h2 className="font-serif text-3xl text-gray-900 mb-3">Google ile devam et</h2>
             <p className="text-sm text-gray-500 leading-relaxed">
-              V2 katmaninin ilk adimi olarak musteri hesabi aciliyor. Kesfet, favoriler ve kredi
-              alanlari bu hesabin ustune eklenecek.
+              Hesabina girerek favorilerini kaydedebilir, deneme gecmisini gorebilir ve kesfet
+              akisini kullanabilirsin.
             </p>
           </div>
 
@@ -67,11 +67,11 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({ onBack, onGoogleSignIn }) =
           )}
 
           <div className="mt-8 rounded-3xl bg-white/70 backdrop-blur-sm border border-white px-5 py-5">
-            <p className="text-xs uppercase tracking-[0.24em] text-gray-400 mb-3">Bu adimda aktif</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-gray-400 mb-3">Girisle acilanlar</p>
             <ul className="space-y-2 text-sm text-gray-600">
               <li>Google ile tek tik giris</li>
-              <li>Musteri profilinin Firebase'e kaydi</li>
-              <li>Hesap ekranina gecis</li>
+              <li>Favori urunlerini kaydetme</li>
+              <li>Bulut gecmisine erisim</li>
             </ul>
           </div>
         </div>

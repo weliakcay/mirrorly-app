@@ -71,16 +71,14 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
           <ArrowLeft className="w-5 h-5 text-gray-900" />
         </button>
 
-        <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400">Discover</p>
+        <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400">Kesfet</p>
       </div>
 
       <div className="px-6 pb-5">
         <div className="rounded-[2rem] bg-white/82 border border-white px-5 py-5 shadow-lg">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400 mb-2">
-                V2 Layer
-              </p>
+              <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400 mb-2">Mirrorly</p>
               <h2 className="font-serif text-3xl text-gray-900">Kesfet</h2>
               <p className="text-sm text-gray-500 mt-2 leading-relaxed">
                 Giris yapan musteri artik QR disinda da urun gezebiliyor.
@@ -140,7 +138,7 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
             <div className="absolute bottom-0 left-0 right-0 p-5">
               <div className="flex items-center gap-2 text-boutique-gold mb-2">
                 <Sparkles className="w-4 h-4" />
-                <span className="text-[11px] uppercase tracking-[0.24em]">Featured</span>
+                <span className="text-[11px] uppercase tracking-[0.24em]">Secili</span>
               </div>
               <h3 className="font-serif text-3xl text-white">{heroItem.garment.name}</h3>
               <p className="text-white/72 text-sm mt-2 line-clamp-2">
