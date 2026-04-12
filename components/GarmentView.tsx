@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { Garment, MerchantPublicProfile } from '../types';
-import { ArrowLeft, Grid3X3, Heart, Home, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Grid3X3, Heart, Home, Sparkles, X } from 'lucide-react';
 
 interface GarmentViewProps {
   garment: Garment;
   merchantProfile: MerchantPublicProfile;
   inventory: Garment[];
   isFavorited?: boolean;
+  isCustomerLoggedIn?: boolean;
   onContinue: () => void;
-  onMerchantClick: () => void;
+  onCustomerAccess: () => void;
   onToggleFavorite?: () => void;
   onSelectGarment: (garment: Garment) => void;
   onBack: () => void;
@@ -20,8 +21,9 @@ const GarmentView: React.FC<GarmentViewProps> = ({
   merchantProfile,
   inventory,
   isFavorited = false,
+  isCustomerLoggedIn = false,
   onContinue,
-  onMerchantClick,
+  onCustomerAccess,
   onToggleFavorite,
   onSelectGarment,
   onBack,
@@ -118,6 +120,30 @@ const GarmentView: React.FC<GarmentViewProps> = ({
               QR ile aninda sanal deneme deneyimi
             </p>
 
+            <button
+              onClick={onCustomerAccess}
+              className="w-full rounded-[1.5rem] border border-gray-200 bg-white px-4 py-4 text-left shadow-sm hover:shadow-md transition-all"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.24em] text-gray-400 mb-2">
+                    Musteri Alani
+                  </p>
+                  <p className="font-serif text-lg text-gray-900">
+                    {isCustomerLoggedIn ? 'Kesfete Gec' : 'Google ile Gir'}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {isCustomerLoggedIn
+                      ? 'Butikleri gez, favorilerini kaydet ve uygulama icinde devam et.'
+                      : 'Favorilerini kaydet ve QR disinda kesfette gezinmeye basla.'}
+                  </p>
+                </div>
+                <div className="w-11 h-11 rounded-full bg-gray-900 text-white flex items-center justify-center">
+                  <ChevronRight className="w-5 h-5 text-boutique-gold" />
+                </div>
+              </div>
+            </button>
+
             {otherItems.length > 0 && (
               <button
                 onClick={() => setShowCollection(true)}
@@ -132,14 +158,6 @@ const GarmentView: React.FC<GarmentViewProps> = ({
           </div>
         </div>
 
-        <div className="pb-8 text-center flex-shrink-0">
-          <button
-            onClick={onMerchantClick}
-            className="text-[10px] text-gray-300 hover:text-gray-500 transition-colors tracking-widest uppercase font-sans border-b border-transparent hover:border-gray-300"
-          >
-            Magaza Girisi
-          </button>
-        </div>
       </div>
 
       {showCollection && (

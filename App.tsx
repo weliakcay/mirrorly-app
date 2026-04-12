@@ -115,7 +115,41 @@ const App: React.FC = () => {
       return AppState.DISCOVER;
     }
 
+    if (savedTarget === AppState.CUSTOMER_HISTORY) {
+      return AppState.CUSTOMER_HISTORY;
+    }
+
+    if (savedTarget === AppState.FAVORITES) {
+      return AppState.FAVORITES;
+    }
+
     return AppState.CUSTOMER_ACCOUNT;
+  };
+
+  const navigateCustomerAfterAuth = async (
+    profile: CustomerProfile,
+    target: AppState
+  ) => {
+    if (target === AppState.CUSTOMER_HISTORY) {
+      const items = isFirebaseConfigured() ? await getCustomerHistoryItems(profile.uid) : getHistory();
+      setCustomerHistoryItems(items);
+      setCurrentState(AppState.CUSTOMER_HISTORY);
+      return;
+    }
+
+    if (target === AppState.FAVORITES) {
+      const items = isFirebaseConfigured() ? await getCustomerFavorites(profile.uid) : [];
+      setCustomerFavorites(items);
+      setCurrentState(AppState.FAVORITES);
+      return;
+    }
+
+    if (target === AppState.DISCOVER) {
+      await handleOpenDiscover();
+      return;
+    }
+
+    setCurrentState(AppState.CUSTOMER_ACCOUNT);
   };
 
   useEffect(() => {
@@ -133,7 +167,7 @@ const App: React.FC = () => {
           ]);
           setCustomerFavorites(favorites);
           setCustomerHistoryItems(history);
-          setCurrentState(consumeCustomerPostAuthTarget());
+          await navigateCustomerAfterAuth(redirectProfile, consumeCustomerPostAuthTarget());
           return;
         }
 
@@ -150,7 +184,7 @@ const App: React.FC = () => {
 
           const pendingTarget = localStorage.getItem(CUSTOMER_POST_AUTH_TARGET_KEY);
           if (pendingTarget) {
-            setCurrentState(consumeCustomerPostAuthTarget());
+            await navigateCustomerAfterAuth(existingCustomer, consumeCustomerPostAuthTarget());
           }
         }
       } catch (error) {
@@ -259,13 +293,13 @@ const App: React.FC = () => {
     setCurrentState(AppState.MERCHANT_DASHBOARD);
   };
 
-  const handleCustomerLoginRequest = () => {
+  const handleCustomerLoginRequest = async (target: AppState = AppState.DISCOVER) => {
     if (customerProfile) {
-      setCurrentState(AppState.CUSTOMER_ACCOUNT);
+      await navigateCustomerAfterAuth(customerProfile, target);
       return;
     }
 
-    localStorage.setItem(CUSTOMER_POST_AUTH_TARGET_KEY, AppState.CUSTOMER_ACCOUNT);
+    localStorage.setItem(CUSTOMER_POST_AUTH_TARGET_KEY, target);
     setCurrentState(AppState.CUSTOMER_AUTH);
   };
 
@@ -283,7 +317,7 @@ const App: React.FC = () => {
     ]);
     setCustomerFavorites(favorites);
     setCustomerHistoryItems(history);
-    setCurrentState(consumeCustomerPostAuthTarget());
+    await navigateCustomerAfterAuth(profile, consumeCustomerPostAuthTarget());
   };
 
   const handleCustomerLogout = async () => {
@@ -496,7 +530,9 @@ const App: React.FC = () => {
           <Landing
             onMerchantLogin={handleMerchantLoginRequest}
             onOpenHistory={handleOpenHistory}
-            onCustomerLogin={handleCustomerLoginRequest}
+            onCustomerLogin={() => {
+              void handleCustomerLoginRequest(AppState.DISCOVER);
+            }}
             isCustomerLoggedIn={!!customerProfile}
           />
         );
@@ -505,7 +541,9 @@ const App: React.FC = () => {
         return (
           <CustomerHistory
             onBack={() => setCurrentState(customerProfile ? AppState.CUSTOMER_ACCOUNT : AppState.LANDING)}
-            onLogin={handleCustomerLoginRequest}
+            onLogin={() => {
+              void handleCustomerLoginRequest(AppState.CUSTOMER_HISTORY);
+            }}
             items={customerProfile ? customerHistoryItems : undefined}
             isCloudMode={!!customerProfile}
             onClearCloud={handleClearCloudHistory}
@@ -534,7 +572,9 @@ const App: React.FC = () => {
           <Landing
             onMerchantLogin={handleMerchantLoginRequest}
             onOpenHistory={handleOpenHistory}
-            onCustomerLogin={handleCustomerLoginRequest}
+            onCustomerLogin={() => {
+              void handleCustomerLoginRequest(AppState.DISCOVER);
+            }}
             isCustomerLoggedIn={!!customerProfile}
           />
         );
@@ -568,7 +608,10 @@ const App: React.FC = () => {
             inventory={collectionInventory}
             isFavorited={favoriteIds.has(selectedGarment.id)}
             onContinue={handleGarmentContinue}
-            onMerchantClick={handleMerchantLoginRequest}
+            onCustomerAccess={() => {
+              void handleCustomerLoginRequest(AppState.DISCOVER);
+            }}
+            isCustomerLoggedIn={!!customerProfile}
             onToggleFavorite={() => {
               const currentItem = buildCatalogItemFromSelection();
               if (currentItem) {
@@ -583,7 +626,9 @@ const App: React.FC = () => {
           <Landing
             onMerchantLogin={handleMerchantLoginRequest}
             onOpenHistory={handleOpenHistory}
-            onCustomerLogin={handleCustomerLoginRequest}
+            onCustomerLogin={() => {
+              void handleCustomerLoginRequest(AppState.DISCOVER);
+            }}
             isCustomerLoggedIn={!!customerProfile}
           />
         );
@@ -620,7 +665,9 @@ const App: React.FC = () => {
             merchantProfile={merchantProfile}
             onUpdateInventory={setMerchantInventory}
             onUpdateProfile={setMerchantProfile}
-            onCustomerLogin={handleCustomerLoginRequest}
+            onCustomerLogin={() => {
+              void handleCustomerLoginRequest(AppState.DISCOVER);
+            }}
             onBack={() => {
               setCurrentState(AppState.LANDING);
             }}

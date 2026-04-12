@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Scan, Sparkles, History, Chrome } from 'lucide-react';
+import { ArrowRight, Chrome, History, Scan, Sparkles } from 'lucide-react';
 
 interface LandingProps {
   onMerchantLogin: () => void;
@@ -36,16 +36,32 @@ const Landing: React.FC<LandingProps> = ({
 
       <button
         onClick={onCustomerLogin}
-        className="flex items-center gap-3 px-6 py-4 bg-gray-900 text-white rounded-xl shadow-lg hover:bg-black transition-all active:scale-95"
+        className="w-full max-w-sm rounded-[2rem] bg-gray-900 text-white px-5 py-5 shadow-[0_20px_50px_rgba(17,24,39,0.2)] hover:bg-black transition-all active:scale-[0.99] relative overflow-hidden"
       >
-        <Chrome className="w-5 h-5" />
-        <div className="text-left">
-          <span className="block font-serif text-lg leading-none">
-            {isCustomerLoggedIn ? 'Hesabim' : 'Hesabina Gir'}
-          </span>
-          <span className="text-[10px] text-white/60 uppercase tracking-wider">
-            {isCustomerLoggedIn ? 'Kesfet ve favoriler' : 'Favoriler ve kesfet'}
-          </span>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(212,175,55,0.22),_transparent_38%)]" />
+        <div className="relative flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4 text-left">
+            <div className="w-14 h-14 rounded-[1.25rem] bg-white/10 border border-white/10 flex items-center justify-center">
+              <Chrome className="w-6 h-6 text-boutique-gold" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.26em] text-white/45 mb-1">
+                Musteri Alani
+              </p>
+              <h3 className="font-serif text-2xl leading-none">
+                {isCustomerLoggedIn ? 'Kesfete Don' : 'Google ile Gir'}
+              </h3>
+              <p className="text-sm text-white/70 mt-2">
+                {isCustomerLoggedIn
+                  ? 'Favorilerini ve butikleri gezmeye devam et.'
+                  : 'Kesfete gir, favorilerini kaydet ve denemelerini takip et.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="w-11 h-11 rounded-full bg-white/10 border border-white/10 flex items-center justify-center flex-shrink-0">
+            <ArrowRight className="w-5 h-5 text-white" />
+          </div>
         </div>
       </button>
 
