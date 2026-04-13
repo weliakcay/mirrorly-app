@@ -584,6 +584,35 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
       <div className="flex-1 overflow-y-auto px-4 sm:px-8 md:px-12 py-6 hide-scrollbar">
         <div className="max-w-4xl mx-auto">
+        {/* Kredi Uyarı Banner */}
+        {merchantProfile.credits === 0 && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Coins className="w-4 h-4 text-red-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-red-800">Krediniz tükendi</p>
+              <p className="text-xs text-red-600 mt-0.5">
+                Müşterileriniz deneme yapamıyor. Kredi eklemek için bizimle iletişime geçin.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {merchantProfile.credits > 0 && merchantProfile.credits <= 3 && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Coins className="w-4 h-4 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-amber-800">Krediniz azalıyor ({merchantProfile.credits} kaldı)</p>
+              <p className="text-xs text-amber-600 mt-0.5">
+                Yakında müşteri denemeleri durabilir. Kredi eklemek için bizimle iletişime geçin.
+              </p>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'inventory' && (
           <>
             <div className="flex items-center justify-between mb-4">
@@ -776,55 +805,33 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         )}
 
         {activeTab === 'balance' && (
-          <div className="space-y-6">
-            <div
-              className={`bg-white rounded-2xl p-6 shadow-sm border ${
-                merchantProfile.credits < 3 ? 'border-red-200' : 'border-gray-100'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                    Mevcut Deneme Kredisi
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Coins
-                      className={`w-8 h-8 ${
-                        merchantProfile.credits < 3 ? 'text-red-400' : 'text-boutique-gold'
-                      }`}
-                    />
-                    <span
-                      className={`font-serif text-4xl font-bold ${
-                        merchantProfile.credits < 3 ? 'text-red-500' : 'text-gray-900'
-                      }`}
-                    >
-                      {merchantProfile.credits}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-1">Her basarili denemede secili model kadar kredi dusurulur.</p>
-                  <p className="text-xs text-gray-400 mt-2">
-                    Secili model: {MODEL_PRESET_OPTIONS.find((option) => option.value === merchantProfile.modelPreset)?.tool || 'Varsayilan model'} · {MODEL_PRESET_OPTIONS.find((option) => option.value === merchantProfile.modelPreset)?.creditCost || 1} kredi / deneme
-                  </p>
-                </div>
-                {merchantProfile.credits < 3 && (
-                  <div className="bg-red-50 text-red-600 px-3 py-2 rounded-lg text-xs font-medium">
-                    Kredi azaliyor
-                  </div>
-                )}
-              </div>
+          <div className="space-y-4">
+            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm text-center">
+              <p className="text-[10px] uppercase tracking-widest text-gray-400 font-sans mb-2">Mevcut Kredi</p>
+              <p className="font-serif text-5xl text-gray-900 mb-1">{merchantProfile.credits}</p>
+              <p className="text-sm text-gray-500">kullanılabilir deneme kredisi</p>
             </div>
 
-            <div className="bg-white rounded-2xl p-5 border border-dashed border-gray-200">
-              <div className="flex items-start gap-3">
-                <Sparkles className="w-5 h-5 text-boutique-gold mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-gray-900">Kredi paketleri yakinda</h4>
-                  <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                    V1 fazinda sadece mevcut kredi bakiyesini takip ediyoruz. Paket satin alma ve
-                    odeme akisi sonraki adimda eklenecek.
-                  </p>
-                </div>
-              </div>
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-2">
+              <p className="text-sm font-medium text-gray-700">Kredi nasıl çalışır?</p>
+              <ul className="text-sm text-gray-500 space-y-1 list-disc list-inside">
+                <li>Ekonomik mod: 1 kredi / deneme</li>
+                <li>Dengeli mod: 2 kredi / deneme</li>
+                <li>Premium mod: 3 kredi / deneme</li>
+              </ul>
+            </div>
+
+            <div className="p-4 bg-boutique-cream border border-gray-200 rounded-2xl text-center">
+              <p className="text-sm text-gray-600 mb-3">Kredi paketi almak için:</p>
+              <a
+                href="https://wa.me/?text=Mirrorly%20kredi%20paketi%20hakkında%20bilgi%20almak%20istiyorum."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-3 bg-gray-900 text-white rounded-full text-sm font-medium hover:bg-black transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Kredi Paketi Hakkında İletişim
+              </a>
             </div>
           </div>
         )}
