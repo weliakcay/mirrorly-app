@@ -315,7 +315,6 @@ const ResultView: React.FC<ResultViewProps> = ({
               <button
                 onClick={() => {
                   handleDownload();
-                  alert('Gorsel indirildi. Instagram uygulamasinda paylasabilirsiniz.');
                 }}
                 className="flex flex-col items-center gap-2 p-4 bg-pink-50 hover:bg-pink-100 rounded-xl transition-colors"
               >
