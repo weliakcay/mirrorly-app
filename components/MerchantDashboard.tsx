@@ -494,6 +494,9 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               <h3 className="font-serif text-3xl text-gray-900 mt-3">{activeQrItem.name}</h3>
               <p className="text-sm text-gray-500 mt-1">{merchantProfile.name}</p>
               <p className="text-xl font-medium mt-3 text-boutique-gold">${activeQrItem.price}</p>
+              <p className="text-[10px] text-gray-400 mt-3 uppercase tracking-widest">
+                QR kodu okutun, deneyin
+              </p>
             </div>
           </div>
 
