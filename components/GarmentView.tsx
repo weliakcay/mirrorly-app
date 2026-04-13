@@ -34,6 +34,7 @@ const GarmentView: React.FC<GarmentViewProps> = ({
   onHome,
 }) => {
   const [showCollection, setShowCollection] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const otherItems = inventory.filter((item) => item.id !== garment.id);
 
   return (
@@ -103,7 +104,23 @@ const GarmentView: React.FC<GarmentViewProps> = ({
 
         <div className="flex-1 flex flex-col items-center px-6 pb-12">
           <div className="relative w-full max-w-sm aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl shadow-gray-200/50 bg-white mb-6">
-            <img src={garment.imageUrl} alt={garment.name} className="w-full h-full object-cover" />
+            {imageError ? (
+              <div className="w-full aspect-[3/4] bg-gray-100 rounded-2xl flex items-center justify-center">
+                <div className="text-center space-y-2 p-4">
+                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mx-auto">
+                    <span className="text-gray-400 text-xl">📷</span>
+                  </div>
+                  <p className="text-xs text-gray-400">Ürün görseli yüklenemedi</p>
+                </div>
+              </div>
+            ) : (
+              <img
+                src={garment.imageUrl}
+                alt={garment.name}
+                className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
+              />
+            )}
             <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-white/80 shadow-sm">
               <span className="text-[10px] tracking-[0.24em] uppercase text-gray-600">
                 {merchantProfile.name}

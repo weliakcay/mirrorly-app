@@ -86,6 +86,24 @@ const PhotoInput: React.FC<PhotoInputProps> = ({ onPhotoSelected, onBack, onHome
             Tek bir fotograf yeterli. Urunun gorunecegi bolgeyi kapatmayan, temiz ve net bir
             kare secmeye calis.
           </div>
+
+          {/* Rehber ipuçları */}
+          <div className="mt-4 p-4 bg-white/60 rounded-2xl border border-gray-100 space-y-2">
+            <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">En iyi sonuç için</p>
+            <ul className="space-y-1.5">
+              {[
+                'Düz, sade arka planlı fotoğraf kullanın',
+                'Yüzünüz ve vücudunuz tam görünsün',
+                'İyi aydınlatılmış ortamda çekin',
+                'Sizi tam kaplayan kıyafet tercih edin',
+              ].map((tip) => (
+                <li key={tip} className="flex items-start gap-2 text-xs text-gray-500">
+                  <span className="text-boutique-gold mt-0.5">✦</span>
+                  {tip}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
     </div>
