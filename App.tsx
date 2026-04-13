@@ -680,8 +680,8 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-screen bg-neutral-100 flex items-center justify-center overflow-hidden">
-      <div className="w-full h-full sm:max-w-md sm:h-[850px] bg-boutique-cream sm:rounded-3xl sm:shadow-2xl overflow-hidden relative border-gray-200 sm:border">
+    <div className="w-full h-[100dvh] bg-neutral-100 flex items-stretch justify-center overflow-y-auto sm:items-center sm:p-4">
+      <div className="w-full h-full sm:max-w-md sm:h-[calc(100dvh-2rem)] sm:max-h-[850px] bg-boutique-cream sm:rounded-3xl sm:shadow-2xl overflow-hidden relative border-gray-200 sm:border">
         {renderContent()}
       </div>
     </div>
