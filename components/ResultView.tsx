@@ -60,6 +60,7 @@ const ResultView: React.FC<ResultViewProps> = ({
 }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [noCtaVisible, setNoCtaVisible] = useState(false);
   const purchaseAction = resolvePurchaseAction(garment, merchantProfile);
 
   if (!result.success) {
@@ -94,10 +95,9 @@ const ResultView: React.FC<ResultViewProps> = ({
 
   const handleBuy = () => {
     if (!purchaseAction.href) {
-      alert('Bu urun icin henuz online satis veya iletisim bilgisi eklenmemis.');
+      setNoCtaVisible(true);
       return;
     }
-
     window.open(purchaseAction.href, '_blank', 'noopener,noreferrer');
   };
 
@@ -218,34 +218,58 @@ const ResultView: React.FC<ResultViewProps> = ({
           </div>
         )}
 
-        <div className="mx-auto max-w-sm grid grid-cols-[auto,1fr,auto] items-center gap-4 mb-8">
-          <button
-            onClick={onRetake}
-            className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-900 transition-colors"
-          >
-            <div className="w-12 h-12 rounded-full border border-gray-300 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-              <RefreshCw className="w-5 h-5" />
+        {/* Ürün ve butik bilgisi */}
+        <div className="mx-auto max-w-sm mb-5 text-center">
+          <h2 className="font-serif text-xl text-gray-900 mb-1">{garment.name}</h2>
+          {merchantProfile && (
+            <div className="flex items-center justify-center gap-2">
+              {merchantProfile.logoUrl && (
+                <img
+                  src={merchantProfile.logoUrl}
+                  alt={merchantProfile.name}
+                  className="w-5 h-5 rounded-full object-cover"
+                />
+              )}
+              <span className="text-sm text-gray-500 font-sans">{merchantProfile.name}</span>
             </div>
-            <span className="text-[10px] uppercase tracking-wide">Tekrar</span>
-          </button>
+          )}
+        </div>
 
+        {/* CTA bölümü */}
+        <div className="mx-auto max-w-sm space-y-3 mb-6">
+          {/* Ana CTA — tam genişlik */}
           <button
             onClick={handleBuy}
-            className="flex-1 max-w-[220px] h-14 bg-gray-900 text-white rounded-full shadow-xl flex items-center justify-center gap-2 hover:bg-black transition-colors"
+            className="w-full h-14 bg-gray-900 text-white rounded-full shadow-xl flex items-center justify-center gap-2 hover:bg-black transition-all active:scale-[0.98]"
           >
             <ShoppingBag className="w-5 h-5" />
-            <span className="font-sans font-medium">{purchaseAction.label}</span>
+            <span className="font-sans font-semibold text-base tracking-wide">{purchaseAction.label}</span>
           </button>
 
-          <button
-            onClick={handleNativeShare}
-            className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-900 transition-colors"
-          >
-            <div className="w-12 h-12 rounded-full border border-gray-300 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-              <Share2 className="w-5 h-5" />
-            </div>
-            <span className="text-[10px] uppercase tracking-wide">Paylas</span>
-          </button>
+          {noCtaVisible && (
+            <p className="text-center text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2">
+              Bu ürün için henüz satış veya iletişim bilgisi eklenmemiş.
+            </p>
+          )}
+
+          {/* İkincil aksiyonlar */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={onRetake}
+              className="flex items-center justify-center gap-2 h-12 rounded-full border border-gray-300 bg-white/80 backdrop-blur-sm text-gray-700 hover:bg-white transition-colors text-sm font-medium"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Tekrar
+            </button>
+
+            <button
+              onClick={handleNativeShare}
+              className="flex items-center justify-center gap-2 h-12 rounded-full border border-gray-300 bg-white/80 backdrop-blur-sm text-gray-700 hover:bg-white transition-colors text-sm font-medium"
+            >
+              <Share2 className="w-4 h-4" />
+              Paylaş
+            </button>
+          </div>
         </div>
 
         <div className="text-center">
@@ -253,7 +277,7 @@ const ResultView: React.FC<ResultViewProps> = ({
             onClick={onHome}
             className="text-xs text-gray-400 font-sans tracking-wide uppercase hover:text-gray-600"
           >
-            Ana Ekrana Don
+            Ana Ekrana Dön
           </button>
         </div>
       </div>
