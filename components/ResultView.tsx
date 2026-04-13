@@ -103,16 +103,24 @@ const ResultView: React.FC<ResultViewProps> = ({
 
   const handleDownload = async () => {
     try {
+      const response = await fetch(result.imageUrl);
+      if (!response.ok) {
+        throw new Error('Remote image fetch failed.');
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = result.imageUrl;
+      link.href = objectUrl;
       link.download = `mirrorly-${garment.name.replace(/\s+/g, '-').toLowerCase()}-tryon.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(objectUrl);
       setShowShareModal(false);
     } catch (error) {
       console.error('Download failed:', error);
-      alert('Indirme basarisiz oldu. Lutfen tekrar deneyin.');
+      window.open(result.imageUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -124,6 +132,10 @@ const ResultView: React.FC<ResultViewProps> = ({
 
     try {
       const response = await fetch(result.imageUrl);
+      if (!response.ok) {
+        throw new Error('Remote image fetch failed.');
+      }
+
       const blob = await response.blob();
       const file = new File([blob], 'mirrorly-tryon.png', { type: 'image/png' });
 
@@ -134,8 +146,21 @@ const ResultView: React.FC<ResultViewProps> = ({
       });
       setShowShareModal(false);
     } catch (error: any) {
-      if (error?.name !== 'AbortError') {
-        setShowShareModal(true);
+      if (error?.name === 'AbortError') {
+        return;
+      }
+
+      try {
+        await navigator.share({
+          title: `${garment.name} - Mirrorly`,
+          text: `Bu gorunumu Mirrorly ile olusturdum: ${garment.name}`,
+          url: result.imageUrl,
+        });
+        setShowShareModal(false);
+      } catch (shareError: any) {
+        if (shareError?.name !== 'AbortError') {
+          setShowShareModal(true);
+        }
       }
     }
   };

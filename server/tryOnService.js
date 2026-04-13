@@ -16,17 +16,6 @@ const uploadDataUrlToKie = async ({ dataUrl, uploadPath, fileName }) => {
   });
 };
 
-const readResultAsDataUrl = async (url) => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error("Oluşturulan görsel indirilemedi.");
-  }
-
-  const contentType = response.headers.get("content-type") || "image/png";
-  const arrayBuffer = await response.arrayBuffer();
-  return `data:${contentType};base64,${Buffer.from(arrayBuffer).toString("base64")}`;
-};
-
 const getGarmentById = async (garmentId) => {
   const db = getAdminDb();
   const snapshots = await db.collectionGroup(COLLECTION_GARMENTS).get();
@@ -144,7 +133,6 @@ export const handleTryOnRequest = async (payload) => {
         userImageUrl,
       });
 
-      const imageUrl = await readResultAsDataUrl(resultUrl);
       const remainingCredits = (merchant.credits || 0) - 1;
       await updateMerchantCredits(garment.merchantUid, remainingCredits);
 
@@ -152,7 +140,7 @@ export const handleTryOnRequest = async (payload) => {
         status: 200,
         body: {
           success: true,
-          imageUrl,
+          imageUrl: resultUrl,
           remainingCredits,
         },
       };

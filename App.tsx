@@ -433,32 +433,45 @@ const App: React.FC = () => {
       const reader = new FileReader();
 
       reader.onloadend = async () => {
-        const base64String = reader.result as string;
-        const apiResult = await generateTryOnImage(
-          base64String,
-          selectedGarment.id,
-          selectedGarment.imageUrl,
-          selectedGarment.name
-        );
+        try {
+          const base64String = reader.result as string;
+          const apiResult = await generateTryOnImage(
+            base64String,
+            selectedGarment.id,
+            selectedGarment.imageUrl,
+            selectedGarment.name
+          );
 
-        if (apiResult.success && apiResult.imageUrl) {
-          saveToHistory(selectedGarment, apiResult.imageUrl);
-          const localHistory = getHistory();
-          setCustomerHistoryItems(localHistory);
+          setResult(apiResult);
+          setCurrentState(AppState.RESULT);
+
+          if (!apiResult.success || !apiResult.imageUrl) {
+            return;
+          }
+
+          try {
+            saveToHistory(selectedGarment, apiResult.imageUrl);
+            setCustomerHistoryItems(getHistory());
+          } catch (historyError) {
+            console.warn('Local history save skipped:', historyError);
+          }
 
           if (customerProfile) {
-            const savedCloudItem = await saveCustomerHistoryItem(
-              customerProfile.uid,
-              selectedGarment,
-              apiResult.imageUrl
-            );
+            void saveCustomerHistoryItem(customerProfile.uid, selectedGarment, apiResult.imageUrl)
+              .then((savedCloudItem) => {
+                if (!savedCloudItem) return;
 
-            if (savedCloudItem) {
-              setCustomerHistoryItems((current) => {
-                const next = [savedCloudItem, ...current.filter((item) => item.id !== savedCloudItem.id)];
-                return next.sort((a, b) => b.timestamp - a.timestamp);
+                setCustomerHistoryItems((current) => {
+                  const next = [
+                    savedCloudItem,
+                    ...current.filter((item) => item.id !== savedCloudItem.id),
+                  ];
+                  return next.sort((a, b) => b.timestamp - a.timestamp);
+                });
+              })
+              .catch((cloudError) => {
+                console.warn('Cloud history save skipped:', cloudError);
               });
-            }
           }
 
           if (
@@ -473,10 +486,15 @@ const App: React.FC = () => {
             setMerchantProfile(updatedProfile);
             localStorage.setItem('mirrorly_profile', JSON.stringify(updatedProfile));
           }
+        } catch (error) {
+          console.error('Try-on result handling error:', error);
+          setResult({
+            success: false,
+            imageUrl: '',
+            message: 'Gorsel hazirlandi ancak son adimda bir sorun olustu. Lutfen tekrar deneyin.',
+          });
+          setCurrentState(AppState.RESULT);
         }
-
-        setResult(apiResult);
-        setCurrentState(AppState.RESULT);
       };
 
       reader.onerror = () => {

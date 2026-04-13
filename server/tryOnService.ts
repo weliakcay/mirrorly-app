@@ -46,17 +46,6 @@ const uploadTempImage = async ({
   return { file, signedUrl };
 };
 
-const readResultAsDataUrl = async (url: string) => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error("Oluşturulan görsel indirilemedi.");
-  }
-
-  const contentType = response.headers.get("content-type") || "image/png";
-  const arrayBuffer = await response.arrayBuffer();
-  return `data:${contentType};base64,${Buffer.from(arrayBuffer).toString("base64")}`;
-};
-
 const getGarmentById = async (garmentId: string): Promise<Garment | null> => {
   const db = getAdminDb();
   const snapshots = await db.collectionGroup(COLLECTION_GARMENTS).get();
@@ -178,7 +167,6 @@ export const handleTryOnRequest = async (payload: {
         userImageUrl: userTemp.signedUrl,
       });
 
-      const imageUrl = await readResultAsDataUrl(resultUrl);
       const remainingCredits = merchant.credits - 1;
       await updateMerchantCredits(garment.merchantUid, remainingCredits);
 
@@ -186,7 +174,7 @@ export const handleTryOnRequest = async (payload: {
         status: 200,
         body: {
           success: true,
-          imageUrl,
+          imageUrl: resultUrl,
           remainingCredits,
         },
       };
