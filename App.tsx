@@ -806,11 +806,19 @@ const App: React.FC = () => {
     }
   };
 
+  const isMerchantScreen = currentState === AppState.MERCHANT_DASHBOARD;
+
   return (
     <div className="w-full min-h-[100dvh] bg-neutral-100 flex items-stretch justify-center overflow-x-hidden">
-      <div className="w-full min-h-[100dvh] bg-boutique-cream relative overflow-hidden sm:min-h-0 sm:max-w-md sm:h-[calc(100dvh-2rem)] sm:max-h-[900px] sm:my-4 sm:rounded-3xl sm:shadow-2xl sm:border sm:border-gray-200">
-        {renderContent()}
-      </div>
+      {isMerchantScreen ? (
+        <div className="w-full min-h-[100dvh] bg-boutique-cream relative overflow-hidden">
+          {renderContent()}
+        </div>
+      ) : (
+        <div className="w-full min-h-[100dvh] bg-boutique-cream relative overflow-hidden sm:min-h-0 sm:max-w-md sm:h-[calc(100dvh-2rem)] sm:max-h-[900px] sm:my-4 sm:rounded-3xl sm:shadow-2xl sm:border sm:border-gray-200">
+          {renderContent()}
+        </div>
+      )}
     </div>
   );
 };
