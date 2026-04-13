@@ -64,6 +64,10 @@ const ResultView: React.FC<ResultViewProps> = ({
   const purchaseAction = resolvePurchaseAction(garment, merchantProfile);
 
   if (!result.success) {
+    const isMerchantCreditError =
+      (result.message || '').toLowerCase().includes('yeterli kredi') ||
+      (result.message || '').toLowerCase().includes('kredi gerektiriyor');
+
     return (
       <div className="h-full min-h-0 flex flex-col items-center justify-center p-8 text-center bg-boutique-cream relative">
         <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
@@ -81,8 +85,21 @@ const ResultView: React.FC<ResultViewProps> = ({
             <Home className="w-5 h-5 text-gray-900" />
           </button>
         </div>
-        <h3 className="font-serif text-2xl text-gray-900 mb-4">Ayna netlesemedi</h3>
-        <p className="text-gray-600 mb-8">{result.message}</p>
+
+        {isMerchantCreditError ? (
+          <>
+            <h3 className="font-serif text-2xl text-gray-900 mb-4">Bu Butik Şu An Dolu</h3>
+            <p className="text-gray-500 text-sm leading-relaxed mb-8 max-w-xs">
+              Bu mağazanın deneme kapasitesi dolmuş. Daha sonra tekrar deneyin veya başka bir butiki keşfedin.
+            </p>
+          </>
+        ) : (
+          <>
+            <h3 className="font-serif text-2xl text-gray-900 mb-4">Ayna netlesemedi</h3>
+            <p className="text-gray-600 mb-8">{result.message}</p>
+          </>
+        )}
+
         <button
           onClick={onRetake}
           className="px-8 py-3 bg-gray-900 text-white rounded-full font-sans text-sm uppercase tracking-wide"
