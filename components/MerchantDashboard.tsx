@@ -539,7 +539,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         </p>
         <p className="text-xs text-gray-400">
           Sorularınız için:{' '}
-          <a href="https://wa.me/" className="underline text-gray-600">
+          <a href="https://wa.me/?text=Mirrorly%20mağaza%20başvurum%20hakkında%20bilgi%20almak%20istiyorum." className="underline text-gray-600">
             WhatsApp ile ulaşın
           </a>
         </p>
