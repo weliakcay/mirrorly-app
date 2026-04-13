@@ -4,6 +4,7 @@ import {
   CustomerProfile,
   DEFAULT_PROFILE,
   CatalogItem,
+  CustomerCreditPack,
   FavoriteItem,
   Garment,
   HistoryItem,
@@ -21,10 +22,12 @@ import MerchantDashboard from './components/MerchantDashboard';
 import CustomerHistory from './components/CustomerHistory';
 import CustomerAuth from './components/CustomerAuth';
 import CustomerAccount from './components/CustomerAccount';
+import CustomerCreditsView from './components/CustomerCreditsView';
 import DiscoverFeed from './components/DiscoverFeed';
 import FavoritesView from './components/FavoritesView';
 import { generateTryOnImage } from './services/tryOnService';
 import {
+  addCustomerCredits,
   addCustomerFavorite,
   clearCustomerHistoryItems,
   consumeGoogleRedirectCustomer,
@@ -77,6 +80,10 @@ const App: React.FC = () => {
   const [userPhoto, setUserPhoto] = useState<File | null>(null);
   const [result, setResult] = useState<ProcessingResult | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [customerCreditsNotice, setCustomerCreditsNotice] = useState('');
+  const [customerCreditsBackState, setCustomerCreditsBackState] = useState<AppState>(
+    AppState.CUSTOMER_ACCOUNT
+  );
 
   useEffect(() => {
     const savedInv = localStorage.getItem('mirrorly_inventory');
@@ -100,12 +107,34 @@ const App: React.FC = () => {
     const savedCustomer = localStorage.getItem(CUSTOMER_PROFILE_KEY);
     if (savedCustomer) {
       try {
-        setCustomerProfile(JSON.parse(savedCustomer));
+        const parsedCustomer = JSON.parse(savedCustomer);
+        setCustomerProfile({
+          ...parsedCustomer,
+          credits: typeof parsedCustomer.credits === 'number' ? parsedCustomer.credits : 0,
+        });
       } catch {
         console.warn('Could not parse cached customer profile');
       }
     }
   }, []);
+
+  const syncCustomerProfile = (profile: CustomerProfile | null) => {
+    const normalizedProfile = profile
+      ? {
+          ...profile,
+          credits: typeof profile.credits === 'number' ? profile.credits : 0,
+        }
+      : null;
+
+    setCustomerProfile(normalizedProfile);
+
+    if (normalizedProfile) {
+      localStorage.setItem(CUSTOMER_PROFILE_KEY, JSON.stringify(normalizedProfile));
+      return;
+    }
+
+    localStorage.removeItem(CUSTOMER_PROFILE_KEY);
+  };
 
   const consumeCustomerPostAuthTarget = () => {
     const savedTarget = localStorage.getItem(CUSTOMER_POST_AUTH_TARGET_KEY);
@@ -121,6 +150,10 @@ const App: React.FC = () => {
 
     if (savedTarget === AppState.FAVORITES) {
       return AppState.FAVORITES;
+    }
+
+    if (savedTarget === AppState.CUSTOMER_CREDITS) {
+      return AppState.CUSTOMER_CREDITS;
     }
 
     return AppState.CUSTOMER_ACCOUNT;
@@ -149,6 +182,11 @@ const App: React.FC = () => {
       return;
     }
 
+    if (target === AppState.CUSTOMER_CREDITS) {
+      setCurrentState(AppState.CUSTOMER_CREDITS);
+      return;
+    }
+
     setCurrentState(AppState.CUSTOMER_ACCOUNT);
   };
 
@@ -159,8 +197,7 @@ const App: React.FC = () => {
       try {
         const redirectProfile = await consumeGoogleRedirectCustomer();
         if (redirectProfile) {
-          setCustomerProfile(redirectProfile);
-          localStorage.setItem(CUSTOMER_PROFILE_KEY, JSON.stringify(redirectProfile));
+          syncCustomerProfile(redirectProfile);
           const [favorites, history] = await Promise.all([
             getCustomerFavorites(redirectProfile.uid),
             getCustomerHistoryItems(redirectProfile.uid),
@@ -173,8 +210,7 @@ const App: React.FC = () => {
 
         const existingCustomer = await getCurrentCustomerProfile();
         if (existingCustomer) {
-          setCustomerProfile(existingCustomer);
-          localStorage.setItem(CUSTOMER_PROFILE_KEY, JSON.stringify(existingCustomer));
+          syncCustomerProfile(existingCustomer);
           const [favorites, history] = await Promise.all([
             getCustomerFavorites(existingCustomer.uid),
             getCustomerHistoryItems(existingCustomer.uid),
@@ -286,6 +322,13 @@ const App: React.FC = () => {
   };
 
   const handleGarmentContinue = () => {
+    if (customerProfile && customerProfile.credits <= 0) {
+      setCustomerCreditsNotice('Bu urunu denemek icin kredi yuklemen gerekiyor.');
+      setCustomerCreditsBackState(AppState.GARMENT_VIEW);
+      setCurrentState(AppState.CUSTOMER_CREDITS);
+      return;
+    }
+
     setCurrentState(AppState.PHOTO_INPUT);
   };
 
@@ -309,8 +352,7 @@ const App: React.FC = () => {
       return;
     }
 
-    setCustomerProfile(profile);
-    localStorage.setItem(CUSTOMER_PROFILE_KEY, JSON.stringify(profile));
+    syncCustomerProfile(profile);
     const [favorites, history] = await Promise.all([
       getCustomerFavorites(profile.uid),
       getCustomerHistoryItems(profile.uid),
@@ -322,11 +364,43 @@ const App: React.FC = () => {
 
   const handleCustomerLogout = async () => {
     await logoutUser();
-    setCustomerProfile(null);
+    syncCustomerProfile(null);
     setCustomerFavorites([]);
     setCustomerHistoryItems([]);
-    localStorage.removeItem(CUSTOMER_PROFILE_KEY);
     setCurrentState(AppState.LANDING);
+  };
+
+  const handleOpenCustomerCredits = async (origin: AppState = AppState.CUSTOMER_ACCOUNT) => {
+    if (!customerProfile) {
+      localStorage.setItem(CUSTOMER_POST_AUTH_TARGET_KEY, AppState.CUSTOMER_CREDITS);
+      setCurrentState(AppState.CUSTOMER_AUTH);
+      return;
+    }
+
+    setCustomerCreditsBackState(origin);
+    if (origin !== AppState.GARMENT_VIEW) {
+      setCustomerCreditsNotice('');
+    }
+    setCurrentState(AppState.CUSTOMER_CREDITS);
+  };
+
+  const handleAddCustomerCredits = async (pack: CustomerCreditPack) => {
+    if (!customerProfile) return;
+
+    try {
+      const updatedProfile = await addCustomerCredits(customerProfile.uid, pack);
+      if (!updatedProfile) return;
+
+      syncCustomerProfile(updatedProfile);
+      setCustomerCreditsNotice('');
+
+      if (customerCreditsBackState === AppState.GARMENT_VIEW) {
+        setCurrentState(AppState.GARMENT_VIEW);
+      }
+    } catch (error) {
+      console.error('Customer credit top-up failed:', error);
+      setCustomerCreditsNotice('Kredi yuklenemedi. Lutfen tekrar dene.');
+    }
   };
 
   const handleOpenDiscover = async () => {
@@ -439,7 +513,8 @@ const App: React.FC = () => {
             base64String,
             selectedGarment.id,
             selectedGarment.imageUrl,
-            selectedGarment.name
+            selectedGarment.name,
+            customerProfile?.uid
           );
 
           setResult(apiResult);
@@ -474,17 +549,29 @@ const App: React.FC = () => {
               });
           }
 
-          if (
-            typeof apiResult.remainingCredits === 'number' &&
-            merchantProfile.uid &&
-            merchantProfile.uid === selectedGarment.merchantUid
-          ) {
-            const updatedProfile = {
-              ...merchantProfile,
-              credits: apiResult.remainingCredits,
-            };
-            setMerchantProfile(updatedProfile);
-            localStorage.setItem('mirrorly_profile', JSON.stringify(updatedProfile));
+          if (typeof apiResult.remainingCredits === 'number') {
+            if (
+              apiResult.creditOwner === 'customer' &&
+              customerProfile
+            ) {
+              syncCustomerProfile({
+                ...customerProfile,
+                credits: apiResult.remainingCredits,
+              });
+            }
+
+            if (
+              apiResult.creditOwner !== 'customer' &&
+              merchantProfile.uid &&
+              merchantProfile.uid === selectedGarment.merchantUid
+            ) {
+              const updatedProfile = {
+                ...merchantProfile,
+                credits: apiResult.remainingCredits,
+              };
+              setMerchantProfile(updatedProfile);
+              localStorage.setItem('mirrorly_profile', JSON.stringify(updatedProfile));
+            }
           }
         } catch (error) {
           console.error('Try-on result handling error:', error);
@@ -584,6 +671,9 @@ const App: React.FC = () => {
             onOpenDiscover={handleOpenDiscover}
             onOpenFavorites={handleOpenFavorites}
             onOpenHistory={handleOpenHistory}
+            onOpenCredits={() => {
+              void handleOpenCustomerCredits(AppState.CUSTOMER_ACCOUNT);
+            }}
             onLogout={handleCustomerLogout}
           />
         ) : (
@@ -618,6 +708,21 @@ const App: React.FC = () => {
           />
         );
 
+      case AppState.CUSTOMER_CREDITS:
+        return customerProfile ? (
+          <CustomerCreditsView
+            customerProfile={customerProfile}
+            notice={customerCreditsNotice}
+            onBack={() => setCurrentState(customerCreditsBackState)}
+            onAddCredits={handleAddCustomerCredits}
+          />
+        ) : (
+          <CustomerAuth
+            onBack={() => setCurrentState(AppState.LANDING)}
+            onGoogleSignIn={handleGoogleCustomerSignIn}
+          />
+        );
+
       case AppState.GARMENT_VIEW:
         return selectedGarment ? (
           <GarmentView
@@ -626,8 +731,12 @@ const App: React.FC = () => {
             inventory={collectionInventory}
             isFavorited={favoriteIds.has(selectedGarment.id)}
             onContinue={handleGarmentContinue}
+            customerCredits={customerProfile?.credits || 0}
             onCustomerAccess={() => {
               void handleCustomerLoginRequest(AppState.DISCOVER);
+            }}
+            onOpenCredits={() => {
+              void handleOpenCustomerCredits(AppState.GARMENT_VIEW);
             }}
             isCustomerLoggedIn={!!customerProfile}
             onToggleFavorite={() => {

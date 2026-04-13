@@ -1,9 +1,16 @@
 import { getAdminDb, getAdminStorage } from "./firebaseAdmin";
 import { generateTryOnWithKie } from "./kie";
-import { DEFAULT_PROFILE, Garment, MerchantProfile, ProcessingResult } from "../types";
+import { CustomerProfile, DEFAULT_PROFILE, Garment, MerchantProfile, ProcessingResult } from "../types";
 
 const COLLECTION_PRIVATE_PROFILE = "merchant_profiles";
+const COLLECTION_CUSTOMER_PROFILE = "customer_profiles";
 const COLLECTION_GARMENTS = "garments";
+const COLLECTION_CUSTOMER_CREDIT_TRANSACTIONS = "credit_transactions";
+const PRESET_CREDIT_COSTS = {
+  economy: 1,
+  balanced: 2,
+  premium: 3,
+} as const;
 
 const parseDataUrl = (dataUrl: string) => {
   const match = dataUrl.match(/^data:(.+);base64,(.+)$/);
@@ -73,11 +80,59 @@ const getMerchantPrivateProfile = async (merchantUid: string): Promise<MerchantP
   };
 };
 
+const getCustomerProfile = async (customerUid: string): Promise<CustomerProfile | null> => {
+  const snapshot = await getAdminDb().collection(COLLECTION_CUSTOMER_PROFILE).doc(customerUid).get();
+  if (!snapshot.exists) return null;
+
+  return {
+    ...(snapshot.data() as CustomerProfile),
+    uid: customerUid,
+    role: "customer",
+  };
+};
+
 const updateMerchantCredits = async (merchantUid: string, credits: number) => {
   await getAdminDb()
     .collection(COLLECTION_PRIVATE_PROFILE)
     .doc(merchantUid)
     .set({ credits }, { merge: true });
+};
+
+const updateCustomerCredits = async (customerUid: string, credits: number) => {
+  await getAdminDb()
+    .collection(COLLECTION_CUSTOMER_PROFILE)
+    .doc(customerUid)
+    .set({ credits, updatedAt: Date.now() }, { merge: true });
+};
+
+const createCreditTransaction = async ({
+  customerUid,
+  credits,
+  label,
+  garmentId,
+  balanceAfter,
+}: {
+  customerUid: string;
+  credits: number;
+  label: string;
+  garmentId: string;
+  balanceAfter: number;
+}) => {
+  const transactionRef = getAdminDb()
+    .collection(COLLECTION_CUSTOMER_PROFILE)
+    .doc(customerUid)
+    .collection(COLLECTION_CUSTOMER_CREDIT_TRANSACTIONS)
+    .doc();
+
+  await transactionRef.set({
+    id: transactionRef.id,
+    type: "spend",
+    credits: -Math.abs(credits),
+    label,
+    createdAt: Date.now(),
+    balanceAfter,
+    garmentId,
+  });
 };
 
 const normalizeGarmentImage = async (garment: Garment) => {
@@ -101,10 +156,12 @@ const normalizeGarmentImage = async (garment: Garment) => {
 export const handleTryOnRequest = async (payload: {
   garmentId?: string;
   userPhotoDataUrl?: string;
+  customerUid?: string;
 }): Promise<{ status: number; body: ProcessingResult }> => {
   try {
     const garmentId = payload.garmentId?.trim();
     const userPhotoDataUrl = payload.userPhotoDataUrl?.trim();
+    const customerUid = payload.customerUid?.trim();
 
     if (!garmentId || !userPhotoDataUrl) {
       return {
@@ -141,13 +198,51 @@ export const handleTryOnRequest = async (payload: {
       };
     }
 
-    if (merchant.credits <= 0) {
+    const creditCost =
+      PRESET_CREDIT_COSTS[merchant.modelPreset || DEFAULT_PROFILE.modelPreset] || 1;
+    let creditOwner: "merchant" | "customer" = "merchant";
+    let remainingCredits = merchant.credits - creditCost;
+    let customerProfile: CustomerProfile | null = null;
+
+    if (customerUid) {
+      customerProfile = await getCustomerProfile(customerUid);
+      if (!customerProfile) {
+        return {
+          status: 404,
+          body: {
+            success: false,
+            imageUrl: "",
+            message: "Musteri bakiyesi bulunamadi. Lutfen tekrar giris yapin.",
+          },
+        };
+      }
+
+      if ((customerProfile.credits || 0) < creditCost) {
+        return {
+          status: 402,
+          body: {
+            success: false,
+            imageUrl: "",
+            message: `Bu deneme icin ${creditCost} kredi gerekiyor. Bakiyeni yukleyip tekrar dene.`,
+            creditOwner: "customer",
+            remainingCredits: customerProfile.credits || 0,
+            creditCost,
+          },
+        };
+      }
+
+      creditOwner = "customer";
+      remainingCredits = (customerProfile.credits || 0) - creditCost;
+    } else if (merchant.credits < creditCost) {
       return {
         status: 402,
         body: {
           success: false,
           imageUrl: "",
-          message: "Bu mağazanın deneme kredisi tükendi.",
+          message: `Bu magaza icin yeterli kredi yok. Bu deneme ${creditCost} kredi gerektiriyor.`,
+          creditOwner: "merchant",
+          remainingCredits: merchant.credits,
+          creditCost,
         },
       };
     }
@@ -167,8 +262,18 @@ export const handleTryOnRequest = async (payload: {
         userImageUrl: userTemp.signedUrl,
       });
 
-      const remainingCredits = merchant.credits - 1;
-      await updateMerchantCredits(garment.merchantUid, remainingCredits);
+      if (creditOwner === "customer" && customerUid) {
+        await updateCustomerCredits(customerUid, remainingCredits);
+        await createCreditTransaction({
+          customerUid,
+          credits: creditCost,
+          label: `${garment.name} denemesi`,
+          garmentId: garment.id,
+          balanceAfter: remainingCredits,
+        });
+      } else {
+        await updateMerchantCredits(garment.merchantUid, remainingCredits);
+      }
 
       return {
         status: 200,
@@ -176,6 +281,8 @@ export const handleTryOnRequest = async (payload: {
           success: true,
           imageUrl: resultUrl,
           remainingCredits,
+          creditOwner,
+          creditCost,
         },
       };
     } finally {

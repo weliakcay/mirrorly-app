@@ -3,38 +3,45 @@ import { ModelPreset } from "../types";
 const KIE_API_BASE = "https://api.kie.ai";
 const DEFAULT_TIMEOUT_MS = 90_000;
 const POLL_INTERVAL_MS = 2_500;
+const GOOGLE_BILLING_DISABLED_PATTERNS = [
+  "billing account for the owning project is disabled",
+  "accountdisabled",
+  "billing account",
+];
 
 type KiePresetConfig =
-  | {
-      type: "market";
-      model: string;
-      resolution: "1K" | "2K";
-    }
-  | {
-      type: "gpt4o";
-      model: "gpt4o-image";
-    };
+  {
+    type: "market";
+    family: "flux-2" | "nano-banana" | "gpt-image";
+    model: string;
+    resolution?: "1K" | "2K";
+  };
 
 const PRESET_CONFIG: Record<ModelPreset, KiePresetConfig> = {
   economy: {
     type: "market",
-    model: process.env.KIE_MODEL_ECONOMY || "flux-2/flex-image-to-image",
-    resolution: "1K",
+    family: "gpt-image",
+    model: process.env.KIE_MODEL_ECONOMY || "gpt-image/1.5-image-to-image",
   },
   balanced: {
     type: "market",
-    model: process.env.KIE_MODEL_BALANCED || "flux-2/pro-image-to-image",
+    family: "nano-banana",
+    model: process.env.KIE_MODEL_BALANCED || "nano-banana-2",
     resolution: "1K",
   },
   premium: {
     type: "market",
-    model:
-      process.env.KIE_MODEL_PREMIUM &&
-      process.env.KIE_MODEL_PREMIUM !== "gpt4o-image"
-        ? process.env.KIE_MODEL_PREMIUM
-        : "flux-2/pro-image-to-image",
+    family: "flux-2",
+    model: process.env.KIE_MODEL_PREMIUM || "flux-2/pro-image-to-image",
     resolution: "2K",
   },
+};
+
+const MARKET_FALLBACK_CONFIG: KiePresetConfig = {
+  type: "market",
+  family: "flux-2",
+  model: process.env.KIE_MODEL_MARKET_FALLBACK || "flux-2/pro-image-to-image",
+  resolution: "1K",
 };
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -63,6 +70,13 @@ Goals:
 Garment details: ${garmentDescription || garmentName}
 `;
 
+const isFlux2ImageEditModel = (model: string) => String(model || "").startsWith("flux-2/");
+
+const isGoogleBillingDisabledError = (error: unknown) => {
+  const message = String((error as any)?.message || "").toLowerCase();
+  return GOOGLE_BILLING_DISABLED_PATTERNS.some((pattern) => message.includes(pattern));
+};
+
 const kieFetch = async (path: string, init?: RequestInit) => {
   const response = await fetch(`${KIE_API_BASE}${path}`, {
     ...init,
@@ -86,23 +100,44 @@ const kieFetch = async (path: string, init?: RequestInit) => {
 };
 
 const createMarketTask = async (
-  model: string,
+  config: KiePresetConfig,
   userImageUrl: string,
   garmentImageUrl: string,
-  prompt: string,
-  resolution: "1K" | "2K" = "1K"
+  prompt: string
 ) => {
+  let input: Record<string, unknown>;
+
+  if (config.family === "flux-2" || isFlux2ImageEditModel(config.model)) {
+    input = {
+      input_urls: [userImageUrl, garmentImageUrl],
+      prompt,
+      aspect_ratio: "2:3",
+      resolution: config.resolution || "1K",
+      nsfw_checker: false,
+    };
+  } else if (config.family === "nano-banana") {
+    input = {
+      prompt,
+      image_input: [userImageUrl, garmentImageUrl],
+      aspect_ratio: "2:3",
+      resolution: config.resolution || "1K",
+      output_format: "png",
+      google_search: false,
+    };
+  } else {
+    input = {
+      prompt,
+      image_urls: [userImageUrl, garmentImageUrl],
+      output_format: "png",
+      image_size: "2:3",
+    };
+  }
+
   const payload = await kieFetch("/api/v1/jobs/createTask", {
     method: "POST",
     body: JSON.stringify({
-      model,
-      input: {
-        input_urls: [userImageUrl, garmentImageUrl],
-        prompt,
-        aspect_ratio: "2:3",
-        resolution,
-        nsfw_checker: false,
-      },
+      model: config.model,
+      input,
     }),
   });
 
@@ -138,52 +173,18 @@ const pollMarketTask = async (taskId: string) => {
   throw new Error("Kie.ai işlem süresi aşıldı.");
 };
 
-const create4oTask = async (
+const tryMarketFallback = async (
   userImageUrl: string,
   garmentImageUrl: string,
   prompt: string
 ) => {
-  const payload = await kieFetch("/api/v1/gpt4o-image/generate", {
-    method: "POST",
-    body: JSON.stringify({
-      filesUrl: [userImageUrl, garmentImageUrl],
-      prompt,
-      size: "2:3",
-      isEnhance: true,
-      enableFallback: true,
-      fallbackModel: "FLUX_MAX",
-    }),
-  });
-
-  return payload.data.taskId as string;
-};
-
-const poll4oTask = async (taskId: string) => {
-  const startedAt = Date.now();
-
-  while (Date.now() - startedAt < DEFAULT_TIMEOUT_MS) {
-    const payload = await kieFetch(
-      `/api/v1/gpt4o-image/record-info?taskId=${encodeURIComponent(taskId)}`,
-      { method: "GET" }
-    );
-
-    const status = payload.data?.status;
-    if (status === "SUCCESS") {
-      const resultUrl = payload.data?.response?.resultUrls?.[0];
-      if (!resultUrl) {
-        throw new Error("Kie.ai premium model sonuç üretmedi.");
-      }
-      return resultUrl as string;
-    }
-
-    if (status === "GENERATE_FAILED" || status === "CREATE_TASK_FAILED") {
-      throw new Error(payload.data?.errorMessage || "Kie.ai premium model başarısız oldu.");
-    }
-
-    await sleep(POLL_INTERVAL_MS);
-  }
-
-  throw new Error("Kie.ai premium işlem süresi aşıldı.");
+  const fallbackTaskId = await createMarketTask(
+    MARKET_FALLBACK_CONFIG,
+    userImageUrl,
+    garmentImageUrl,
+    prompt
+  );
+  return pollMarketTask(fallbackTaskId);
 };
 
 export const generateTryOnWithKie = async ({
@@ -202,17 +203,14 @@ export const generateTryOnWithKie = async ({
   const prompt = buildPrompt(garmentName, garmentDescription);
   const config = PRESET_CONFIG[preset] || PRESET_CONFIG.balanced;
 
-  if (config.type === "gpt4o") {
-    const taskId = await create4oTask(userImageUrl, garmentImageUrl, prompt);
-    return poll4oTask(taskId);
-  }
+  try {
+    const taskId = await createMarketTask(config, userImageUrl, garmentImageUrl, prompt);
+    return pollMarketTask(taskId);
+  } catch (error) {
+    if (isGoogleBillingDisabledError(error) || config.family !== "flux-2") {
+      return tryMarketFallback(userImageUrl, garmentImageUrl, prompt);
+    }
 
-  const taskId = await createMarketTask(
-    config.model,
-    userImageUrl,
-    garmentImageUrl,
-    prompt,
-    config.resolution
-  );
-  return pollMarketTask(taskId);
+    throw error;
+  }
 };

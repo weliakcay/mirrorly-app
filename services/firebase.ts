@@ -6,6 +6,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  increment,
   getFirestore,
   query,
   setDoc,
@@ -23,7 +24,10 @@ import {
 } from "firebase/auth";
 import {
   CatalogItem,
+  CustomerCreditPack,
+  CustomerCreditTransaction,
   CustomerProfile,
+  DEFAULT_CUSTOMER_CREDITS,
   DEFAULT_PROFILE,
   FavoriteItem,
   Garment,
@@ -70,6 +74,7 @@ const COLLECTION_GARMENTS = "garments";
 const COLLECTION_CUSTOMER_PROFILE = "customer_profiles";
 const COLLECTION_CUSTOMER_HISTORY = "history";
 const COLLECTION_CUSTOMER_FAVORITES = "favorites";
+const COLLECTION_CUSTOMER_CREDIT_TRANSACTIONS = "credit_transactions";
 
 const isPermissionError = (error: any) => {
   const text = `${error?.code || ""} ${error?.message || ""}`.toLowerCase();
@@ -210,6 +215,10 @@ const upsertCustomerProfile = async (profile: CustomerProfile): Promise<Customer
   const normalizedProfile: CustomerProfile = cleanData({
     ...profile,
     role: "customer",
+    credits:
+      typeof profile.credits === "number"
+        ? profile.credits
+        : DEFAULT_CUSTOMER_CREDITS,
     updatedAt: Date.now(),
   }) as CustomerProfile;
 
@@ -645,6 +654,46 @@ export const addCustomerFavorite = async (
   return favorite;
 };
 
+export const addCustomerCredits = async (
+  uid: string,
+  pack: CustomerCreditPack
+): Promise<CustomerProfile | null> => {
+  if (!db || !uid) return null;
+
+  await setDoc(
+    doc(db, COLLECTION_CUSTOMER_PROFILE, uid),
+    {
+      credits: increment(pack.credits),
+      updatedAt: Date.now(),
+    },
+    { merge: true }
+  );
+
+  const transactionRef = doc(
+    collection(db, COLLECTION_CUSTOMER_PROFILE, uid, COLLECTION_CUSTOMER_CREDIT_TRANSACTIONS)
+  );
+
+  const transaction: CustomerCreditTransaction = {
+    id: transactionRef.id,
+    type: "topup",
+    credits: pack.credits,
+    label: pack.label,
+    createdAt: Date.now(),
+  };
+
+  try {
+    await setDoc(transactionRef, cleanData(transaction));
+  } catch (error: any) {
+    if (isPermissionError(error)) {
+      console.warn("customer credit transaction write skipped:", error?.message || error);
+    } else {
+      throw error;
+    }
+  }
+
+  return getCustomerProfileByUid(uid);
+};
+
 export const removeCustomerFavorite = async (uid: string, garmentId: string): Promise<void> => {
   if (!db || !uid || !garmentId) return;
 
@@ -744,6 +793,7 @@ export const registerCustomer = async (email: string, pass: string): Promise<Cus
     email: user.email || email,
     displayName: user.displayName || "",
     photoURL: user.photoURL || "",
+    credits: DEFAULT_CUSTOMER_CREDITS,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
@@ -790,6 +840,10 @@ const mapGoogleUserToCustomerProfile = async (user: any): Promise<CustomerProfil
     email: user.email || existing?.email || "",
     displayName: user.displayName || existing?.displayName || "",
     photoURL: user.photoURL || existing?.photoURL || "",
+    credits:
+      typeof existing?.credits === "number"
+        ? existing.credits
+        : DEFAULT_CUSTOMER_CREDITS,
     createdAt: existing?.createdAt || now,
     updatedAt: now,
   });

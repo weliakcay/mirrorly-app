@@ -204,7 +204,8 @@ export const generateTryOnImage = async (
   userPhotoBase64: string,
   garmentId: string,
   garmentImageUrl: string,
-  garmentName: string
+  garmentName: string,
+  customerUid?: string
 ): Promise<ProcessingResult> => {
   try {
     const optimizedPhoto = await resizeImage(userPhotoBase64);
@@ -219,6 +220,7 @@ export const generateTryOnImage = async (
       body: JSON.stringify({
         garmentId,
         userPhotoDataUrl: optimizedPhoto,
+        customerUid,
       }),
       signal: controller.signal,
     });

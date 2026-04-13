@@ -8,8 +8,10 @@ interface GarmentViewProps {
   inventory: Garment[];
   isFavorited?: boolean;
   isCustomerLoggedIn?: boolean;
+  customerCredits?: number;
   onContinue: () => void;
   onCustomerAccess: () => void;
+  onOpenCredits: () => void;
   onToggleFavorite?: () => void;
   onSelectGarment: (garment: Garment) => void;
   onBack: () => void;
@@ -22,8 +24,10 @@ const GarmentView: React.FC<GarmentViewProps> = ({
   inventory,
   isFavorited = false,
   isCustomerLoggedIn = false,
+  customerCredits = 0,
   onContinue,
   onCustomerAccess,
+  onOpenCredits,
   onToggleFavorite,
   onSelectGarment,
   onBack,
@@ -143,6 +147,31 @@ const GarmentView: React.FC<GarmentViewProps> = ({
             <p className="text-center text-xs text-gray-400 font-sans">
               QR ile aninda sanal deneme deneyimi
             </p>
+
+            {isCustomerLoggedIn && (
+              <button
+                onClick={onOpenCredits}
+                className={`w-full rounded-[1.35rem] px-4 py-4 text-left border transition-all ${
+                  customerCredits > 0
+                    ? 'border-emerald-200 bg-emerald-50/70 text-emerald-900'
+                    : 'border-amber-200 bg-amber-50 text-amber-900'
+                }`}
+              >
+                <p className="text-[10px] uppercase tracking-[0.22em] opacity-60 mb-1">
+                  Kredi Durumu
+                </p>
+                <p className="font-serif text-lg">
+                  {customerCredits > 0
+                    ? `${customerCredits} kredi kullanima hazir`
+                    : 'Denemeye devam etmek icin kredi yukle'}
+                </p>
+                <p className="text-sm opacity-80 mt-1">
+                  {customerCredits > 0
+                    ? 'Giris yaptiktan sonraki try-on denemeleri bu bakiyeden duser.'
+                    : 'Google hesabin icin bakiye yukleyip try-on akisini acabilirsin.'}
+                </p>
+              </button>
+            )}
 
             {otherItems.length > 0 && (
               <button

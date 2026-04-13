@@ -11,6 +11,7 @@ export enum AppState {
   CUSTOMER_AUTH = 'CUSTOMER_AUTH',
   CUSTOMER_ACCOUNT = 'CUSTOMER_ACCOUNT',
   FAVORITES = 'FAVORITES',
+  CUSTOMER_CREDITS = 'CUSTOMER_CREDITS',
 }
 
 export type UserRole = 'merchant' | 'customer';
@@ -40,6 +41,7 @@ export interface CustomerProfile {
   email: string;
   displayName?: string;
   photoURL?: string;
+  credits: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -60,6 +62,8 @@ export interface ProcessingResult {
   success: boolean;
   message?: string;
   remainingCredits?: number;
+  creditOwner?: UserRole;
+  creditCost?: number;
   mode?: 'live' | 'demo';
 }
 
@@ -78,6 +82,23 @@ export interface CatalogItem {
 export interface FavoriteItem extends CatalogItem {
   id: string;
   createdAt: number;
+}
+
+export interface CustomerCreditPack {
+  id: string;
+  label: string;
+  credits: number;
+  description: string;
+}
+
+export interface CustomerCreditTransaction {
+  id: string;
+  type: 'welcome' | 'topup' | 'spend';
+  credits: number;
+  label: string;
+  createdAt: number;
+  balanceAfter?: number;
+  garmentId?: string;
 }
 
 export interface UserSession {
@@ -116,30 +137,57 @@ export const MODEL_PRESET_OPTIONS: Array<{
   badge: string;
   tool: string;
   cost: string;
+  creditCost: number;
 }> = [
   {
     value: 'economy',
     label: 'Ekonomik',
-    description: 'Daha uygun maliyetli, hızlı ve temel try-on denemeleri için.',
+    description: 'Hizli ve daha uygun maliyetli denemeler icin giris seviyesi secim.',
     badge: 'Uygun fiyat',
-    tool: 'Flux 2 Flex · 1K',
-    cost: 'Yakl. dusuk maliyet / deneme',
+    tool: 'GPT Image 1.5',
+    cost: 'Yakl. 1 kredi / deneme',
+    creditCost: 1,
   },
   {
     value: 'balanced',
     label: 'Dengeli',
-    description: 'Kalite ve hız arasında en güvenli varsayılan seçim.',
-    badge: 'Önerilen',
-    tool: 'Flux 2 Pro · 1K',
-    cost: 'Yakl. orta maliyet / deneme',
+    description: 'Kalite ve urun uyumu dengesinde en guvenli varsayilan secim.',
+    badge: 'Onerilen',
+    tool: 'Nano Banana 2 · 1K',
+    cost: 'Yakl. 2 kredi / deneme',
+    creditCost: 2,
   },
   {
     value: 'premium',
     label: 'Premium',
-    description: 'Daha yüksek çözünürlük ve daha premium çıktı hedefler.',
+    description: 'Daha premium sonuc ve daha guclu gorsel isleme icin yuksek kalite mod.',
     badge: 'Yuksek kalite',
-    tool: 'Flux 2 Pro · 2K',
-    cost: 'Yakl. yuksek maliyet / deneme',
+    tool: 'Flux 2 Pro',
+    cost: 'Yakl. 3 kredi / deneme',
+    creditCost: 3,
+  },
+];
+
+export const DEFAULT_CUSTOMER_CREDITS = 3;
+
+export const CUSTOMER_CREDIT_PACKAGES: CustomerCreditPack[] = [
+  {
+    id: 'starter',
+    label: 'Mini Paket',
+    credits: 5,
+    description: 'Birkac hizli deneme icin uygun baslangic paketi.',
+  },
+  {
+    id: 'standard',
+    label: 'Standart Paket',
+    credits: 12,
+    description: 'Kesfet ekraninda dolasip farkli urunler denemek icin rahat secim.',
+  },
+  {
+    id: 'plus',
+    label: 'Plus Paket',
+    credits: 28,
+    description: 'Sik kullanan musteriler icin daha uzun sureli kredi paketi.',
   },
 ];
 

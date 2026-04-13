@@ -779,7 +779,10 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                       {merchantProfile.credits}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">Her basarili deneme 1 kredi dusurur.</p>
+                  <p className="text-sm text-gray-500 mt-1">Her basarili denemede secili model kadar kredi dusurulur.</p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Secili model: {MODEL_PRESET_OPTIONS.find((option) => option.value === merchantProfile.modelPreset)?.tool || 'Varsayilan model'} · {MODEL_PRESET_OPTIONS.find((option) => option.value === merchantProfile.modelPreset)?.creditCost || 1} kredi / deneme
+                  </p>
                 </div>
                 {merchantProfile.credits < 3 && (
                   <div className="bg-red-50 text-red-600 px-3 py-2 rounded-lg text-xs font-medium">

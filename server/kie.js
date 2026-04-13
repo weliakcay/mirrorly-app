@@ -6,27 +6,28 @@ const POLL_INTERVAL_MS = 2500;
 const PRESET_CONFIG = {
   economy: {
     type: "market",
-    model: process.env.KIE_MODEL_ECONOMY || "flux-2/flex-image-to-image",
-    resolution: "1K",
+    family: "gpt-image",
+    model: process.env.KIE_MODEL_ECONOMY || "gpt-image/1.5-image-to-image",
   },
   balanced: {
     type: "market",
-    model: process.env.KIE_MODEL_BALANCED || "flux-2/pro-image-to-image",
+    family: "nano-banana",
+    model: process.env.KIE_MODEL_BALANCED || "nano-banana-2",
     resolution: "1K",
   },
   premium: {
     type: "market",
-    model:
-      process.env.KIE_MODEL_PREMIUM &&
-      process.env.KIE_MODEL_PREMIUM !== "gpt4o-image"
-        ? process.env.KIE_MODEL_PREMIUM
-        : "flux-2/pro-image-to-image",
+    family: "flux-2",
+    model: process.env.KIE_MODEL_PREMIUM || "flux-2/pro-image-to-image",
     resolution: "2K",
   },
 };
 
-const MARKET_FALLBACK_MODEL =
-  process.env.KIE_MODEL_MARKET_FALLBACK || "flux-2/flex-image-to-image";
+const MARKET_FALLBACK_CONFIG = {
+  family: "flux-2",
+  model: process.env.KIE_MODEL_MARKET_FALLBACK || "flux-2/pro-image-to-image",
+  resolution: "1K",
+};
 
 const GOOGLE_BILLING_DISABLED_PATTERNS = [
   "billing account for the owning project is disabled",
@@ -133,26 +134,39 @@ const isGoogleBillingDisabledError = (error) => {
   return GOOGLE_BILLING_DISABLED_PATTERNS.some((pattern) => message.includes(pattern));
 };
 
-const createMarketTask = async (model, userImageUrl, garmentImageUrl, prompt, resolution = "1K") => {
-  const input = isFlux2ImageEditModel(model)
-    ? {
-        input_urls: [userImageUrl, garmentImageUrl],
-        prompt,
-        aspect_ratio: "2:3",
-        resolution,
-        nsfw_checker: false,
-      }
-    : {
-        prompt,
-        image_urls: [userImageUrl, garmentImageUrl],
-        output_format: "png",
-        image_size: "2:3",
-      };
+const createMarketTask = async (config, userImageUrl, garmentImageUrl, prompt) => {
+  let input;
+
+  if (config.family === "flux-2" || isFlux2ImageEditModel(config.model)) {
+    input = {
+      input_urls: [userImageUrl, garmentImageUrl],
+      prompt,
+      aspect_ratio: "2:3",
+      resolution: config.resolution || "1K",
+      nsfw_checker: false,
+    };
+  } else if (config.family === "nano-banana") {
+    input = {
+      prompt,
+      image_input: [userImageUrl, garmentImageUrl],
+      aspect_ratio: "2:3",
+      resolution: config.resolution || "1K",
+      output_format: "png",
+      google_search: false,
+    };
+  } else {
+    input = {
+      prompt,
+      image_urls: [userImageUrl, garmentImageUrl],
+      output_format: "png",
+      image_size: "2:3",
+    };
+  }
 
   const payload = await kieFetch("/api/v1/jobs/createTask", {
     method: "POST",
     body: JSON.stringify({
-      model,
+      model: config.model,
       input,
     }),
   });
@@ -189,63 +203,9 @@ const pollMarketTask = async (taskId) => {
   throw new Error("Kie.ai işlem süresi aşıldı.");
 };
 
-const create4oTask = async (userImageUrl, garmentImageUrl, prompt) => {
-  const payload = await kieFetch("/api/v1/gpt4o-image/generate", {
-    method: "POST",
-    body: JSON.stringify({
-      filesUrl: [userImageUrl, garmentImageUrl],
-      prompt,
-      size: "2:3",
-      isEnhance: true,
-      enableFallback: true,
-      fallbackModel: "FLUX_MAX",
-    }),
-  });
-
-  return payload.data.taskId;
-};
-
-const tryPremiumFallback = async (userImageUrl, garmentImageUrl, prompt) => {
-  const fallbackTaskId = await create4oTask(userImageUrl, garmentImageUrl, prompt);
-  return poll4oTask(fallbackTaskId);
-};
-
 const tryMarketFallback = async (userImageUrl, garmentImageUrl, prompt) => {
-  const fallbackTaskId = await createMarketTask(
-    MARKET_FALLBACK_MODEL,
-    userImageUrl,
-    garmentImageUrl,
-    prompt
-  );
+  const fallbackTaskId = await createMarketTask(MARKET_FALLBACK_CONFIG, userImageUrl, garmentImageUrl, prompt);
   return pollMarketTask(fallbackTaskId);
-};
-
-const poll4oTask = async (taskId) => {
-  const startedAt = Date.now();
-
-  while (Date.now() - startedAt < DEFAULT_TIMEOUT_MS) {
-    const payload = await kieFetch(
-      `/api/v1/gpt4o-image/record-info?taskId=${encodeURIComponent(taskId)}`,
-      { method: "GET" }
-    );
-
-    const status = payload.data?.status;
-    if (status === "SUCCESS") {
-      const resultUrl = payload.data?.response?.resultUrls?.[0];
-      if (!resultUrl) {
-        throw new Error("Kie.ai premium model sonuç üretmedi.");
-      }
-      return resultUrl;
-    }
-
-    if (status === "GENERATE_FAILED" || status === "CREATE_TASK_FAILED") {
-      throw new Error(payload.data?.errorMessage || "Kie.ai premium model başarısız oldu.");
-    }
-
-    await sleep(POLL_INTERVAL_MS);
-  }
-
-  throw new Error("Kie.ai premium işlem süresi aşıldı.");
 };
 
 export const generateTryOnWithKie = async ({
@@ -258,40 +218,18 @@ export const generateTryOnWithKie = async ({
   const prompt = buildPrompt(garmentName, garmentDescription);
   const config = PRESET_CONFIG[preset] || PRESET_CONFIG.balanced;
 
-  if (config.type === "gpt4o") {
-    try {
-      const taskId = await create4oTask(userImageUrl, garmentImageUrl, prompt);
-      return poll4oTask(taskId);
-    } catch (error) {
-      if (isGoogleBillingDisabledError(error)) {
-        console.warn("Premium model billing hatasi verdi, market fallback deneniyor.");
-        return tryMarketFallback(userImageUrl, garmentImageUrl, prompt);
-      }
-
-      throw error;
-    }
-  }
-
   try {
-    const taskId = await createMarketTask(
-      config.model,
-      userImageUrl,
-      garmentImageUrl,
-      prompt,
-      config.resolution || "1K"
-    );
+    const taskId = await createMarketTask(config, userImageUrl, garmentImageUrl, prompt);
     return pollMarketTask(taskId);
   } catch (error) {
     if (isGoogleBillingDisabledError(error)) {
-      console.warn(
-        `Kie market modeli kullanilamadi (${config.model}). Premium fallback deneniyor.`
-      );
-      try {
-        return await tryPremiumFallback(userImageUrl, garmentImageUrl, prompt);
-      } catch (premiumError) {
-        console.warn("Premium fallback de basarisiz oldu, market fallback deneniyor.");
-        return tryMarketFallback(userImageUrl, garmentImageUrl, prompt);
-      }
+      console.warn(`Kie market modeli kullanilamadi (${config.model}). Flux fallback deneniyor.`);
+      return tryMarketFallback(userImageUrl, garmentImageUrl, prompt);
+    }
+
+    if (config.family !== "flux-2") {
+      console.warn(`Kie modeli basarisiz oldu (${config.model}). Flux fallback deneniyor.`);
+      return tryMarketFallback(userImageUrl, garmentImageUrl, prompt);
     }
 
     throw error;
