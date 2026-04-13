@@ -524,6 +524,31 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   }
 
   return (
+    <>
+    {isLoggedIn && merchantProfile.status === 'pending' && (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
+        <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-6">
+          <Sparkles className="w-7 h-7 text-amber-500" />
+        </div>
+        <h2 className="font-serif text-2xl text-gray-900 mb-3">Başvurunuz İnceleniyor</h2>
+        <p className="text-gray-500 text-sm leading-relaxed max-w-xs mb-6">
+          Mağazanız Mirrorly ekibi tarafından inceleniyor. Onay sonrası panele tam erişim sağlayacaksınız.
+        </p>
+        <p className="text-xs text-gray-400">
+          Sorularınız için:{' '}
+          <a href="https://wa.me/" className="underline text-gray-600">
+            WhatsApp ile ulaşın
+          </a>
+        </p>
+        <button
+          onClick={() => setIsLoggedIn(false)}
+          className="mt-8 text-xs text-gray-400 hover:text-gray-600 uppercase tracking-widest transition-colors"
+        >
+          Çıkış Yap
+        </button>
+      </div>
+    )}
+    {isLoggedIn && merchantProfile.status !== 'pending' && (
     <div className="flex flex-col min-h-[100dvh] bg-gray-50 animate-fade-in">
       <div className="bg-white px-4 sm:px-8 md:px-12 pt-6 pb-2 border-b border-gray-100 sticky top-0 z-10">
         {/* Mağaza kimliği ve çıkış */}
@@ -967,6 +992,8 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         </div>
       </div>
     </div>
+    )}
+    </>
   );
 };
 
