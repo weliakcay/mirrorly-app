@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ArrowRight, Chrome, History, Scan, Sparkles } from 'lucide-react';
+import { ArrowRight, Chrome, History, Scan, Sparkles, Store } from 'lucide-react';
 
 interface LandingProps {
   onMerchantLogin: () => void;
@@ -80,12 +80,13 @@ const Landing: React.FC<LandingProps> = ({
             </div>
           </button>
 
-          <div className="pt-2 text-center">
+          <div className="pt-2">
             <button
               onClick={onMerchantLogin}
-              className="text-[10px] text-gray-400 hover:text-gray-600 transition-colors tracking-widest uppercase font-sans p-4"
+              className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-white/60 border border-gray-200 rounded-2xl text-gray-500 hover:text-gray-800 hover:bg-white hover:border-gray-300 transition-all text-sm font-sans"
             >
-              Magaza Girisi
+              <Store className="w-4 h-4" />
+              Mağaza Girişi
             </button>
           </div>
         </div>
