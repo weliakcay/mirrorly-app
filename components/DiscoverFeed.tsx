@@ -45,18 +45,26 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
   onToggleFavorite,
 }) => {
   const [query, setQuery] = useState('');
+  const [hiddenItemIds, setHiddenItemIds] = useState<string[]>([]);
   const deferredQuery = useDeferredValue(query);
+
+  const hideItem = (itemId: string) => {
+    setHiddenItemIds((current) => (current.includes(itemId) ? current : [...current, itemId]));
+  };
 
   const filteredItems = useMemo(() => {
     const normalized = deferredQuery.trim().toLowerCase();
-    if (!normalized) return items;
+    const visibleItems = items.filter(
+      ({ garment }) => !!garment.imageUrl?.trim() && !hiddenItemIds.includes(garment.id)
+    );
+    if (!normalized) return visibleItems;
 
-    return items.filter(({ garment, merchant }) =>
+    return visibleItems.filter(({ garment, merchant }) =>
       [garment.name, garment.description, merchant.name]
         .filter(Boolean)
         .some((value) => value.toLowerCase().includes(normalized))
     );
-  }, [items, deferredQuery]);
+  }, [items, deferredQuery, hiddenItemIds]);
 
   const sections = useMemo(() => sectionize(filteredItems), [filteredItems]);
   const heroItem = filteredItems[0] || items[0];
@@ -112,6 +120,7 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
                 src={heroItem.garment.imageUrl}
                 alt={heroItem.garment.name}
                 className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                onError={() => hideItem(heroItem.garment.id)}
               />
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -177,6 +186,7 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
                           src={item.garment.imageUrl}
                           alt={item.garment.name}
                           className="w-full h-full object-cover"
+                          onError={() => hideItem(item.garment.id)}
                         />
                       </div>
                       <div className="p-4">

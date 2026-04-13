@@ -490,7 +490,19 @@ export const getPublicCatalog = async (): Promise<CatalogItem[]> => {
 
   const merchantMap = new Map<string, MerchantPublicProfile | null>(merchantEntries);
 
+  const hasUsableImage = (imageUrl?: string) => {
+    const normalized = imageUrl?.trim();
+    if (!normalized) return false;
+
+    return (
+      normalized.startsWith('http://') ||
+      normalized.startsWith('https://') ||
+      normalized.startsWith('data:image/')
+    );
+  };
+
   return garments
+    .filter((garment) => hasUsableImage(garment.imageUrl))
     .map((garment) => {
       const merchant =
         merchantMap.get(garment.merchantUid) ||
