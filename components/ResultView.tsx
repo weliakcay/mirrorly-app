@@ -64,7 +64,7 @@ const ResultView: React.FC<ResultViewProps> = ({
 
   if (!result.success) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-boutique-cream">
+      <div className="h-full min-h-0 flex flex-col items-center justify-center p-8 text-center bg-boutique-cream relative">
         <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
           <button
             onClick={onRetake}
@@ -80,13 +80,13 @@ const ResultView: React.FC<ResultViewProps> = ({
             <Home className="w-5 h-5 text-gray-900" />
           </button>
         </div>
-        <h3 className="font-serif text-2xl text-gray-900 mb-4">The mirror is foggy.</h3>
+        <h3 className="font-serif text-2xl text-gray-900 mb-4">Ayna netlesemedi</h3>
         <p className="text-gray-600 mb-8">{result.message}</p>
         <button
           onClick={onRetake}
           className="px-8 py-3 bg-gray-900 text-white rounded-full font-sans text-sm uppercase tracking-wide"
         >
-          Try Again
+          Tekrar Dene
         </button>
       </div>
     );
@@ -154,7 +154,7 @@ const ResultView: React.FC<ResultViewProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col bg-boutique-cream animate-fade-in relative">
+    <div className="h-full min-h-0 flex flex-col bg-boutique-cream animate-fade-in relative overflow-y-auto">
       <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between">
         <button
           onClick={onRetake}
@@ -171,19 +171,19 @@ const ResultView: React.FC<ResultViewProps> = ({
         </button>
       </div>
 
-      <div className="flex-1 relative overflow-hidden bg-gray-100">
+      <div className="flex-1 min-h-0 relative overflow-hidden bg-gray-100">
         <img src={result.imageUrl} alt="Virtual Try-On Result" className="w-full h-full object-cover" />
         {result.mode === 'demo' && (
           <div className="absolute top-4 left-4 px-4 py-2 rounded-full bg-white/88 backdrop-blur-md shadow-sm">
             <span className="text-[11px] uppercase tracking-[0.22em] text-gray-700">
-              Demo Preview
+              Demo Onizleme
             </span>
           </div>
         )}
         <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-boutique-cream via-boutique-cream/90 to-transparent" />
       </div>
 
-      <div className="absolute bottom-0 w-full px-6 pb-8 pt-4">
+      <div className="relative z-10 -mt-16 sm:-mt-20 w-full px-6 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-4">
         {result.mode === 'demo' && (
           <div className="mb-4 mx-auto max-w-sm rounded-2xl bg-white/82 backdrop-blur-md px-4 py-3 text-center shadow-sm">
             <p className="text-xs text-gray-600 leading-relaxed">
@@ -193,7 +193,7 @@ const ResultView: React.FC<ResultViewProps> = ({
           </div>
         )}
 
-        <div className="flex items-center justify-center gap-4 mb-8">
+        <div className="mx-auto max-w-sm grid grid-cols-[auto,1fr,auto] items-center gap-4 mb-8">
           <button
             onClick={onRetake}
             className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-900 transition-colors"
@@ -201,7 +201,7 @@ const ResultView: React.FC<ResultViewProps> = ({
             <div className="w-12 h-12 rounded-full border border-gray-300 bg-white/80 backdrop-blur-sm flex items-center justify-center">
               <RefreshCw className="w-5 h-5" />
             </div>
-            <span className="text-[10px] uppercase tracking-wide">Retry</span>
+            <span className="text-[10px] uppercase tracking-wide">Tekrar</span>
           </button>
 
           <button
@@ -219,7 +219,7 @@ const ResultView: React.FC<ResultViewProps> = ({
             <div className="w-12 h-12 rounded-full border border-gray-300 bg-white/80 backdrop-blur-sm flex items-center justify-center">
               <Share2 className="w-5 h-5" />
             </div>
-            <span className="text-[10px] uppercase tracking-wide">Share</span>
+            <span className="text-[10px] uppercase tracking-wide">Paylas</span>
           </button>
         </div>
 
@@ -237,7 +237,7 @@ const ResultView: React.FC<ResultViewProps> = ({
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-end justify-center z-50 animate-fade-in">
           <div className="w-full max-w-md bg-white rounded-t-3xl p-6 pb-10 space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="font-serif text-xl text-gray-900">Share Your Look</h3>
+              <h3 className="font-serif text-xl text-gray-900">Gorunumu Paylas</h3>
               <button
                 onClick={() => setShowShareModal(false)}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -251,7 +251,7 @@ const ResultView: React.FC<ResultViewProps> = ({
               className="w-full flex items-center justify-center gap-3 bg-gray-900 text-white py-4 rounded-xl font-medium hover:bg-black transition-colors"
             >
               <Download className="w-5 h-5" />
-              Download Image
+              Gorseli Indir
             </button>
 
             <div className="grid grid-cols-3 gap-4">
@@ -295,12 +295,12 @@ const ResultView: React.FC<ResultViewProps> = ({
               {copied ? (
                 <>
                   <Check className="w-4 h-4 text-green-500" />
-                  <span className="text-green-600">Copied!</span>
+                  <span className="text-green-600">Kopyalandi</span>
                 </>
               ) : (
                 <>
                   <Link2 className="w-4 h-4" />
-                  <span>Copy Link</span>
+                  <span>Baglantiyi Kopyala</span>
                 </>
               )}
             </button>

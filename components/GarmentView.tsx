@@ -33,7 +33,7 @@ const GarmentView: React.FC<GarmentViewProps> = ({
   const otherItems = inventory.filter((item) => item.id !== garment.id);
 
   return (
-    <div className="h-full flex flex-col relative animate-fade-in bg-boutique-cream overflow-y-auto hide-scrollbar">
+    <div className="h-full min-h-0 flex flex-col relative animate-fade-in bg-boutique-cream overflow-y-auto hide-scrollbar">
       <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
         <button
           onClick={onBack}
@@ -51,7 +51,7 @@ const GarmentView: React.FC<GarmentViewProps> = ({
       </div>
 
       <div className="min-h-full flex flex-col">
-        <div className="pt-8 pb-4 px-6 text-center flex flex-col items-center flex-shrink-0">
+        <div className="pt-20 pb-4 px-6 text-center flex flex-col items-center flex-shrink-0">
           <p className="text-[10px] font-sans tracking-[0.3em] uppercase text-gray-400 mb-3">
             Collection by
           </p>
@@ -71,10 +71,34 @@ const GarmentView: React.FC<GarmentViewProps> = ({
               {merchantProfile.description}
             </p>
           )}
+
+          <button
+            onClick={onCustomerAccess}
+            className="mt-4 w-full max-w-sm rounded-2xl border border-gray-200 bg-white/92 px-4 py-4 text-left shadow-sm hover:shadow-md transition-all"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.24em] text-gray-400 mb-1">
+                  Musteri Girisi
+                </p>
+                <p className="font-serif text-lg text-gray-900">
+                  {isCustomerLoggedIn ? 'Kesfete Gec' : 'Google ile Gir'}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {isCustomerLoggedIn
+                    ? 'Butikleri gez ve favorilerini tek alandan yonet.'
+                    : 'Favorilerini kaydetmek ve kesfette dolasmak icin hesabini ac.'}
+                </p>
+              </div>
+              <div className="w-11 h-11 rounded-full bg-gray-900 text-white flex items-center justify-center flex-shrink-0">
+                <ChevronRight className="w-5 h-5 text-boutique-gold" />
+              </div>
+            </div>
+          </button>
         </div>
 
         <div className="flex-1 flex flex-col items-center px-6 pb-12">
-          <div className="relative w-full max-w-sm aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl shadow-gray-200/50 bg-white mb-8">
+          <div className="relative w-full max-w-sm aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl shadow-gray-200/50 bg-white mb-6">
             <img src={garment.imageUrl} alt={garment.name} className="w-full h-full object-cover" />
             <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-white/80 shadow-sm">
               <span className="text-[10px] tracking-[0.24em] uppercase text-gray-600">
@@ -119,30 +143,6 @@ const GarmentView: React.FC<GarmentViewProps> = ({
             <p className="text-center text-xs text-gray-400 font-sans">
               QR ile aninda sanal deneme deneyimi
             </p>
-
-            <button
-              onClick={onCustomerAccess}
-              className="w-full rounded-[1.5rem] border border-gray-200 bg-white px-4 py-4 text-left shadow-sm hover:shadow-md transition-all"
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-gray-400 mb-2">
-                    Musteri Alani
-                  </p>
-                  <p className="font-serif text-lg text-gray-900">
-                    {isCustomerLoggedIn ? 'Kesfete Gec' : 'Google ile Gir'}
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {isCustomerLoggedIn
-                      ? 'Butikleri gez, favorilerini kaydet ve uygulama icinde devam et.'
-                      : 'Favorilerini kaydet ve QR disinda kesfette gezinmeye basla.'}
-                  </p>
-                </div>
-                <div className="w-11 h-11 rounded-full bg-gray-900 text-white flex items-center justify-center">
-                  <ChevronRight className="w-5 h-5 text-boutique-gold" />
-                </div>
-              </div>
-            </button>
 
             {otherItems.length > 0 && (
               <button

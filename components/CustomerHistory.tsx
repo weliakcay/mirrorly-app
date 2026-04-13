@@ -32,11 +32,11 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
     }, [controlledItems]);
 
     const formatDate = (timestamp: number) => {
-        return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(timestamp));
+        return new Intl.DateTimeFormat('tr-TR', { month: 'short', day: 'numeric' }).format(new Date(timestamp));
     };
 
     const handleClear = async () => {
-        if (!confirm("Are you sure you want to clear your history?")) {
+        if (!confirm("Gecmisini temizlemek istedigine emin misin?")) {
             return;
         }
 
@@ -55,7 +55,7 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
     // Detail View (Modal-ish)
     if (selectedItem) {
         return (
-            <div className="h-full flex flex-col bg-boutique-cream animate-fade-in relative">
+            <div className="h-full min-h-0 flex flex-col bg-boutique-cream animate-fade-in relative">
                 <div className="absolute top-4 left-4 z-10">
                     <button onClick={() => setSelectedItem(null)} className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors">
                         <ArrowLeft className="w-5 h-5 text-gray-900" />
@@ -106,7 +106,7 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
 
     // List View
     return (
-        <div className="h-full flex flex-col bg-gray-50 animate-fade-in">
+        <div className="h-full min-h-0 flex flex-col bg-gray-50 animate-fade-in">
             <div className="bg-white px-6 pt-6 pb-4 border-b border-gray-100 flex items-center justify-between sticky top-0 z-10">
                 <button onClick={onBack} className="p-2 -ml-2 text-gray-500 hover:text-gray-900">
                     <ArrowLeft className="w-6 h-6" />
@@ -119,9 +119,9 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
                 ) : (
                     <button
                         onClick={() => onLogin?.()}
-                        className="text-xs font-medium text-boutique-gold hover:text-gray-900 transition-colors"
+                        className="px-3 py-1.5 rounded-full bg-gray-900 text-white text-[11px] uppercase tracking-[0.18em] hover:bg-black transition-colors"
                     >
-                        Giris Yap
+                        Google ile Gir
                     </button>
                 )}
             </div>
@@ -131,6 +131,14 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
                     <div className="h-full flex flex-col items-center justify-center text-center opacity-50 space-y-4">
                         <Calendar className="w-12 h-12 text-gray-300" />
                         <p className="font-serif text-xl text-gray-400">Henuz kayitli bir deneme yok.</p>
+                        {!isCloudMode && onLogin && (
+                            <button
+                                onClick={() => onLogin()}
+                                className="mt-2 px-5 py-3 rounded-full bg-gray-900 text-white text-xs uppercase tracking-[0.2em] opacity-100"
+                            >
+                                Google ile Gir
+                            </button>
+                        )}
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 gap-4">

@@ -62,7 +62,7 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
   const heroItem = filteredItems[0] || items[0];
 
   return (
-    <div className="h-full flex flex-col bg-boutique-cream animate-fade-in">
+    <div className="h-full min-h-0 flex flex-col bg-boutique-cream animate-fade-in">
       <div className="px-6 pt-6 pb-4 flex items-center justify-between">
         <button
           onClick={onBack}
@@ -101,7 +101,7 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pb-8 hide-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-8 hide-scrollbar">
         {heroItem && (
           <button
             onClick={() => onSelectItem(heroItem)}

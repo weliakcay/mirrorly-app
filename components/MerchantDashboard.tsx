@@ -524,7 +524,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-50 animate-fade-in">
+    <div className="h-full min-h-0 flex flex-col bg-gray-50 animate-fade-in">
       <div className="bg-white px-6 pt-6 pb-2 border-b border-gray-100 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-4">
           <button onClick={onBack} className="text-gray-400 hover:text-gray-900">
@@ -561,7 +561,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 px-6 py-6 overflow-auto hide-scrollbar">
+      <div className="flex-1 min-h-0 px-6 py-6 overflow-y-auto hide-scrollbar">
         {activeTab === 'inventory' && (
           <>
             <div className="flex items-center justify-between mb-4">
@@ -805,7 +805,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         )}
 
         {activeTab === 'profile' && (
-          <div className="space-y-6 relative">
+          <div className="space-y-6 relative pb-20 sm:pb-8">
             {isSaving && (
               <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center rounded-xl">
                 <div className="flex flex-col items-center">

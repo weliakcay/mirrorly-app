@@ -16,7 +16,7 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({
   onRemove,
 }) => {
   return (
-    <div className="h-full flex flex-col bg-boutique-cream animate-fade-in">
+    <div className="h-full min-h-0 flex flex-col bg-boutique-cream animate-fade-in">
       <div className="px-6 pt-6 pb-4 flex items-center justify-between">
         <button
           onClick={onBack}
@@ -25,7 +25,7 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({
           <ArrowLeft className="w-5 h-5 text-gray-900" />
         </button>
 
-        <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400">Favorites</p>
+        <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400">Favoriler</p>
       </div>
 
       <div className="px-6 pb-5">
@@ -37,7 +37,7 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pb-8 hide-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-8 hide-scrollbar">
         {items.length === 0 ? (
           <div className="rounded-[2rem] bg-white/82 border border-white px-6 py-10 text-center shadow-sm">
             <Heart className="w-8 h-8 text-gray-300 mx-auto mb-4" />

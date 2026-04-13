@@ -23,7 +23,7 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({ onBack, onGoogleSignIn }) =
   };
 
   return (
-    <div className="h-full flex flex-col bg-boutique-cream animate-fade-in">
+    <div className="h-full min-h-0 flex flex-col bg-boutique-cream animate-fade-in overflow-y-auto">
       <div className="px-6 pt-6 pb-4">
         <button
           onClick={onBack}
@@ -33,7 +33,7 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({ onBack, onGoogleSignIn }) =
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col justify-center px-7 pb-12">
+      <div className="flex-1 flex flex-col justify-center px-6 sm:px-7 pb-10">
         <div className="max-w-sm mx-auto w-full">
           <div className="mb-10 text-center">
             <div className="w-20 h-20 mx-auto mb-6 rounded-[2rem] bg-white/80 border border-gray-200 shadow-xl flex items-center justify-center">

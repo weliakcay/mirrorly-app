@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, ChevronRight, Compass, Heart, History, LogOut, Sparkles } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Compass, Heart, History, LogOut, ShieldCheck } from 'lucide-react';
 import { CustomerProfile } from '../types';
 
 interface CustomerAccountProps {
@@ -27,7 +27,7 @@ const CustomerAccount: React.FC<CustomerAccountProps> = ({
     .toUpperCase();
 
   return (
-    <div className="h-full flex flex-col bg-boutique-cream animate-fade-in">
+    <div className="h-full min-h-0 flex flex-col bg-boutique-cream animate-fade-in overflow-y-auto">
       <div className="px-6 pt-6 pb-4 flex items-center justify-between">
         <button
           onClick={onBack}
@@ -107,7 +107,7 @@ const CustomerAccount: React.FC<CustomerAccountProps> = ({
           </div>
         </button>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
             onClick={onOpenFavorites}
             className="rounded-[1.5rem] bg-white/72 border border-white px-4 py-5 text-left"
@@ -118,9 +118,9 @@ const CustomerAccount: React.FC<CustomerAccountProps> = ({
           </button>
 
           <div className="rounded-[1.5rem] bg-white/72 border border-white px-4 py-5">
-            <Sparkles className="w-5 h-5 text-gray-700 mb-3" />
-            <p className="font-serif text-lg text-gray-900">Stil Varyasyonlari</p>
-            <p className="text-xs text-gray-500 mt-1">Yakinda</p>
+            <ShieldCheck className="w-5 h-5 text-gray-700 mb-3" />
+            <p className="font-serif text-lg text-gray-900">Guvenli Giris</p>
+            <p className="text-xs text-gray-500 mt-1">Hesabin Google ile bagli olarak korunur.</p>
           </div>
         </div>
       </div>

@@ -8,10 +8,10 @@ interface ProcessingProps {
 }
 
 const MESSAGES = [
-  "Measuring starlight...",
-  "Weaving pixels...",
-  "Adjusting the fit...",
-  "Almost ready..."
+  "Detaylar hizalaniyor...",
+  "Kumas kadraja uyarlaniyor...",
+  "Son dokunuslar yapiliyor...",
+  "Neredeyse hazir..."
 ];
 
 const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome }) => {
@@ -36,7 +36,7 @@ const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome }) => 
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-boutique-cream flex flex-col items-center justify-center z-40 animate-fade-in px-8">
+    <div className="absolute inset-0 bg-boutique-cream flex flex-col items-center justify-center z-40 animate-fade-in px-8">
       <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
         <button
           onClick={onBack || onCancel}
@@ -54,7 +54,7 @@ const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome }) => 
       </div>
       
       {/* Abstract Mirror Animation */}
-      <div className="relative w-64 h-80 mb-12">
+      <div className="relative w-48 h-64 sm:w-64 sm:h-80 mb-10 sm:mb-12">
         <div className="absolute inset-0 border border-gray-200 rounded-full animate-pulse"></div>
         <div className="absolute inset-4 border border-boutique-gold/30 rounded-full animate-[spin_8s_linear_infinite]"></div>
         <div className="absolute inset-0 flex items-center justify-center">
@@ -71,7 +71,7 @@ const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome }) => 
         </p>
         {showCancel && (
             <p className="text-xs text-gray-400 mt-2 animate-fade-in">
-                This is taking longer than usual...
+                Islem beklenenden uzun suruyor...
             </p>
         )}
       </div>
@@ -82,7 +82,7 @@ const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome }) => 
             className="mt-8 flex items-center gap-2 px-6 py-2 bg-white border border-gray-200 rounded-full shadow-sm text-gray-500 hover:text-red-500 hover:border-red-200 transition-colors animate-fade-in"
           >
               <XCircle className="w-4 h-4" />
-              <span className="text-xs uppercase tracking-wider font-bold">Cancel</span>
+              <span className="text-xs uppercase tracking-wider font-bold">Iptal</span>
           </button>
       )}
 
