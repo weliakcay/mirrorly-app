@@ -8,6 +8,7 @@ type KiePresetConfig =
   | {
       type: "market";
       model: string;
+      resolution: "1K" | "2K";
     }
   | {
       type: "gpt4o";
@@ -17,15 +18,22 @@ type KiePresetConfig =
 const PRESET_CONFIG: Record<ModelPreset, KiePresetConfig> = {
   economy: {
     type: "market",
-    model: process.env.KIE_MODEL_ECONOMY || "google/nano-banana-edit",
+    model: process.env.KIE_MODEL_ECONOMY || "flux-2/flex-image-to-image",
+    resolution: "1K",
   },
   balanced: {
     type: "market",
-    model: process.env.KIE_MODEL_BALANCED || "grok-imagine/image-to-image",
+    model: process.env.KIE_MODEL_BALANCED || "flux-2/pro-image-to-image",
+    resolution: "1K",
   },
   premium: {
-    type: "gpt4o",
-    model: "gpt4o-image",
+    type: "market",
+    model:
+      process.env.KIE_MODEL_PREMIUM &&
+      process.env.KIE_MODEL_PREMIUM !== "gpt4o-image"
+        ? process.env.KIE_MODEL_PREMIUM
+        : "flux-2/pro-image-to-image",
+    resolution: "2K",
   },
 };
 
@@ -81,17 +89,19 @@ const createMarketTask = async (
   model: string,
   userImageUrl: string,
   garmentImageUrl: string,
-  prompt: string
+  prompt: string,
+  resolution: "1K" | "2K" = "1K"
 ) => {
   const payload = await kieFetch("/api/v1/jobs/createTask", {
     method: "POST",
     body: JSON.stringify({
       model,
       input: {
+        input_urls: [userImageUrl, garmentImageUrl],
         prompt,
-        image_urls: [userImageUrl, garmentImageUrl],
-        output_format: "png",
-        image_size: "2:3",
+        aspect_ratio: "2:3",
+        resolution,
+        nsfw_checker: false,
       },
     }),
   });
@@ -197,6 +207,12 @@ export const generateTryOnWithKie = async ({
     return poll4oTask(taskId);
   }
 
-  const taskId = await createMarketTask(config.model, userImageUrl, garmentImageUrl, prompt);
+  const taskId = await createMarketTask(
+    config.model,
+    userImageUrl,
+    garmentImageUrl,
+    prompt,
+    config.resolution
+  );
   return pollMarketTask(taskId);
 };

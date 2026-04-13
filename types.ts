@@ -114,24 +114,32 @@ export const MODEL_PRESET_OPTIONS: Array<{
   label: string;
   description: string;
   badge: string;
+  tool: string;
+  cost: string;
 }> = [
   {
     value: 'economy',
     label: 'Ekonomik',
-    description: 'Daha uygun maliyetli, günlük kullanım için yeterli kalite.',
+    description: 'Daha uygun maliyetli, hızlı ve temel try-on denemeleri için.',
     badge: 'Uygun fiyat',
+    tool: 'Flux 2 Flex · 1K',
+    cost: 'Yakl. dusuk maliyet / deneme',
   },
   {
     value: 'balanced',
     label: 'Dengeli',
     description: 'Kalite ve hız arasında en güvenli varsayılan seçim.',
     badge: 'Önerilen',
+    tool: 'Flux 2 Pro · 1K',
+    cost: 'Yakl. orta maliyet / deneme',
   },
   {
     value: 'premium',
     label: 'Premium',
-    description: 'En iyi kaliteyi hedefler, maliyeti daha yüksektir.',
-    badge: 'En yüksek kalite',
+    description: 'Daha yüksek çözünürlük ve daha premium çıktı hedefler.',
+    badge: 'Yuksek kalite',
+    tool: 'Flux 2 Pro · 2K',
+    cost: 'Yakl. yuksek maliyet / deneme',
   },
 ];
 

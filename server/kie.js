@@ -6,15 +6,22 @@ const POLL_INTERVAL_MS = 2500;
 const PRESET_CONFIG = {
   economy: {
     type: "market",
-    model: process.env.KIE_MODEL_ECONOMY || "flux-2/pro-image-to-image",
+    model: process.env.KIE_MODEL_ECONOMY || "flux-2/flex-image-to-image",
+    resolution: "1K",
   },
   balanced: {
     type: "market",
     model: process.env.KIE_MODEL_BALANCED || "flux-2/pro-image-to-image",
+    resolution: "1K",
   },
   premium: {
-    type: "gpt4o",
-    model: process.env.KIE_MODEL_PREMIUM || "gpt4o-image",
+    type: "market",
+    model:
+      process.env.KIE_MODEL_PREMIUM &&
+      process.env.KIE_MODEL_PREMIUM !== "gpt4o-image"
+        ? process.env.KIE_MODEL_PREMIUM
+        : "flux-2/pro-image-to-image",
+    resolution: "2K",
   },
 };
 
@@ -126,13 +133,13 @@ const isGoogleBillingDisabledError = (error) => {
   return GOOGLE_BILLING_DISABLED_PATTERNS.some((pattern) => message.includes(pattern));
 };
 
-const createMarketTask = async (model, userImageUrl, garmentImageUrl, prompt) => {
+const createMarketTask = async (model, userImageUrl, garmentImageUrl, prompt, resolution = "1K") => {
   const input = isFlux2ImageEditModel(model)
     ? {
         input_urls: [userImageUrl, garmentImageUrl],
         prompt,
         aspect_ratio: "2:3",
-        resolution: "1K",
+        resolution,
         nsfw_checker: false,
       }
     : {
@@ -266,7 +273,13 @@ export const generateTryOnWithKie = async ({
   }
 
   try {
-    const taskId = await createMarketTask(config.model, userImageUrl, garmentImageUrl, prompt);
+    const taskId = await createMarketTask(
+      config.model,
+      userImageUrl,
+      garmentImageUrl,
+      prompt,
+      config.resolution || "1K"
+    );
     return pollMarketTask(taskId);
   } catch (error) {
     if (isGoogleBillingDisabledError(error)) {
