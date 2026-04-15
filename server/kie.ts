@@ -1,7 +1,7 @@
 import { ModelPreset } from "../types";
 
 const KIE_API_BASE = "https://api.kie.ai";
-const DEFAULT_TIMEOUT_MS = 90_000;
+const DEFAULT_TIMEOUT_MS = 85_000; // Vercel limit is 90s. 85s allows clean JSON response.
 const POLL_INTERVAL_MS = 2_500;
 const GOOGLE_BILLING_DISABLED_PATTERNS = [
   "billing account for the owning project is disabled",

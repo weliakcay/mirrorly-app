@@ -33,6 +33,7 @@ export interface MerchantProfile extends MerchantPublicProfile {
   credits: number;
   modelPreset: ModelPreset;
   status?: 'active' | 'pending';
+  subscriptionTier?: 'starter' | 'pro' | 'scale' | 'none';
 }
 
 export interface CustomerProfile {
@@ -93,7 +94,7 @@ export interface CustomerCreditPack {
 
 export interface CustomerCreditTransaction {
   id: string;
-  type: 'welcome' | 'topup' | 'spend';
+  type: 'welcome' | 'topup' | 'spend' | 'subscription_renew';
   credits: number;
   label: string;
   createdAt: number;

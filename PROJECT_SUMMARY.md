@@ -1,46 +1,41 @@
-# 🪞 Mirrorly - Yapay Zeka Destekli Sanal Butik Aynası
+# Mirrorly - Proje Ozeti
 
-**Mirrorly**, butikler için tasarlanmış, müşterilerin kıyafetleri fiziksel olarak giymeden kendi üzerlerinde görmelerini sağlayan yapay zeka (AI) tabanlı bir sanal deneme (Virtual Try-On) uygulamasıdır.
+Mirrorly, butiklerin urunlerini QR veya deep link ile acilan mobil try-on deneyimine donusturen bir urundur. Musteri urun etiketindeki kodu okutur, kendi fotografini yukler ve ideal durumda secilen urunu kendi uzerinde gorur.
 
-## 🌟 Proje Vizyonu
-Geleneksel alışveriş deneyimini dijitalin hızı ve yapay zekanın büyüsüyle birleştirmek. Müşteriler, mağazadaki bir QR kodu okutarak saniyeler içinde seçtikleri kıyafeti kendi fotoğrafları üzerinde görebilirler.
+## Urun Hedefi
 
-## 🚀 Temel Özellikler
+- Magaza ici urun denemeyi hizlandirmak
+- Fiziksel prova ihtiyacini her urunde zorunlu olmaktan cikarmak
+- Butige daha olculebilir bir dijital temas noktasi saglamak
 
-### 1. Müşteri Deneyimi
-- **Anında Sanal Deneme:** Google Gemini 2.5 Flash Image modelini kullanarak, kullanıcının fotoğrafı ile kıyafet görselini gerçekçi bir şekilde birleştirir.
-- **QR Kod Entegrasyonu:** Her ürün için özel üretilen QR kodlar sayesinde doğrudan ilgili ürüne erişim.
-- **Kişisel Geçmiş (Reflections):** Kullanıcıların daha önce denediği kombinleri tarayıcı hafızasında saklayarak tekrar bakabilme imkanı.
-- **Satın Alma Yönlendirmesi:** Beğenilen ürünü doğrudan butiğin online mağazasından alma veya mağaza içi bilgi alma butonu.
+## Hedeflenen V1 Kapsami
 
-### 2. Mağaza Yönetimi (Merchant Dashboard)
-- **Envanter Yönetimi:** Ürün fotoğrafı, fiyatı ve açıklamasıyla kolayca ürün ekleme/güncelleme.
-- **Otomatik QR Etiket Üretimi:** Ürünler için rafa asılmaya hazır, fiyat ve isim içeren QR kodlu etiket tasarımı ve yazdırma desteği.
-- **Marka Özelleştirme:** Butik adı ve logosunu uygulama arayüzüne entegre edebilme.
-- **Bulut Senkronizasyonu:** Firebase entegrasyonu sayesinde verilerin tüm cihazlarda güncel kalması.
+- Merchant e-posta ve sifre ile giris/kayit
+- Merchant profil, logo, shop URL ve WhatsApp bilgileri
+- Multi-tenant urun envanteri
+- Her urun icin QR etiketi ve deep link
+- Mobil foto yukleme
+- Server-side AI try-on
+- Sonuc indirme, paylasma ve cihaz ici gecmis
+- Kredi bakiyesi takibi
 
-## 🛠 Teknik Altyapı
-- **Frontend:** React 19 + TypeScript + Tailwind CSS.
-- **Yapay Zeka:** Google Gemini API (`gemini-2.5-flash-image`).
-- **Backend/Veritabanı:** Firebase Firestore (Veri) & Firebase Storage (Görsel).
-- **Görsel İşleme:** 
-  - Mobil cihazlar için optimize edilmiş Canvas tabanlı sıkıştırma.
-  - CORS hatalarını aşmak için gelişmiş Proxy ve Cache-Busting mekanizmaları.
-  - 45 saniyelik işlem zaman aşımı (Timeout) koruması.
+## Guncel Urun Gercegi
 
-## 🎨 Tasarım Dili (Boutique Aesthetics)
-- **Tipografi:** Şık ve klasik bir hava için *Cormorant Garamond* (Serif), modern okunabilirlik için *Inter* (Sans-serif).
-- **Renk Paleti:**
-  - `Boutique Cream (#fdfbf7)` - Sıcak ve lüks bir arka plan.
-  - `Boutique Gold (#d4af37)` - Premium detaylar ve vurgular.
-  - `Mirror Dark (#1f2937)` - Modern ve ciddi bir kontrast.
+- Merchant, QR ve sonuc ekrani tarafi buyuk oranda kurulmus durumda
+- Gercek try-on sonucu hatti hala kapanmasi gereken ana teknik risk
+- Bu nedenle urun su an "pilot hazirlik" seviyesinde; henuz tam satilabilir V1 degil
 
-## 📱 Kurulum ve Dağıtım
-Proje, Vite kullanılarak paketlenmiş olup Vercel veya Firebase Hosting üzerinde tek tıkla yayınlanmaya hazırdır. 
+Teknik referans:
 
-1. Bağımlılıkları yükle: `npm install`
-2. `.env` dosyasına API anahtarlarını ekle.
-3. Uygulamayı başlat: `npm start`
+- Deploy runtime icin `api/try-on` ve `server/*.js`
+- Stratejik yol haritasi icin `ROADMAP.md`
+- Teknik mimari icin `BLUEPRINT.md`
 
----
-*Mirrorly - Geleceğin butik deneyimi şimdi cebinizde.*
+## V2'ye Birakilanlar
+
+- Google/Apple girisi
+- Kredi paketi satin alma ve odeme akisi
+- Musteri hesabi ve bulut gecmis senkronu
+- Analytics ve merchant raporlama
+- Daha gelismis model secimi ve kalite dashboard'u
+- Kesfet ana sayfasi, sponsorlu urunler ve marketplace katmani

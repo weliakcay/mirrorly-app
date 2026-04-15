@@ -1,6 +1,6 @@
 {
   "name": "Mirrorly",
-  "description": "A magical virtual try-on mirror experience for boutiques.",
+  "description": "QR tabanli butik virtual try-on deneyimi.",
   "requestFramePermissions": [
     "camera"
   ]

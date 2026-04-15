@@ -186,7 +186,18 @@ export const handleTryOnRequest = async (payload: {
       };
     }
 
-    const merchant = await getMerchantPrivateProfile(garment.merchantUid);
+    let merchant = await getMerchantPrivateProfile(garment.merchantUid);
+    if (!merchant && garment.merchantUid === 'demo-merchant') {
+      merchant = {
+        ...DEFAULT_PROFILE,
+        ...DEFAULT_PROFILE,
+        uid: 'demo-merchant',
+        name: 'Demo Mağaza',
+        credits: 9999,
+        modelPreset: 'balanced'
+      };
+    }
+
     if (!merchant) {
       return {
         status: 404,
@@ -271,8 +282,19 @@ export const handleTryOnRequest = async (payload: {
           garmentId: garment.id,
           balanceAfter: remainingCredits,
         });
+
+        if (customerProfile?.email && remainingCredits <= 3 && (remainingCredits + creditCost) > 3) {
+          const { sendLowCreditAlert } = await import("./emailService");
+          await sendLowCreditAlert(customerProfile.email, remainingCredits).catch(e => console.error("Email error:", e));
+        }
+
       } else {
         await updateMerchantCredits(garment.merchantUid, remainingCredits);
+        
+        if (merchant.email && remainingCredits <= 10 && (remainingCredits + creditCost) > 10) {
+          const { sendLowCreditAlert } = await import("./emailService");
+          await sendLowCreditAlert(merchant.email, remainingCredits).catch(e => console.error("Email error:", e));
+        }
       }
 
       return {
@@ -287,12 +309,12 @@ export const handleTryOnRequest = async (payload: {
       };
     } finally {
       await Promise.all([
-        userTemp.file.delete().catch(() => undefined),
-        garmentTemp.cleanup(),
+        userTemp.file.delete().catch((e) => console.warn("Temp user image delete failed", e)),
+        garmentTemp.cleanup().catch((e) => console.warn("Temp garment image delete failed", e)),
       ]);
     }
   } catch (error: any) {
-    console.error("Try-on API Error:", error);
+    console.error("Try-on API Error [Provider/Backend]:", error);
     return {
       status: 500,
       body: {

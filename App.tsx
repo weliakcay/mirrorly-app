@@ -45,6 +45,7 @@ import {
   signInCustomerWithGoogle,
 } from './services/firebase';
 import { clearHistory, getHistory, saveToHistory } from './services/historyService';
+import { initAnalytics, identifyUser, trackTryOnStarted, trackTryOnCompleted } from './services/analytics';
 
 const buildFallbackMerchant = (
   garment: Garment,
@@ -116,6 +117,8 @@ const App: React.FC = () => {
         console.warn('Could not parse cached customer profile');
       }
     }
+
+    initAnalytics();
   }, []);
 
   const syncCustomerProfile = (profile: CustomerProfile | null) => {
@@ -198,6 +201,7 @@ const App: React.FC = () => {
         const redirectProfile = await consumeGoogleRedirectCustomer();
         if (redirectProfile) {
           syncCustomerProfile(redirectProfile);
+          identifyUser(redirectProfile.uid, { role: 'customer' });
           const [favorites, history] = await Promise.all([
             getCustomerFavorites(redirectProfile.uid),
             getCustomerHistoryItems(redirectProfile.uid),
@@ -211,6 +215,7 @@ const App: React.FC = () => {
         const existingCustomer = await getCurrentCustomerProfile();
         if (existingCustomer) {
           syncCustomerProfile(existingCustomer);
+          identifyUser(existingCustomer.uid, { role: 'customer' });
           const [favorites, history] = await Promise.all([
             getCustomerFavorites(existingCustomer.uid),
             getCustomerHistoryItems(existingCustomer.uid),
@@ -329,6 +334,9 @@ const App: React.FC = () => {
       return;
     }
 
+    if (selectedGarment) {
+      trackTryOnStarted(selectedGarment.id, selectedGarment.merchantUid);
+    }
     setCurrentState(AppState.PHOTO_INPUT);
   };
 
@@ -519,6 +527,10 @@ const App: React.FC = () => {
 
           setResult(apiResult);
           setCurrentState(AppState.RESULT);
+
+          if (selectedGarment) {
+            trackTryOnCompleted(selectedGarment.id, apiResult.success);
+          }
 
           if (!apiResult.success || !apiResult.imageUrl) {
             return;
