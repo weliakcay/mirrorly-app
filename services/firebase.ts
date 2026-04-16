@@ -864,7 +864,11 @@ export const signInCustomerWithGoogle = async (): Promise<CustomerProfile | null
     const userCredential = await signInWithPopup(auth, googleProvider);
     return mapGoogleUserToCustomerProfile(userCredential.user);
   } catch (error: any) {
-    if (error?.code === "auth/popup-blocked") {
+    if (
+      error?.code === "auth/popup-blocked" ||
+      error?.code === "auth/cancelled-popup-request" ||
+      error?.code === "auth/operation-not-supported-in-this-environment"
+    ) {
       await signInWithRedirect(auth, googleProvider);
       return null;
     }
@@ -920,7 +924,7 @@ export const updateCustomerModelPreset = async (
   if (!isFirebaseConfigured()) return null;
 
   try {
-    const docRef = doc(db, COLLECTION_CUSTOMER_PROFILES, uid);
+    const docRef = doc(db, COLLECTION_CUSTOMER_PROFILE, uid);
     await setDoc(
       docRef,
       { modelPreset, updatedAt: Date.now() },

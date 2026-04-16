@@ -56,23 +56,23 @@ export default async function handler(req, res) {
       let newTier = undefined;
 
       if (customerUid) {
-        if (packageId === 'starter') creditsToAdd = 5;
-        else if (packageId === 'standard') creditsToAdd = 12;
-        else if (packageId === 'plus') creditsToAdd = 28;
+        if (packageId === 'starter') creditsToAdd = 12;
+        else if (packageId === 'standard') creditsToAdd = 30;
+        else if (packageId === 'plus') creditsToAdd = 75;
         
         if (creditsToAdd > 0) {
           await addCreditsToCustomer(customerUid, creditsToAdd);
           console.log(`Granted ${creditsToAdd} customer credits to ${customerUid}`);
         }
       } else if (merchantUid) {
-        if (variantId === process.env.LS_STARTER_VARIANT_ID) {
-          creditsToAdd = 200;
+        if (packageId === 'merchant_starter' || variantId === process.env.LS_STARTER_VARIANT_ID) {
+          creditsToAdd = 300;
           newTier = 'starter';
-        } else if (variantId === process.env.LS_PRO_VARIANT_ID) {
-          creditsToAdd = 750;
+        } else if (packageId === 'merchant_pro' || variantId === process.env.LS_PRO_VARIANT_ID) {
+          creditsToAdd = 1200;
           newTier = 'pro';
-        } else if (variantId === process.env.LS_SCALE_VARIANT_ID) {
-          creditsToAdd = 3000;
+        } else if (packageId === 'merchant_scale' || variantId === process.env.LS_SCALE_VARIANT_ID) {
+          creditsToAdd = 5000;
           newTier = 'scale';
         } else if (variantId === process.env.LS_TOPUP_100_VARIANT_ID) {
           creditsToAdd = 100;

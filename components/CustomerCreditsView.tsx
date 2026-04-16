@@ -6,6 +6,7 @@ import {
   CustomerProfile,
   MODEL_PRESET_OPTIONS,
 } from '../types';
+import { openCustomerCheckout } from '../services/billingService';
 
 interface CustomerCreditsViewProps {
   customerProfile: CustomerProfile;
@@ -75,12 +76,7 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
             <button
               key={pack.id}
               onClick={() => {
-                if (pack.checkoutUrl) {
-                  const url = new URL(pack.checkoutUrl);
-                  url.searchParams.set('checkout[custom][customer_uid]', customerProfile.uid);
-                  url.searchParams.set('checkout[custom][package_id]', pack.id);
-                  window.open(url.toString(), '_blank');
-                } else {
+                if (!openCustomerCheckout(pack, customerProfile.uid)) {
                   void onAddCredits(pack);
                 }
               }}

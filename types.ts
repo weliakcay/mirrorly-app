@@ -89,6 +89,15 @@ export interface FavoriteItem extends CatalogItem {
   createdAt: number;
 }
 
+export interface MerchantCreditPack {
+  id: string;
+  packType: 'starter' | 'pro' | 'scale';
+  label: string;
+  credits: number;
+  description: string;
+  checkoutUrl?: string;
+}
+
 export interface CustomerCreditPack {
   id: string;
   label: string;
@@ -179,24 +188,45 @@ export const DEFAULT_CUSTOMER_CREDITS = 3;
 export const CUSTOMER_CREDIT_PACKAGES: CustomerCreditPack[] = [
   {
     id: 'starter',
-    label: 'Mini Paket',
-    credits: 5,
-    description: 'Birkac hizli deneme icin uygun baslangic paketi.',
-    checkoutUrl: 'https://mirrorly-tr.lemonsqueezy.com/checkout/buy/58ce5163-cd2d-4231-8bc1-003ce3e94905',
+    label: 'Look Pack',
+    credits: 12,
+    description: 'Hizli denemeler ve ilk kombinler icin en hafif kredi paketi.',
   },
   {
     id: 'standard',
-    label: 'Standart Paket',
-    credits: 12,
-    description: 'Kesfet ekraninda dolasip farkli urunler denemek icin rahat secim.',
-    checkoutUrl: 'https://mirrorly-tr.lemonsqueezy.com/checkout/buy/3f7aae44-064e-4a5f-aea4-14ecddb8fea3',
+    label: 'Style Pack',
+    credits: 30,
+    description: 'Kesfette daha uzun kalip farkli urunler denemek isteyenler icin dengeli paket.',
   },
   {
     id: 'plus',
     label: 'Plus Paket',
-    credits: 28,
-    description: 'Sik kullanan musteriler icin daha uzun sureli kredi paketi.',
-    checkoutUrl: 'https://mirrorly-tr.lemonsqueezy.com/checkout/buy/fd10b604-74a4-43bc-9a5c-d5f13b7ccd5c',
+    credits: 75,
+    description: 'Sik kullanan musteriler icin en uzun sureli ve en avantajli kredi paketi.',
+  },
+];
+
+export const MERCHANT_CREDIT_PACKAGES: MerchantCreditPack[] = [
+  {
+    id: 'merchant_starter',
+    packType: 'starter',
+    label: 'Pilot Paket',
+    credits: 300,
+    description: 'Pilot surecte QR akisini test eden butiklere uygun giris seviyesi kredi paketi.',
+  },
+  {
+    id: 'merchant_pro',
+    packType: 'pro',
+    label: 'Growth Paket',
+    credits: 1200,
+    description: 'Magaza ici yogun trafik alan ve aylik duzenli deneme toplayan butikler icin.',
+  },
+  {
+    id: 'merchant_scale',
+    packType: 'scale',
+    label: 'Scale Paket',
+    credits: 5000,
+    description: 'Coklu koleksiyonla calisan, yogun kullanim alan magazalar icin hacimli paket.',
   },
 ];
 

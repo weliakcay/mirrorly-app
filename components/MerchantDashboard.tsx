@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
   ArrowLeft,
+  ChevronRight,
   Coins,
   Image as ImageIcon,
   Instagram,
@@ -20,7 +21,8 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { Currency, Garment, MerchantProfile, MODEL_PRESET_OPTIONS, ModelPreset } from '../types';
+import { Currency, Garment, MerchantProfile, MERCHANT_CREDIT_PACKAGES, MODEL_PRESET_OPTIONS, ModelPreset } from '../types';
+import { buildMerchantCheckoutUrl, openMerchantCheckout } from '../services/billingService';
 import { formatPrice } from '../utils/currency';
 import {
   addGarmentToUserInventory,
@@ -64,6 +66,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [activeQrItem, setActiveQrItem] = useState<Garment | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const [billingNotice, setBillingNotice] = useState('');
 
   const [newItemName, setNewItemName] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
@@ -854,17 +857,73 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               </ul>
             </div>
 
-            <div className="p-4 bg-boutique-cream border border-gray-200 rounded-2xl text-center">
-              <p className="text-sm text-gray-600 mb-3">Kredi paketi almak için:</p>
-              <a
-                href="https://wa.me/?text=Mirrorly%20kredi%20paketi%20hakkında%20bilgi%20almak%20istiyorum."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-3 bg-gray-900 text-white rounded-full text-sm font-medium hover:bg-black transition-colors"
-              >
-                <MessageCircle className="w-4 h-4" />
-                Kredi Paketi Hakkında İletişim
-              </a>
+            <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">Magaza Paketleri</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  QR trafigini finanse etmek icin daha yuksek kredi paketlerini buradan yonet.
+                </p>
+              </div>
+
+              {billingNotice && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  {billingNotice}
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {MERCHANT_CREDIT_PACKAGES.map((pack) => {
+                  const checkoutReady = !!buildMerchantCheckoutUrl(pack, merchantProfile.uid);
+
+                  return (
+                    <button
+                      key={pack.id}
+                      type="button"
+                      disabled={!merchantProfile.uid}
+                      onClick={() => {
+                        setBillingNotice('');
+
+                        if (!openMerchantCheckout(pack, merchantProfile.uid)) {
+                          setBillingNotice(
+                            'Bu paket icin LemonSqueezy checkout linki henuz tanimlanmadi. Vercel env degiskenlerini eklememiz gerekiyor.'
+                          );
+                        }
+                      }}
+                      className="w-full rounded-2xl border border-gray-200 bg-white px-5 py-5 text-left shadow-sm transition-all hover:shadow-md disabled:opacity-60"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="font-serif text-xl text-gray-900">{pack.label}</p>
+                          <p className="text-sm text-gray-500 mt-1">{pack.description}</p>
+                          <p className="text-xs uppercase tracking-[0.22em] text-gray-400 mt-3">
+                            {pack.credits} kredi yukler
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <div className="rounded-full bg-gray-900 px-4 py-2 text-sm font-medium text-white">
+                            +{pack.credits}
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-gray-400" />
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between text-xs">
+                        <span className="uppercase tracking-[0.22em] text-gray-400">
+                          {pack.packType === 'starter'
+                            ? 'Pilot'
+                            : pack.packType === 'pro'
+                              ? 'Buyume'
+                              : 'Yuksek hacim'}
+                        </span>
+                        <span className={checkoutReady ? 'text-emerald-700' : 'text-amber-700'}>
+                          {checkoutReady ? 'Lemon checkout hazir' : 'Checkout linki bekliyor'}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
