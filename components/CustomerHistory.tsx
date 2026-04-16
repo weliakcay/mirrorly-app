@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { ArrowLeft, ShoppingBag, Calendar, Trash2 } from 'lucide-react';
 import { HistoryItem } from '../types';
 import { getHistory, clearHistory } from '../services/historyService';
+import { formatPrice } from '../utils/currency';
 
 interface CustomerHistoryProps {
     onBack: () => void;
@@ -76,7 +77,7 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
                             <h3 className="font-serif text-2xl text-gray-900">{selectedItem.garment.name}</h3>
                             <p className="text-sm text-gray-500">{selectedItem.garment.boutiqueName}</p>
                         </div>
-                        <span className="font-sans font-medium text-lg">${selectedItem.garment.price}</span>
+                        <span className="font-sans font-medium text-lg">{formatPrice(selectedItem.garment.price, selectedItem.garment.currency)}</span>
                     </div>
 
                     <button

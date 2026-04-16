@@ -1,6 +1,7 @@
 import React, { useDeferredValue, useMemo, useState } from 'react';
 import { ArrowLeft, Compass, Heart, Search, Sparkles, Store } from 'lucide-react';
 import { CatalogItem } from '../types';
+import { formatPrice } from '../utils/currency';
 
 interface DiscoverFeedProps {
   items: CatalogItem[];
@@ -199,7 +200,7 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
                         <p className="text-xs text-gray-500 mt-1 line-clamp-2">
                           {item.garment.description}
                         </p>
-                        <p className="text-sm text-gray-900 mt-3 font-medium">${item.garment.price}</p>
+                        <p className="text-sm text-gray-900 mt-3 font-medium">{formatPrice(item.garment.price, item.garment.currency || item.merchant.currency)}</p>
                       </div>
                     </button>
                     <button

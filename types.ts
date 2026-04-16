@@ -16,6 +16,7 @@ export enum AppState {
 
 export type UserRole = 'merchant' | 'customer';
 export type ModelPreset = 'economy' | 'balanced' | 'premium';
+export type Currency = 'USD' | 'EUR' | 'TRY';
 
 export interface MerchantPublicProfile {
   uid: string;
@@ -25,6 +26,7 @@ export interface MerchantPublicProfile {
   instagramUrl?: string;
   defaultShopUrl?: string;
   whatsappNumber?: string;
+  currency?: Currency;
 }
 
 export interface MerchantProfile extends MerchantPublicProfile {
@@ -56,6 +58,7 @@ export interface Garment {
   price: number;
   boutiqueName?: string;
   shopUrl?: string;
+  currency?: Currency;
 }
 
 export interface ProcessingResult {
@@ -205,4 +208,5 @@ export const DEFAULT_PROFILE: MerchantProfile = {
   credits: 10,
   modelPreset: 'balanced',
   status: 'active',
+  currency: 'USD',
 };

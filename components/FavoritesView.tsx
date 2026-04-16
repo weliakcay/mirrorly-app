@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Heart } from 'lucide-react';
 import { FavoriteItem } from '../types';
+import { formatPrice } from '../utils/currency';
 
 interface FavoritesViewProps {
   items: FavoriteItem[];
@@ -66,7 +67,7 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({
                     <h4 className="font-serif text-lg text-gray-900 line-clamp-2">
                       {item.garment.name}
                     </h4>
-                    <p className="text-sm text-gray-900 mt-3 font-medium">${item.garment.price}</p>
+                    <p className="text-sm text-gray-900 mt-3 font-medium">{formatPrice(item.garment.price, item.garment.currency || item.merchant.currency)}</p>
                   </div>
                 </button>
                 <div className="px-4 pb-4">

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Garment, MerchantPublicProfile } from '../types';
 import { ArrowLeft, ChevronRight, Grid3X3, Heart, Home, Sparkles, X } from 'lucide-react';
+import { formatPrice } from '../utils/currency';
 
 interface GarmentViewProps {
   garment: Garment;
@@ -142,7 +143,7 @@ const GarmentView: React.FC<GarmentViewProps> = ({
                 {garment.description}
               </p>
               <div className="inline-block px-3 py-1 border border-white/30 rounded-full backdrop-blur-sm bg-white/10">
-                <p className="text-white font-sans font-medium text-sm">${garment.price}</p>
+                <p className="text-white font-sans font-medium text-sm">{formatPrice(garment.price, garment.currency || merchantProfile.currency)}</p>
               </div>
             </div>
           </div>
@@ -237,7 +238,7 @@ const GarmentView: React.FC<GarmentViewProps> = ({
                   <img src={item.imageUrl} alt={item.name} className="w-full aspect-[3/4] object-cover" />
                   <div className="p-3">
                     <h4 className="font-serif text-sm text-gray-900 truncate">{item.name}</h4>
-                    <p className="text-xs text-gray-500 font-medium">${item.price}</p>
+                    <p className="text-xs text-gray-500 font-medium">{formatPrice(item.price, item.currency || merchantProfile.currency)}</p>
                   </div>
                 </button>
               ))}

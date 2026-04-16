@@ -20,7 +20,8 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { Garment, MerchantProfile, MODEL_PRESET_OPTIONS, ModelPreset } from '../types';
+import { Currency, Garment, MerchantProfile, MODEL_PRESET_OPTIONS, ModelPreset } from '../types';
+import { formatPrice } from '../utils/currency';
 import {
   addGarmentToUserInventory,
   deleteGarmentFromUserInventory,
@@ -77,6 +78,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   const [profileInstagram, setProfileInstagram] = useState(merchantProfile.instagramUrl || '');
   const [profileShopUrl, setProfileShopUrl] = useState(merchantProfile.defaultShopUrl || '');
   const [profileWhatsapp, setProfileWhatsapp] = useState(merchantProfile.whatsappNumber || '');
+  const [profileCurrency, setProfileCurrency] = useState<Currency>(merchantProfile.currency || 'USD');
   const [profileModelPreset, setProfileModelPreset] = useState<ModelPreset>(
     merchantProfile.modelPreset || 'balanced'
   );
@@ -89,6 +91,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     setProfileInstagram(profile.instagramUrl || '');
     setProfileShopUrl(profile.defaultShopUrl || '');
     setProfileWhatsapp(profile.whatsappNumber || '');
+    setProfileCurrency(profile.currency || 'USD');
     setProfileModelPreset(profile.modelPreset || 'balanced');
   };
 
@@ -228,6 +231,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         description: newItemDesc || 'Exclusive Piece',
         imageUrl: newItemImage,
         price: parseFloat(newItemPrice) || 0,
+        currency: merchantProfile.currency || 'USD',
         boutiqueName: merchantProfile.name,
         shopUrl: newItemShopUrl.trim(),
       };
@@ -272,6 +276,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
       instagramUrl: profileInstagram,
       defaultShopUrl: profileShopUrl,
       whatsappNumber: profileWhatsapp,
+      currency: profileCurrency,
       modelPreset: profileModelPreset,
     };
 
@@ -493,7 +498,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               </span>
               <h3 className="font-serif text-3xl text-gray-900 mt-3">{activeQrItem.name}</h3>
               <p className="text-sm text-gray-500 mt-1">{merchantProfile.name}</p>
-              <p className="text-xl font-medium mt-3 text-boutique-gold">${activeQrItem.price}</p>
+              <p className="text-xl font-medium mt-3 text-boutique-gold">{formatPrice(activeQrItem.price, merchantProfile.currency)}</p>
               <p className="text-[10px] text-gray-400 mt-3 uppercase tracking-widest">
                 QR kodu okutun, deneyin
               </p>
@@ -791,7 +796,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   <div className="flex-1 min-w-0">
                     <h4 className="font-serif text-gray-900 truncate text-lg">{item.name}</h4>
                     <p className="text-xs text-gray-400 truncate mb-1">{item.description}</p>
-                    <span className="text-sm font-bold text-gray-900">${item.price}</span>
+                    <span className="text-sm font-bold text-gray-900">{formatPrice(item.price, merchantProfile.currency)}</span>
                   </div>
                   <div className="flex flex-col gap-2">
                     <button
@@ -943,6 +948,19 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   placeholder="Instagram kullanici adi veya linki"
                   className="w-full bg-white border border-gray-200 rounded-lg p-3 pl-9 text-gray-900"
                 />
+              </div>
+
+              <div className="relative">
+                <Coins className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                <select
+                  value={profileCurrency}
+                  onChange={(e) => setProfileCurrency(e.target.value as Currency)}
+                  className="w-full bg-white border border-gray-200 rounded-lg p-3 pl-9 text-gray-900 appearance-none"
+                >
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="TRY">TRY (₺)</option>
+                </select>
               </div>
 
               <div className="bg-white border border-gray-200 rounded-2xl p-4">
