@@ -76,7 +76,10 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
               key={pack.id}
               onClick={() => {
                 if (pack.checkoutUrl) {
-                  window.open(pack.checkoutUrl, '_blank');
+                  const url = new URL(pack.checkoutUrl);
+                  url.searchParams.set('checkout[custom][customer_uid]', customerProfile.uid);
+                  url.searchParams.set('checkout[custom][package_id]', pack.id);
+                  window.open(url.toString(), '_blank');
                 } else {
                   void onAddCredits(pack);
                 }

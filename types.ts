@@ -182,21 +182,21 @@ export const CUSTOMER_CREDIT_PACKAGES: CustomerCreditPack[] = [
     label: 'Mini Paket',
     credits: 5,
     description: 'Birkac hizli deneme icin uygun baslangic paketi.',
-    checkoutUrl: 'https://wa.me/?text=Mirrorly%20Mini%20(5%20Kredi)%20paketi%20almak%20istiyorum.',
+    checkoutUrl: 'https://mirrorly-tr.lemonsqueezy.com/checkout/buy/58ce5163-cd2d-4231-8bc1-003ce3e94905',
   },
   {
     id: 'standard',
     label: 'Standart Paket',
     credits: 12,
     description: 'Kesfet ekraninda dolasip farkli urunler denemek icin rahat secim.',
-    checkoutUrl: 'https://wa.me/?text=Mirrorly%20Standart%20(12%20Kredi)%20paketi%20almak%20istiyorum.',
+    checkoutUrl: 'https://mirrorly-tr.lemonsqueezy.com/checkout/buy/3f7aae44-064e-4a5f-aea4-14ecddb8fea3',
   },
   {
     id: 'plus',
     label: 'Plus Paket',
     credits: 28,
     description: 'Sik kullanan musteriler icin daha uzun sureli kredi paketi.',
-    checkoutUrl: 'https://wa.me/?text=Mirrorly%20Plus%20(28%20Kredi)%20paketi%20almak%20istiyorum.',
+    checkoutUrl: 'https://mirrorly-tr.lemonsqueezy.com/checkout/buy/fd10b604-74a4-43bc-9a5c-d5f13b7ccd5c',
   },
 ];
 

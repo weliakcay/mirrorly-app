@@ -30,3 +30,26 @@ export const addCreditsToMerchant = async (
 
   return true;
 };
+
+export const addCreditsToCustomer = async (
+  customerUid: string,
+  creditsToAdd: number
+) => {
+  const db = getAdminDb();
+  const ref = db.collection("customer_profiles").doc(customerUid);
+  
+  await db.runTransaction(async (transaction) => {
+    const defaultData = {
+      credits: 0,
+    };
+    
+    const doc = await transaction.get(ref);
+    const currentData = doc.exists ? doc.data() : defaultData;
+    
+    const currentCredits = typeof currentData?.credits === 'number' ? currentData.credits : 0;
+    
+    transaction.set(ref, { credits: currentCredits + creditsToAdd, updatedAt: Date.now() }, { merge: true });
+  });
+
+  return true;
+};
