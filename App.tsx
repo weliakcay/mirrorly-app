@@ -30,6 +30,7 @@ import { generateTryOnImage } from './services/tryOnService';
 import {
   addCustomerCredits,
   addCustomerFavorite,
+  clearGoogleRedirectPending,
   clearCustomerHistoryItems,
   consumeGoogleRedirectCustomer,
   getCustomerFavorites,
@@ -40,6 +41,7 @@ import {
   getPublicCatalog,
   getMerchantPublicProfileByUid,
   isFirebaseConfigured,
+  isGoogleRedirectPending,
   observeAuthSession,
   logoutUser,
   removeCustomerFavorite,
@@ -84,6 +86,7 @@ const App: React.FC = () => {
   const [userPhoto, setUserPhoto] = useState<File | null>(null);
   const [result, setResult] = useState<ProcessingResult | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isCustomerAuthPending, setIsCustomerAuthPending] = useState(false);
   const [customerCreditsNotice, setCustomerCreditsNotice] = useState('');
   const [customerCreditsBackState, setCustomerCreditsBackState] = useState<AppState>(
     AppState.CUSTOMER_ACCOUNT
@@ -217,6 +220,8 @@ const App: React.FC = () => {
         profile: CustomerProfile,
         target: AppState | null = null
       ) => {
+        clearGoogleRedirectPending();
+        setIsCustomerAuthPending(false);
         syncCustomerProfile(profile);
         identifyUser(profile.uid, { role: 'customer' });
         await syncCustomerCollections(profile.uid);
@@ -226,13 +231,46 @@ const App: React.FC = () => {
         }
       };
 
+      const waitForRedirectSession = async (target: AppState | null) => {
+        for (let attempt = 0; attempt < 12; attempt += 1) {
+          try {
+            const profile = await getOrCreateCurrentCustomerProfile();
+            if (profile) {
+              await applyCustomerSession(profile, target);
+              return true;
+            }
+          } catch (error) {
+            console.warn('Redirect session poll skipped:', error);
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 700));
+        }
+
+        return false;
+      };
+
       let unsubscribe = () => {};
+      const redirectPending = isGoogleRedirectPending();
+      if (redirectPending) {
+        setIsCustomerAuthPending(true);
+      }
 
       try {
         const redirectProfile = await consumeGoogleRedirectCustomer();
         if (redirectProfile) {
           await applyCustomerSession(redirectProfile, consumeCustomerPostAuthTarget());
           return;
+        }
+
+        if (redirectPending) {
+          const pendingTarget = localStorage.getItem(CUSTOMER_POST_AUTH_TARGET_KEY);
+          const resolved = await waitForRedirectSession(
+            pendingTarget ? consumeCustomerPostAuthTarget() : AppState.DISCOVER
+          );
+
+          if (resolved) {
+            return;
+          }
         }
 
         const existingCustomer = await getOrCreateCurrentCustomerProfile();
@@ -396,6 +434,7 @@ const App: React.FC = () => {
   };
 
   const handleGoogleCustomerSignIn = async () => {
+    setIsCustomerAuthPending(true);
     const profile = await signInCustomerWithGoogle();
     if (!profile) {
       return;
@@ -726,6 +765,7 @@ const App: React.FC = () => {
           <CustomerAuth
             onBack={() => setCurrentState(AppState.LANDING)}
             onGoogleSignIn={handleGoogleCustomerSignIn}
+            isPending={isCustomerAuthPending}
           />
         );
 
@@ -787,6 +827,7 @@ const App: React.FC = () => {
           <CustomerAuth
             onBack={() => setCurrentState(AppState.LANDING)}
             onGoogleSignIn={handleGoogleCustomerSignIn}
+            isPending={isCustomerAuthPending}
           />
         );
 

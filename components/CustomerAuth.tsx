@@ -4,9 +4,10 @@ import { ArrowLeft, Chrome, ShieldCheck } from 'lucide-react';
 interface CustomerAuthProps {
   onBack: () => void;
   onGoogleSignIn: () => Promise<void>;
+  isPending?: boolean;
 }
 
-const CustomerAuth: React.FC<CustomerAuthProps> = ({ onBack, onGoogleSignIn }) => {
+const CustomerAuth: React.FC<CustomerAuthProps> = ({ onBack, onGoogleSignIn, isPending = false }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -42,21 +43,24 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({ onBack, onGoogleSignIn }) =
             <p className="text-[11px] uppercase tracking-[0.32em] text-gray-400 mb-3">
               Mirrorly
             </p>
-            <h2 className="font-serif text-3xl text-gray-900 mb-3">Google ile devam et</h2>
+            <h2 className="font-serif text-3xl text-gray-900 mb-3">
+              {isPending ? 'Giris tamamlanıyor' : 'Google ile devam et'}
+            </h2>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Hesabina girerek favorilerini kaydedebilir, deneme gecmisini gorebilir ve kesfet
-              akisini kullanabilirsin.
+              {isPending
+                ? 'Google onayindan sonra oturumun cihaza geri yazilmasi birkac saniye surebilir.'
+                : 'Hesabina girerek favorilerini kaydedebilir, deneme gecmisini gorebilir ve kesfet akisini kullanabilirsin.'}
             </p>
           </div>
 
           <button
             onClick={handleGoogleSignIn}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isPending}
             className="w-full flex items-center justify-center gap-3 rounded-2xl bg-gray-900 text-white py-4 shadow-xl hover:bg-black transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Chrome className="w-5 h-5" />
             <span className="font-medium">
-              {isSubmitting ? 'Google baglaniyor...' : 'Google ile giris yap'}
+              {isPending ? 'Oturum tamamlanıyor...' : isSubmitting ? 'Google baglaniyor...' : 'Google ile giris yap'}
             </span>
           </button>
 

@@ -77,6 +77,7 @@ const COLLECTION_CUSTOMER_PROFILE = "customer_profiles";
 const COLLECTION_CUSTOMER_HISTORY = "history";
 const COLLECTION_CUSTOMER_FAVORITES = "favorites";
 const COLLECTION_CUSTOMER_CREDIT_TRANSACTIONS = "credit_transactions";
+const GOOGLE_REDIRECT_PENDING_KEY = "mirrorly_google_redirect_pending";
 
 const isPermissionError = (error: any) => {
   const text = `${error?.code || ""} ${error?.message || ""}`.toLowerCase();
@@ -844,6 +845,15 @@ export const observeAuthSession = (callback: (user: any | null) => void) => {
   return onAuthStateChanged(auth, callback);
 };
 
+export const isGoogleRedirectPending = () =>
+  typeof window !== "undefined" &&
+  window.localStorage.getItem(GOOGLE_REDIRECT_PENDING_KEY) === "1";
+
+export const clearGoogleRedirectPending = () => {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(GOOGLE_REDIRECT_PENDING_KEY);
+};
+
 const isMobileBrowser = () =>
   typeof window !== "undefined" &&
   /android|iphone|ipad|ipod/i.test(window.navigator.userAgent);
@@ -873,6 +883,9 @@ export const signInCustomerWithGoogle = async (): Promise<CustomerProfile | null
   }
 
   if (isMobileBrowser()) {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(GOOGLE_REDIRECT_PENDING_KEY, "1");
+    }
     await signInWithRedirect(auth, googleProvider);
     return null;
   }
@@ -886,6 +899,9 @@ export const signInCustomerWithGoogle = async (): Promise<CustomerProfile | null
       error?.code === "auth/cancelled-popup-request" ||
       error?.code === "auth/operation-not-supported-in-this-environment"
     ) {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(GOOGLE_REDIRECT_PENDING_KEY, "1");
+      }
       await signInWithRedirect(auth, googleProvider);
       return null;
     }
