@@ -208,12 +208,11 @@ export const handleTryOnRequest = async (payload: {
         },
       };
     }
-
-    const creditCost =
-      PRESET_CREDIT_COSTS[merchant.modelPreset || DEFAULT_PROFILE.modelPreset] || 1;
+    let activeModelPreset = merchant.modelPreset || DEFAULT_PROFILE.modelPreset;
+    let creditCost = PRESET_CREDIT_COSTS[activeModelPreset] || 1;
     let creditOwner: "merchant" | "customer" = "merchant";
-    let remainingCredits = merchant.credits - creditCost;
     let customerProfile: CustomerProfile | null = null;
+    let remainingCredits = merchant.credits - creditCost;
 
     if (customerUid) {
       customerProfile = await getCustomerProfile(customerUid);
@@ -227,6 +226,9 @@ export const handleTryOnRequest = async (payload: {
           },
         };
       }
+
+      activeModelPreset = customerProfile.modelPreset || activeModelPreset;
+      creditCost = PRESET_CREDIT_COSTS[activeModelPreset] || 1;
 
       if ((customerProfile.credits || 0) < creditCost) {
         return {
@@ -269,7 +271,7 @@ export const handleTryOnRequest = async (payload: {
         garmentName: garment.name,
         garmentDescription: garment.description,
         garmentImageUrl: garmentTemp.imageUrl,
-        preset: merchant.modelPreset || DEFAULT_PROFILE.modelPreset,
+        preset: activeModelPreset,
         userImageUrl: userTemp.signedUrl,
       });
 

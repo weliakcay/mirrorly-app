@@ -34,6 +34,7 @@ import {
   HistoryItem,
   MerchantProfile,
   MerchantPublicProfile,
+  ModelPreset,
   UserRole,
 } from "../types";
 
@@ -911,3 +912,24 @@ export const logoutUser = async () => {
 };
 
 export const isFirebaseConfigured = () => !!db;
+
+export const updateCustomerModelPreset = async (
+  uid: string,
+  modelPreset: ModelPreset
+): Promise<CustomerProfile | null> => {
+  if (!isFirebaseConfigured()) return null;
+
+  try {
+    const docRef = doc(db, COLLECTION_CUSTOMER_PROFILES, uid);
+    await setDoc(
+      docRef,
+      { modelPreset, updatedAt: Date.now() },
+      { merge: true }
+    );
+    const snap = await getDoc(docRef);
+    return snap.data() as CustomerProfile;
+  } catch (error) {
+    console.error("Error updating customer model preset:", error);
+    return null;
+  }
+};

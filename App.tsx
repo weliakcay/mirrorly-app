@@ -10,6 +10,7 @@ import {
   HistoryItem,
   MerchantProfile,
   MerchantPublicProfile,
+  ModelPreset,
   ProcessingResult,
 } from './types';
 import Splash from './components/Splash';
@@ -43,6 +44,7 @@ import {
   removeCustomerFavorite,
   saveCustomerHistoryItem,
   signInCustomerWithGoogle,
+  updateCustomerModelPreset,
 } from './services/firebase';
 import { clearHistory, getHistory, saveToHistory } from './services/historyService';
 import { initAnalytics, identifyUser, trackTryOnStarted, trackTryOnCompleted } from './services/analytics';
@@ -411,6 +413,19 @@ const App: React.FC = () => {
     }
   };
 
+  const handleSelectCustomerModelPreset = async (preset: ModelPreset) => {
+    if (!customerProfile) return;
+
+    try {
+      const updatedProfile = await updateCustomerModelPreset(customerProfile.uid, preset);
+      if (updatedProfile) {
+        syncCustomerProfile(updatedProfile);
+      }
+    } catch (error) {
+      console.error('Failed to update customer model preset:', error);
+    }
+  };
+
   const handleOpenDiscover = async () => {
     setIsLoadingData(true);
 
@@ -727,6 +742,7 @@ const App: React.FC = () => {
             notice={customerCreditsNotice}
             onBack={() => setCurrentState(customerCreditsBackState)}
             onAddCredits={handleAddCustomerCredits}
+            onSelectModelPreset={handleSelectCustomerModelPreset}
           />
         ) : (
           <CustomerAuth

@@ -45,6 +45,7 @@ export interface CustomerProfile {
   displayName?: string;
   photoURL?: string;
   credits: number;
+  modelPreset?: ModelPreset;
   createdAt: number;
   updatedAt: number;
 }
@@ -93,6 +94,7 @@ export interface CustomerCreditPack {
   label: string;
   credits: number;
   description: string;
+  checkoutUrl?: string;
 }
 
 export interface CustomerCreditTransaction {
@@ -180,18 +182,21 @@ export const CUSTOMER_CREDIT_PACKAGES: CustomerCreditPack[] = [
     label: 'Mini Paket',
     credits: 5,
     description: 'Birkac hizli deneme icin uygun baslangic paketi.',
+    checkoutUrl: 'https://wa.me/?text=Mirrorly%20Mini%20(5%20Kredi)%20paketi%20almak%20istiyorum.',
   },
   {
     id: 'standard',
     label: 'Standart Paket',
     credits: 12,
     description: 'Kesfet ekraninda dolasip farkli urunler denemek icin rahat secim.',
+    checkoutUrl: 'https://wa.me/?text=Mirrorly%20Standart%20(12%20Kredi)%20paketi%20almak%20istiyorum.',
   },
   {
     id: 'plus',
     label: 'Plus Paket',
     credits: 28,
     description: 'Sik kullanan musteriler icin daha uzun sureli kredi paketi.',
+    checkoutUrl: 'https://wa.me/?text=Mirrorly%20Plus%20(28%20Kredi)%20paketi%20almak%20istiyorum.',
   },
 ];
 

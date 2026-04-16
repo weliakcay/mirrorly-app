@@ -12,6 +12,7 @@ interface CustomerCreditsViewProps {
   notice?: string;
   onBack: () => void;
   onAddCredits: (pack: CustomerCreditPack) => Promise<void>;
+  onSelectModelPreset: (preset: typeof MODEL_PRESET_OPTIONS[number]['value']) => Promise<void>;
 }
 
 const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
@@ -19,6 +20,7 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
   notice,
   onBack,
   onAddCredits,
+  onSelectModelPreset,
 }) => {
   return (
     <div className="h-full min-h-0 flex flex-col bg-boutique-cream animate-fade-in overflow-y-auto">
@@ -72,7 +74,13 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
           {CUSTOMER_CREDIT_PACKAGES.map((pack) => (
             <button
               key={pack.id}
-              onClick={() => void onAddCredits(pack)}
+              onClick={() => {
+                if (pack.checkoutUrl) {
+                  window.open(pack.checkoutUrl, '_blank');
+                } else {
+                  void onAddCredits(pack);
+                }
+              }}
               className="w-full rounded-[1.75rem] bg-white border border-gray-200 px-5 py-5 text-left shadow-sm hover:shadow-md transition-all"
             >
               <div className="flex items-center justify-between gap-4">
@@ -99,9 +107,14 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
           <h3 className="font-serif text-2xl text-gray-900">Model Bazli Kullanim</h3>
           <div className="mt-4 space-y-3">
             {MODEL_PRESET_OPTIONS.map((option) => (
-              <div
+              <button
                 key={option.value}
-                className="flex items-start justify-between gap-4 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4"
+                onClick={() => void onSelectModelPreset(option.value)}
+                className={`w-full text-left flex items-start justify-between gap-4 rounded-2xl border px-4 py-4 transition-colors ${
+                  (customerProfile.modelPreset || 'balanced') === option.value
+                    ? 'border-boutique-gold bg-boutique-gold/10'
+                    : 'border-gray-100 bg-gray-50 hover:bg-gray-100'
+                }`}
               >
                 <div>
                   <p className="font-medium text-gray-900">{option.label}</p>
@@ -111,7 +124,7 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
                   <p className="text-sm font-medium text-gray-900">{option.creditCost} kredi</p>
                   <p className="text-xs text-gray-400 mt-1">{option.badge}</p>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
