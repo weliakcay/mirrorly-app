@@ -52,26 +52,35 @@ export default async function handler(req, res) {
       const { addCreditsToMerchant, addCreditsToCustomer } = await import("../../server/billingService.js");
       
       const variantId = String(data.attributes.variant_id);
+      const customerStarterVariantId = String(process.env.VITE_LS_CUSTOMER_STARTER_VARIANT_ID || "");
+      const customerStandardVariantId = String(process.env.VITE_LS_CUSTOMER_STANDARD_VARIANT_ID || "");
+      const customerPlusVariantId = String(process.env.VITE_LS_CUSTOMER_PLUS_VARIANT_ID || "");
+      const merchantStarterVariantId =
+        String(process.env.VITE_LS_MERCHANT_STARTER_VARIANT_ID || process.env.LS_STARTER_VARIANT_ID || "");
+      const merchantProVariantId =
+        String(process.env.VITE_LS_MERCHANT_PRO_VARIANT_ID || process.env.LS_PRO_VARIANT_ID || "");
+      const merchantScaleVariantId =
+        String(process.env.VITE_LS_MERCHANT_SCALE_VARIANT_ID || process.env.LS_SCALE_VARIANT_ID || "");
       let creditsToAdd = 0;
       let newTier = undefined;
 
       if (customerUid) {
-        if (packageId === 'starter') creditsToAdd = 12;
-        else if (packageId === 'standard') creditsToAdd = 30;
-        else if (packageId === 'plus') creditsToAdd = 75;
+        if (variantId === customerStarterVariantId || packageId === 'starter') creditsToAdd = 12;
+        else if (variantId === customerStandardVariantId || packageId === 'standard') creditsToAdd = 30;
+        else if (variantId === customerPlusVariantId || packageId === 'plus') creditsToAdd = 75;
         
         if (creditsToAdd > 0) {
           await addCreditsToCustomer(customerUid, creditsToAdd);
           console.log(`Granted ${creditsToAdd} customer credits to ${customerUid}`);
         }
       } else if (merchantUid) {
-        if (packageId === 'merchant_starter' || variantId === process.env.LS_STARTER_VARIANT_ID) {
+        if (packageId === 'merchant_starter' || variantId === merchantStarterVariantId) {
           creditsToAdd = 300;
           newTier = 'starter';
-        } else if (packageId === 'merchant_pro' || variantId === process.env.LS_PRO_VARIANT_ID) {
+        } else if (packageId === 'merchant_pro' || variantId === merchantProVariantId) {
           creditsToAdd = 1200;
           newTier = 'pro';
-        } else if (packageId === 'merchant_scale' || variantId === process.env.LS_SCALE_VARIANT_ID) {
+        } else if (packageId === 'merchant_scale' || variantId === merchantScaleVariantId) {
           creditsToAdd = 5000;
           newTier = 'scale';
         } else if (variantId === process.env.LS_TOPUP_100_VARIANT_ID) {

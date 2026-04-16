@@ -1,33 +1,27 @@
 import { CustomerCreditPack, MerchantCreditPack } from "../types";
 
-const LEMON_STORE_URL =
-  import.meta.env.VITE_LS_STORE_URL || "https://mirrorly-tr.lemonsqueezy.com";
-
-const buildVariantCheckoutUrl = (variantId?: string) =>
-  variantId ? `${LEMON_STORE_URL.replace(/\/$/, "")}/checkout/buy/${variantId}` : undefined;
-
-const CUSTOMER_VARIANT_IDS: Record<string, string | undefined> = {
-  starter: import.meta.env.VITE_LS_CUSTOMER_STARTER_VARIANT_ID,
-  standard: import.meta.env.VITE_LS_CUSTOMER_STANDARD_VARIANT_ID,
-  plus: import.meta.env.VITE_LS_CUSTOMER_PLUS_VARIANT_ID,
-};
-
-const MERCHANT_VARIANT_IDS: Record<string, string | undefined> = {
-  starter: import.meta.env.VITE_LS_MERCHANT_STARTER_VARIANT_ID,
-  pro: import.meta.env.VITE_LS_MERCHANT_PRO_VARIANT_ID,
-  scale: import.meta.env.VITE_LS_MERCHANT_SCALE_VARIANT_ID,
-};
-
 const CUSTOMER_CHECKOUT_URLS: Record<string, string | undefined> = {
-  starter: buildVariantCheckoutUrl(CUSTOMER_VARIANT_IDS.starter),
-  standard: buildVariantCheckoutUrl(CUSTOMER_VARIANT_IDS.standard),
-  plus: buildVariantCheckoutUrl(CUSTOMER_VARIANT_IDS.plus),
+  starter:
+    import.meta.env.VITE_LS_CUSTOMER_PRODUCT_CHECKOUT_URL ||
+    "https://mirrorly-tr.lemonsqueezy.com/checkout/buy/619b9b87-af4e-40d5-930c-d07ebe524c68?media=0",
+  standard:
+    import.meta.env.VITE_LS_CUSTOMER_PRODUCT_CHECKOUT_URL ||
+    "https://mirrorly-tr.lemonsqueezy.com/checkout/buy/619b9b87-af4e-40d5-930c-d07ebe524c68?media=0",
+  plus:
+    import.meta.env.VITE_LS_CUSTOMER_PRODUCT_CHECKOUT_URL ||
+    "https://mirrorly-tr.lemonsqueezy.com/checkout/buy/619b9b87-af4e-40d5-930c-d07ebe524c68?media=0",
 };
 
 const MERCHANT_CHECKOUT_URLS: Record<string, string | undefined> = {
-  starter: buildVariantCheckoutUrl(MERCHANT_VARIANT_IDS.starter),
-  pro: buildVariantCheckoutUrl(MERCHANT_VARIANT_IDS.pro),
-  scale: buildVariantCheckoutUrl(MERCHANT_VARIANT_IDS.scale),
+  starter:
+    import.meta.env.VITE_LS_MERCHANT_PRODUCT_CHECKOUT_URL ||
+    "https://mirrorly-tr.lemonsqueezy.com/checkout/buy/63edab1f-bf75-40f0-a538-6dd5458dced1",
+  pro:
+    import.meta.env.VITE_LS_MERCHANT_PRODUCT_CHECKOUT_URL ||
+    "https://mirrorly-tr.lemonsqueezy.com/checkout/buy/63edab1f-bf75-40f0-a538-6dd5458dced1",
+  scale:
+    import.meta.env.VITE_LS_MERCHANT_PRODUCT_CHECKOUT_URL ||
+    "https://mirrorly-tr.lemonsqueezy.com/checkout/buy/63edab1f-bf75-40f0-a538-6dd5458dced1",
 };
 
 const appendCustomData = (rawUrl: string, customData: Record<string, string>) => {
