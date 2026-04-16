@@ -17,6 +17,7 @@ import {
   getRedirectResult,
   GoogleAuthProvider,
   getAuth,
+  onAuthStateChanged,
   signInWithPopup,
   signInWithRedirect,
   signInWithEmailAndPassword,
@@ -825,6 +826,22 @@ export const getCustomerProfileByUid = async (uid: string): Promise<CustomerProf
 export const getCurrentCustomerProfile = async (): Promise<CustomerProfile | null> => {
   if (!auth?.currentUser?.uid) return null;
   return getCustomerProfileByUid(auth.currentUser.uid);
+};
+
+export const getOrCreateCurrentCustomerProfile = async (): Promise<CustomerProfile | null> => {
+  if (!auth?.currentUser) return null;
+
+  const existing = await getCustomerProfileByUid(auth.currentUser.uid);
+  if (existing) {
+    return existing;
+  }
+
+  return mapGoogleUserToCustomerProfile(auth.currentUser);
+};
+
+export const observeAuthSession = (callback: (user: any | null) => void) => {
+  if (!auth) return () => {};
+  return onAuthStateChanged(auth, callback);
 };
 
 const isMobileBrowser = () =>

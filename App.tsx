@@ -34,12 +34,13 @@ import {
   consumeGoogleRedirectCustomer,
   getCustomerFavorites,
   getCustomerHistoryItems,
-  getCurrentCustomerProfile,
+  getOrCreateCurrentCustomerProfile,
   getGarmentById,
   getGarmentsByMerchant,
   getPublicCatalog,
   getMerchantPublicProfileByUid,
   isFirebaseConfigured,
+  observeAuthSession,
   logoutUser,
   removeCustomerFavorite,
   saveCustomerHistoryItem,
@@ -199,43 +200,81 @@ const App: React.FC = () => {
     const bootstrapCustomerAuth = async () => {
       if (!isFirebaseConfigured()) return;
 
+      const syncCustomerCollections = async (uid: string) => {
+        try {
+          const [favorites, history] = await Promise.all([
+            getCustomerFavorites(uid),
+            getCustomerHistoryItems(uid),
+          ]);
+          setCustomerFavorites(favorites);
+          setCustomerHistoryItems(history);
+        } catch (error) {
+          console.warn('Customer collection sync skipped:', error);
+        }
+      };
+
+      const applyCustomerSession = async (
+        profile: CustomerProfile,
+        target: AppState | null = null
+      ) => {
+        syncCustomerProfile(profile);
+        identifyUser(profile.uid, { role: 'customer' });
+        await syncCustomerCollections(profile.uid);
+
+        if (target) {
+          await navigateCustomerAfterAuth(profile, target);
+        }
+      };
+
+      let unsubscribe = () => {};
+
       try {
         const redirectProfile = await consumeGoogleRedirectCustomer();
         if (redirectProfile) {
-          syncCustomerProfile(redirectProfile);
-          identifyUser(redirectProfile.uid, { role: 'customer' });
-          const [favorites, history] = await Promise.all([
-            getCustomerFavorites(redirectProfile.uid),
-            getCustomerHistoryItems(redirectProfile.uid),
-          ]);
-          setCustomerFavorites(favorites);
-          setCustomerHistoryItems(history);
-          await navigateCustomerAfterAuth(redirectProfile, consumeCustomerPostAuthTarget());
+          await applyCustomerSession(redirectProfile, consumeCustomerPostAuthTarget());
           return;
         }
 
-        const existingCustomer = await getCurrentCustomerProfile();
+        const existingCustomer = await getOrCreateCurrentCustomerProfile();
         if (existingCustomer) {
-          syncCustomerProfile(existingCustomer);
-          identifyUser(existingCustomer.uid, { role: 'customer' });
-          const [favorites, history] = await Promise.all([
-            getCustomerFavorites(existingCustomer.uid),
-            getCustomerHistoryItems(existingCustomer.uid),
-          ]);
-          setCustomerFavorites(favorites);
-          setCustomerHistoryItems(history);
-
           const pendingTarget = localStorage.getItem(CUSTOMER_POST_AUTH_TARGET_KEY);
-          if (pendingTarget) {
-            await navigateCustomerAfterAuth(existingCustomer, consumeCustomerPostAuthTarget());
-          }
+          await applyCustomerSession(
+            existingCustomer,
+            pendingTarget ? consumeCustomerPostAuthTarget() : null
+          );
         }
       } catch (error) {
         console.warn('Customer auth bootstrap skipped:', error);
       }
+
+      unsubscribe = observeAuthSession(async (user) => {
+        if (!user) return;
+
+        try {
+          const profile = await getOrCreateCurrentCustomerProfile();
+          if (!profile) return;
+
+          const pendingTarget = localStorage.getItem(CUSTOMER_POST_AUTH_TARGET_KEY);
+          await applyCustomerSession(profile, pendingTarget ? consumeCustomerPostAuthTarget() : null);
+        } catch (error) {
+          console.warn('Customer auth observer skipped:', error);
+        }
+      });
+
+      return unsubscribe;
     };
 
-    bootstrapCustomerAuth();
+    let cleanup = () => {};
+
+    void bootstrapCustomerAuth().then((unsubscribe) => {
+      if (unsubscribe) {
+        cleanup = unsubscribe;
+      }
+    });
+
+    return () => {
+      cleanup();
+    };
   }, []);
 
   const resetExperienceState = () => {
