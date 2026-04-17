@@ -896,6 +896,7 @@ export const signInCustomerWithGoogle = async (): Promise<CustomerProfile | null
   } catch (error: any) {
     if (
       error?.code === "auth/popup-blocked" ||
+      error?.code === "auth/popup-closed-by-user" ||
       error?.code === "auth/cancelled-popup-request" ||
       error?.code === "auth/operation-not-supported-in-this-environment"
     ) {
