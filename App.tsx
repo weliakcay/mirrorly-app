@@ -42,8 +42,10 @@ import {
   getMerchantPublicProfileByUid,
   isFirebaseConfigured,
   isGoogleRedirectPending,
+  loginUser,
   observeAuthSession,
   logoutUser,
+  registerCustomer,
   removeCustomerFavorite,
   saveCustomerHistoryItem,
   signInCustomerWithGoogle,
@@ -450,6 +452,39 @@ const App: React.FC = () => {
     await navigateCustomerAfterAuth(profile, consumeCustomerPostAuthTarget());
   };
 
+  const handleEmailCustomerSignIn = async (email: string, password: string, isRegister: boolean) => {
+    setIsCustomerAuthPending(true);
+    try {
+      let profile: CustomerProfile | null = null;
+
+      if (isRegister) {
+        profile = await registerCustomer(email, password);
+      } else {
+        const result = await loginUser(email, password);
+        if (result.role === 'customer') {
+          profile = result.profile as CustomerProfile;
+        }
+      }
+
+      if (!profile) {
+        setIsCustomerAuthPending(false);
+        return;
+      }
+
+      syncCustomerProfile(profile);
+      const [favorites, history] = await Promise.all([
+        getCustomerFavorites(profile.uid),
+        getCustomerHistoryItems(profile.uid),
+      ]);
+      setCustomerFavorites(favorites);
+      setCustomerHistoryItems(history);
+      await navigateCustomerAfterAuth(profile, consumeCustomerPostAuthTarget());
+    } catch (error) {
+      console.error('Email sign-in failed:', error);
+      setIsCustomerAuthPending(false);
+    }
+  };
+
   const handleCustomerLogout = async () => {
     await logoutUser();
     syncCustomerProfile(null);
@@ -744,6 +779,8 @@ const App: React.FC = () => {
               void handleCustomerLoginRequest(AppState.DISCOVER);
             }}
             isCustomerLoggedIn={!!customerProfile}
+            customerProfile={customerProfile}
+            onCustomerAccount={() => setCurrentState(AppState.CUSTOMER_ACCOUNT)}
           />
         );
 
@@ -765,6 +802,7 @@ const App: React.FC = () => {
           <CustomerAuth
             onBack={() => setCurrentState(AppState.LANDING)}
             onGoogleSignIn={handleGoogleCustomerSignIn}
+            onEmailSignIn={handleEmailCustomerSignIn}
             isPending={isCustomerAuthPending}
           />
         );
@@ -790,6 +828,8 @@ const App: React.FC = () => {
               void handleCustomerLoginRequest(AppState.DISCOVER);
             }}
             isCustomerLoggedIn={!!customerProfile}
+            customerProfile={customerProfile}
+            onCustomerAccount={() => setCurrentState(AppState.CUSTOMER_ACCOUNT)}
           />
         );
 
@@ -865,6 +905,8 @@ const App: React.FC = () => {
               void handleCustomerLoginRequest(AppState.DISCOVER);
             }}
             isCustomerLoggedIn={!!customerProfile}
+            customerProfile={customerProfile}
+            onCustomerAccount={() => setCurrentState(AppState.CUSTOMER_ACCOUNT)}
           />
         );
 

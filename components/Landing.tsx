@@ -1,12 +1,15 @@
 
 import React from 'react';
 import { ArrowRight, Chrome, History, Scan, Sparkles, Store } from 'lucide-react';
+import { CustomerProfile } from '../types';
 
 interface LandingProps {
   onMerchantLogin: () => void;
   onOpenHistory: () => void;
   onCustomerLogin: () => void;
   isCustomerLoggedIn?: boolean;
+  customerProfile?: CustomerProfile | null;
+  onCustomerAccount?: () => void;
 }
 
 const Landing: React.FC<LandingProps> = ({
@@ -14,9 +17,23 @@ const Landing: React.FC<LandingProps> = ({
   onOpenHistory,
   onCustomerLogin,
   isCustomerLoggedIn = false,
+  customerProfile = null,
+  onCustomerAccount,
 }) => {
   return (
     <div className="h-full bg-boutique-cream animate-fade-in overflow-y-auto">
+      {customerProfile && onCustomerAccount && (
+        <div className="px-6 pt-4 pb-2 flex items-center justify-end">
+          <button
+            onClick={onCustomerAccount}
+            className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm font-semibold hover:bg-black transition-colors shadow-sm"
+          >
+            {customerProfile.displayName
+              ? customerProfile.displayName.charAt(0).toUpperCase()
+              : 'U'}
+          </button>
+        </div>
+      )}
       <div className="min-h-full px-6 pt-8 pb-8 flex flex-col justify-between gap-8">
         <div className="w-full max-w-sm mx-auto text-center">
           <div className="relative mb-8">

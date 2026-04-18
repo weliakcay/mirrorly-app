@@ -57,98 +57,49 @@ const GarmentView: React.FC<GarmentViewProps> = ({
       </div>
 
       <div className="min-h-full flex flex-col">
-        <div className="pt-20 pb-4 px-6 text-center flex flex-col items-center flex-shrink-0">
-          <p className="text-[10px] font-sans tracking-[0.3em] uppercase text-gray-400 mb-3">
-            Collection by
-          </p>
-
-          {merchantProfile.logoUrl ? (
-            <img
-              src={merchantProfile.logoUrl}
-              alt={merchantProfile.name}
-              className="h-12 object-contain mb-2"
-            />
-          ) : (
-            <h2 className="font-serif text-2xl text-gray-900">{merchantProfile.name}</h2>
-          )}
-
-          {merchantProfile.description && (
-            <p className="mt-2 text-sm text-gray-500 max-w-xs leading-relaxed">
-              {merchantProfile.description}
-            </p>
-          )}
-
-          <button
-            onClick={onCustomerAccess}
-            className="mt-4 w-full max-w-sm rounded-2xl border border-gray-200 bg-white/92 px-4 py-4 text-left shadow-sm hover:shadow-md transition-all"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.24em] text-gray-400 mb-1">
-                  Musteri Girisi
-                </p>
-                <p className="font-serif text-lg text-gray-900">
-                  {isCustomerLoggedIn ? 'Kesfete Gec' : 'Google ile Gir'}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {isCustomerLoggedIn
-                    ? 'Butikleri gez ve favorilerini tek alandan yonet.'
-                    : 'Favorilerini kaydetmek ve kesfette dolasmak icin hesabini ac.'}
-                </p>
-              </div>
-              <div className="w-11 h-11 rounded-full bg-gray-900 text-white flex items-center justify-center flex-shrink-0">
-                <ChevronRight className="w-5 h-5 text-boutique-gold" />
+        {/* Hero Image Section */}
+        <div className="relative w-full h-[65vh] flex-shrink-0 bg-gray-100">
+          {imageError ? (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="text-center space-y-2 p-4">
+                <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mx-auto">
+                  <span className="text-gray-400 text-xl">📷</span>
+                </div>
+                <p className="text-xs text-gray-400">Ürün görseli yüklenemedi</p>
               </div>
             </div>
-          </button>
+          ) : (
+            <img
+              src={garment.imageUrl}
+              alt={garment.name}
+              className="w-full h-full object-cover"
+              onError={() => setImageError(true)}
+            />
+          )}
+          <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-white/80 shadow-sm">
+            <span className="text-[10px] tracking-[0.24em] uppercase text-gray-600">
+              {merchantProfile.name}
+            </span>
+          </div>
+          {onToggleFavorite && (
+            <button
+              onClick={onToggleFavorite}
+              className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/88 backdrop-blur-md shadow-sm flex items-center justify-center"
+            >
+              <Heart
+                className={`w-5 h-5 ${isFavorited ? 'fill-rose-500 text-rose-500' : 'text-gray-600'}`}
+              />
+            </button>
+          )}
+          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent p-6 pt-12 text-left">
+            <h3 className="text-white font-serif text-2xl leading-tight">{garment.name}</h3>
+          </div>
         </div>
 
-        <div className="flex-1 flex flex-col items-center px-6 pb-12">
-          <div className="relative w-full max-w-sm aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl shadow-gray-200/50 bg-white mb-6">
-            {imageError ? (
-              <div className="w-full aspect-[3/4] bg-gray-100 rounded-2xl flex items-center justify-center">
-                <div className="text-center space-y-2 p-4">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mx-auto">
-                    <span className="text-gray-400 text-xl">📷</span>
-                  </div>
-                  <p className="text-xs text-gray-400">Ürün görseli yüklenemedi</p>
-                </div>
-              </div>
-            ) : (
-              <img
-                src={garment.imageUrl}
-                alt={garment.name}
-                className="w-full h-full object-cover"
-                onError={() => setImageError(true)}
-              />
-            )}
-            <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-white/80 shadow-sm">
-              <span className="text-[10px] tracking-[0.24em] uppercase text-gray-600">
-                {merchantProfile.name}
-              </span>
-            </div>
-            {onToggleFavorite && (
-              <button
-                onClick={onToggleFavorite}
-                className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/88 backdrop-blur-md shadow-sm flex items-center justify-center"
-              >
-                <Heart
-                  className={`w-5 h-5 ${isFavorited ? 'fill-rose-500 text-rose-500' : 'text-gray-600'}`}
-                />
-              </button>
-            )}
-            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent p-6 pt-24 text-left">
-              <h3 className="text-white font-serif text-3xl leading-tight mb-1">{garment.name}</h3>
-              <p className="text-gray-200 font-sans text-sm font-light leading-relaxed opacity-90 mb-3 line-clamp-3">
-                {garment.description}
-              </p>
-              <div className="inline-block px-3 py-1 border border-white/30 rounded-full backdrop-blur-sm bg-white/10">
-                <p className="text-white font-sans font-medium text-sm">{formatPrice(garment.price, garment.currency || merchantProfile.currency)}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="w-full max-w-sm space-y-3 pb-8">
+        {/* Action and Info Section */}
+        <div className="flex-1 flex flex-col items-center px-6 pt-6 pb-8">
+          <div className="w-full max-w-sm space-y-4">
+            {/* Primary CTA */}
             <button
               onClick={onContinue}
               className="group w-full relative bg-gray-900 text-white py-5 rounded-xl shadow-xl hover:bg-black hover:scale-[1.02] transition-all duration-300 active:scale-95"
@@ -162,10 +113,63 @@ const GarmentView: React.FC<GarmentViewProps> = ({
               </div>
             </button>
 
-            <p className="text-center text-xs text-gray-400 font-sans">
-              QR ile aninda sanal deneme deneyimi
-            </p>
+            {/* Boutique Info Card */}
+            <div className="rounded-2xl border border-gray-200 bg-white/92 px-4 py-5 shadow-sm">
+              <p className="text-[10px] font-sans tracking-[0.3em] uppercase text-gray-400 mb-2">
+                Collection by
+              </p>
+              {merchantProfile.logoUrl ? (
+                <img
+                  src={merchantProfile.logoUrl}
+                  alt={merchantProfile.name}
+                  className="h-10 object-contain mb-2"
+                />
+              ) : (
+                <h2 className="font-serif text-xl text-gray-900 mb-2">{merchantProfile.name}</h2>
+              )}
+              {merchantProfile.description && (
+                <p className="text-xs text-gray-500 leading-relaxed mb-3">
+                  {merchantProfile.description}
+                </p>
+              )}
+            </div>
 
+            {/* Product Details */}
+            <div className="space-y-2">
+              <p className="text-gray-200 font-sans text-sm font-light leading-relaxed text-gray-600">
+                {garment.description}
+              </p>
+              <div className="inline-block px-3 py-1 border border-gray-200 rounded-full bg-gray-50">
+                <p className="font-sans font-medium text-sm text-gray-900">{formatPrice(garment.price, garment.currency || merchantProfile.currency)}</p>
+              </div>
+            </div>
+
+            {/* Customer Access */}
+            <button
+              onClick={onCustomerAccess}
+              className="w-full rounded-2xl border border-gray-200 bg-white/92 px-4 py-4 text-left shadow-sm hover:shadow-md transition-all"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-[0.24em] text-gray-400 mb-1">
+                    Musteri Girisi
+                  </p>
+                  <p className="font-serif text-lg text-gray-900">
+                    {isCustomerLoggedIn ? 'Kesfete Gec' : 'Google ile Gir'}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {isCustomerLoggedIn
+                      ? 'Butikleri gez ve favorilerini tek alandan yonet.'
+                      : 'Favorilerini kaydetmek ve kesfette dolasmak icin hesabini ac.'}
+                  </p>
+                </div>
+                <div className="w-11 h-11 rounded-full bg-gray-900 text-white flex items-center justify-center flex-shrink-0">
+                  <ChevronRight className="w-5 h-5 text-boutique-gold" />
+                </div>
+              </div>
+            </button>
+
+            {/* Credits Block */}
             {isCustomerLoggedIn && (
               <button
                 onClick={onOpenCredits}
@@ -191,6 +195,7 @@ const GarmentView: React.FC<GarmentViewProps> = ({
               </button>
             )}
 
+            {/* Other Items */}
             {otherItems.length > 0 && (
               <button
                 onClick={() => setShowCollection(true)}

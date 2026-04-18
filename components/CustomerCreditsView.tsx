@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, ChevronRight, Coins, Sparkles } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Clock, Coins, Sparkles } from 'lucide-react';
 import {
   CUSTOMER_CREDIT_PACKAGES,
   CustomerCreditPack,
@@ -109,19 +109,25 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
               <button
                 key={option.value}
                 onClick={() => void onSelectModelPreset(option.value)}
-                className={`w-full text-left flex items-start justify-between gap-4 rounded-2xl border px-4 py-4 transition-colors ${
+                className={`w-full text-left flex flex-col gap-2 rounded-2xl border px-4 py-4 transition-colors ${
                   (customerProfile.modelPreset || 'balanced') === option.value
                     ? 'border-boutique-gold bg-boutique-gold/10'
                     : 'border-gray-100 bg-gray-50 hover:bg-gray-100'
                 }`}
               >
-                <div>
+                <div className="flex items-start justify-between gap-4">
                   <p className="font-medium text-gray-900">{option.label}</p>
-                  <p className="text-sm text-gray-500 mt-1">{option.tool}</p>
+                  <span className="text-xs px-2 py-1 rounded-full bg-gray-200 text-gray-700">{option.badge}</span>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">{option.creditCost} kredi</p>
-                  <p className="text-xs text-gray-400 mt-1">{option.badge}</p>
+                <p className="text-sm text-gray-500">{option.tool}</p>
+                <div className="flex items-center justify-between gap-4 pt-1">
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="font-medium text-gray-900">{option.creditCost} kredi</span>
+                    <span className="flex items-center gap-1 text-gray-500">
+                      <Clock className="w-4 h-4" />
+                      {option.waitTime}
+                    </span>
+                  </div>
                 </div>
               </button>
             ))}

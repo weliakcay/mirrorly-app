@@ -153,6 +153,7 @@ export const MODEL_PRESET_OPTIONS: Array<{
   tool: string;
   cost: string;
   creditCost: number;
+  waitTime: string;
 }> = [
   {
     value: 'economy',
@@ -162,6 +163,7 @@ export const MODEL_PRESET_OPTIONS: Array<{
     tool: 'GPT Image 1.5',
     cost: 'Yakl. 1 kredi / deneme',
     creditCost: 1,
+    waitTime: '~10-20 sn',
   },
   {
     value: 'balanced',
@@ -171,6 +173,7 @@ export const MODEL_PRESET_OPTIONS: Array<{
     tool: 'Nano Banana 2 · 1K',
     cost: 'Yakl. 2 kredi / deneme',
     creditCost: 2,
+    waitTime: '~25-40 sn',
   },
   {
     value: 'premium',
@@ -180,6 +183,7 @@ export const MODEL_PRESET_OPTIONS: Array<{
     tool: 'Flux 2 Pro',
     cost: 'Yakl. 3 kredi / deneme',
     creditCost: 3,
+    waitTime: '~45-70 sn',
   },
 ];
 
