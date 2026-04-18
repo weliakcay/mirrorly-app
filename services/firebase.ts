@@ -1,4 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
+import { detectDevice } from "./deviceDetection";
 import {
   collection,
   collectionGroup,
@@ -856,10 +857,13 @@ export const clearGoogleRedirectPending = () => {
 
 const isMobileBrowser = () => {
   if (typeof window === "undefined") return false;
-  const ua = window.navigator.userAgent.toLowerCase();
-  const isMobile = /android|iphone|ipad|ipod|mobile|tablet/i.test(ua);
-  console.log('[Google Auth] isMobileBrowser:', isMobile, 'UA:', ua);
-  return isMobile;
+  const device = detectDevice();
+  console.log(
+    '[Google Auth] isMobileBrowser:',
+    device.isMobile || device.isTablet,
+    `(${device.os} ${device.browser})`
+  );
+  return device.isMobile || device.isTablet;
 };
 
 const mapGoogleUserToCustomerProfile = async (user: any): Promise<CustomerProfile> => {
