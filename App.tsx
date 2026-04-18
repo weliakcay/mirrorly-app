@@ -20,6 +20,7 @@ import PhotoInput from './components/PhotoInput';
 import Processing from './components/Processing';
 import ResultView from './components/ResultView';
 import MerchantDashboard from './components/MerchantDashboard';
+import AdminPanel from './components/AdminPanel';
 import CustomerHistory from './components/CustomerHistory';
 import CustomerAuth from './components/CustomerAuth';
 import CustomerAccount from './components/CustomerAccount';
@@ -73,7 +74,9 @@ const buildFallbackMerchant = (
 const App: React.FC = () => {
   const CUSTOMER_PROFILE_KEY = 'mirrorly_customer_profile';
   const CUSTOMER_POST_AUTH_TARGET_KEY = 'mirrorly_customer_post_auth_target';
+  const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
   const [currentState, setCurrentState] = useState<AppState>(AppState.SPLASH);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [experienceOriginState, setExperienceOriginState] = useState<AppState>(AppState.LANDING);
 
   const [merchantInventory, setMerchantInventory] = useState<Garment[]>([]);
@@ -449,6 +452,14 @@ const App: React.FC = () => {
       return;
     }
 
+    // Check if user is admin
+    if (adminEmails.includes(profile.email)) {
+      setIsAdmin(true);
+      setCurrentState(AppState.ADMIN_PANEL);
+      setIsCustomerAuthPending(false);
+      return;
+    }
+
     syncCustomerProfile(profile);
     const [favorites, history] = await Promise.all([
       getCustomerFavorites(profile.uid),
@@ -479,6 +490,14 @@ const App: React.FC = () => {
       if (!profile) {
         setIsCustomerAuthPending(false);
         throw new Error('Profil oluşturulamadı. Lütfen tekrar deneyin.');
+      }
+
+      // Check if user is admin
+      if (adminEmails.includes(email)) {
+        setIsAdmin(true);
+        setCurrentState(AppState.ADMIN_PANEL);
+        setIsCustomerAuthPending(false);
+        return;
       }
 
       syncCustomerProfile(profile);
@@ -962,16 +981,36 @@ const App: React.FC = () => {
           />
         );
 
+      case AppState.ADMIN_PANEL:
+        return (
+          <AdminPanel
+            userEmail={customerProfile?.email || ''}
+            onBack={() => {
+              setIsAdmin(false);
+              setCurrentState(AppState.LANDING);
+            }}
+            onLogout={async () => {
+              await handleCustomerLogout();
+              setIsAdmin(false);
+            }}
+          />
+        );
+
       default:
         return null;
     }
   };
 
   const isMerchantScreen = currentState === AppState.MERCHANT_DASHBOARD;
+  const isAdminScreen = currentState === AppState.ADMIN_PANEL;
 
   return (
     <div className="w-full min-h-[100dvh] bg-neutral-100 flex items-stretch justify-center overflow-x-hidden">
-      {isMerchantScreen ? (
+      {isAdminScreen ? (
+        <div className="w-full min-h-[100dvh] bg-slate-50 relative overflow-hidden">
+          {renderContent()}
+        </div>
+      ) : isMerchantScreen ? (
         <div className="w-full min-h-[100dvh] bg-boutique-cream relative overflow-hidden">
           {renderContent()}
         </div>

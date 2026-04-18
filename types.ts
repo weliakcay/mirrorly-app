@@ -12,6 +12,7 @@ export enum AppState {
   CUSTOMER_ACCOUNT = 'CUSTOMER_ACCOUNT',
   FAVORITES = 'FAVORITES',
   CUSTOMER_CREDITS = 'CUSTOMER_CREDITS',
+  ADMIN_PANEL = 'ADMIN_PANEL',
 }
 
 export type UserRole = 'merchant' | 'customer';

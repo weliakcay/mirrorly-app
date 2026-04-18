@@ -6,7 +6,6 @@ import {
   Coins,
   Copy,
   Download,
-  Gift,
   Image as ImageIcon,
   Instagram,
   Link as LinkIcon,
@@ -65,7 +64,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'inventory' | 'profile' | 'balance' | 'credits'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'profile' | 'balance'>('inventory');
   const [itemEditorMode, setItemEditorMode] = useState<'create' | 'edit' | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -73,12 +72,6 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [billingNotice, setBillingNotice] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
-
-  const [customerEmail, setCustomerEmail] = useState('');
-  const [creditAmount, setCreditAmount] = useState('');
-  const [creditReason, setCreditReason] = useState('');
-  const [isAddingCredits, setIsAddingCredits] = useState(false);
-  const [creditNotice, setCreditNotice] = useState('');
 
   const [newItemName, setNewItemName] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
@@ -691,8 +684,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         <div className="flex gap-3">
           {[
             { key: 'inventory', label: 'Urunler', icon: Package },
-            { key: 'balance', label: 'Deneme Kredileri', icon: Coins },
-            { key: 'credits', label: 'Müşteri Kredileri', icon: Gift },
+            { key: 'balance', label: 'Krediler', icon: Coins },
             { key: 'profile', label: 'Magaza', icon: Store },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -1026,159 +1018,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
           </div>
         )}
 
-        {activeTab === 'credits' && (
-          <div className="space-y-6 relative pb-20 sm:pb-8">
-            <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 p-6 text-center">
-              <p className="text-[11px] uppercase tracking-widest text-emerald-700 font-medium mb-2">Müşteri Hediye Kredisi</p>
-              <p className="font-serif text-3xl text-emerald-900 mb-1">Kendi kreditimden ver</p>
-              <p className="text-sm text-emerald-800 leading-relaxed">
-                Müşterilerine ücretsiz deneme kredisi hediye et, promosyon düzenle veya özel müşteri hediye kredileri yönet.
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
-              <div>
-                <h3 className="font-serif text-xl text-gray-900 mb-4">Müşteriye Kredi Ver</h3>
-
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    if (!customerEmail || !creditAmount) {
-                      setCreditNotice('Lütfen e-posta ve kredi miktarını girin.');
-                      return;
-                    }
-
-                    setIsAddingCredits(true);
-                    setCreditNotice('');
-
-                    try {
-                      const amount = parseInt(creditAmount);
-                      if (amount <= 0) {
-                        throw new Error('Kredi miktarı 0\'dan büyük olmalı.');
-                      }
-
-                      if (amount > merchantProfile.credits) {
-                        throw new Error(`Yeterli krediniz yok. Mevcut: ${merchantProfile.credits}`);
-                      }
-
-                      // TODO: Implement credit transfer to customer email
-                      // For now show success message
-                      setCreditNotice(`✓ ${amount} kredi ${customerEmail} adresine gönderildi.`);
-                      setCustomerEmail('');
-                      setCreditAmount('');
-                      setCreditReason('');
-                    } catch (error: any) {
-                      setCreditNotice(`Hata: ${error.message}`);
-                    } finally {
-                      setIsAddingCredits(false);
-                    }
-                  }}
-                  className="space-y-4"
-                >
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Müşteri E-postası
-                    </label>
-                    <input
-                      type="email"
-                      value={customerEmail}
-                      onChange={(e) => setCustomerEmail(e.target.value)}
-                      disabled={isAddingCredits}
-                      placeholder="musteri@example.com"
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm placeholder-gray-400 focus:border-gray-900 focus:outline-none disabled:opacity-60"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Kredi Miktarı
-                      </label>
-                      <input
-                        type="number"
-                        value={creditAmount}
-                        onChange={(e) => setCreditAmount(e.target.value)}
-                        disabled={isAddingCredits}
-                        placeholder="10"
-                        min="1"
-                        max={merchantProfile.credits}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm placeholder-gray-400 focus:border-gray-900 focus:outline-none disabled:opacity-60"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Neden? (İsteğe bağlı)
-                      </label>
-                      <select
-                        value={creditReason}
-                        onChange={(e) => setCreditReason(e.target.value)}
-                        disabled={isAddingCredits}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-gray-900 focus:outline-none disabled:opacity-60"
-                      >
-                        <option value="">Seç...</option>
-                        <option value="welcome">Hoşgeldin hediyesi</option>
-                        <option value="promo">Promosyon</option>
-                        <option value="loyalty">Sadakat ödülü</option>
-                        <option value="support">Müşteri desteği</option>
-                        <option value="other">Diğer</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {creditNotice && (
-                    <div className={`rounded-lg px-4 py-3 text-sm ${
-                      creditNotice.startsWith('✓')
-                        ? 'border border-emerald-200 bg-emerald-50 text-emerald-700'
-                        : 'border border-red-200 bg-red-50 text-red-700'
-                    }`}>
-                      {creditNotice}
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={isAddingCredits || !customerEmail || !creditAmount}
-                    className="w-full bg-gray-900 text-white py-3 rounded-lg font-medium hover:bg-black transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    <Gift className="w-4 h-4" />
-                    {isAddingCredits ? 'Gönderiliyor...' : 'Kredi Gönder'}
-                  </button>
-                </form>
-              </div>
-
-              <div className="pt-6 border-t border-gray-200">
-                <h4 className="font-serif text-lg text-gray-900 mb-4">Hızlı İpuçları</h4>
-                <ul className="space-y-3 text-sm text-gray-600">
-                  <li className="flex gap-3">
-                    <span className="text-emerald-600 font-bold">1.</span>
-                    <span><strong>Yeni müşteriler</strong> - İlk deneme için 5-10 kredi hediye et</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-emerald-600 font-bold">2.</span>
-                    <span><strong>Promosyon dönemleri</strong> - Kampanya sırasında ekstra kredi ver</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-emerald-600 font-bold">3.</span>
-                    <span><strong>Sadık müşteriler</strong> - Tekrar gelen müşterilere aylık hediye kredi</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-emerald-600 font-bold">4.</span>
-                    <span><strong>Destek senaryosu</strong> - Sorun yaşayan müşteriler için tazminat kredisi</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
-                <p className="text-sm text-blue-900">
-                  <strong>💡 İpucu:</strong> Müşteri kredileri kendi kredinizden çıkılır. Yeterli krediniz yoksa önce paket satın alın.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'profile' && (
+{activeTab === 'profile' && (
           <div className="space-y-6 relative pb-20 sm:pb-8">
             {isSaving && (
               <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center rounded-xl">
