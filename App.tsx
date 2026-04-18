@@ -234,7 +234,7 @@ const App: React.FC = () => {
       };
 
       const waitForRedirectSession = async (target: AppState | null) => {
-        for (let attempt = 0; attempt < 12; attempt += 1) {
+        for (let attempt = 0; attempt < 20; attempt += 1) {
           try {
             const profile = await getOrCreateCurrentCustomerProfile();
             if (profile) {
@@ -242,12 +242,13 @@ const App: React.FC = () => {
               return true;
             }
           } catch (error) {
-            console.warn('Redirect session poll skipped:', error);
+            console.warn('Redirect session poll attempt', attempt + 1, 'skipped:', error);
           }
 
-          await new Promise((resolve) => setTimeout(resolve, 700));
+          await new Promise((resolve) => setTimeout(resolve, 800));
         }
 
+        console.warn('Redirect session timed out after 20 attempts');
         return false;
       };
 
@@ -273,6 +274,9 @@ const App: React.FC = () => {
           if (resolved) {
             return;
           }
+
+          console.warn('Redirect pending but session not found, clearing pending flag');
+          clearGoogleRedirectPending();
         }
 
         const existingCustomer = await getOrCreateCurrentCustomerProfile();
@@ -282,7 +286,10 @@ const App: React.FC = () => {
             existingCustomer,
             pendingTarget ? consumeCustomerPostAuthTarget() : null
           );
+          return;
         }
+
+        setIsCustomerAuthPending(false);
       } catch (error) {
         console.warn('Customer auth bootstrap skipped:', error);
       }
@@ -461,14 +468,17 @@ const App: React.FC = () => {
         profile = await registerCustomer(email, password);
       } else {
         const result = await loginUser(email, password);
-        if (result.role === 'customer') {
+        if (result && result.role === 'customer' && result.profile) {
           profile = result.profile as CustomerProfile;
+        } else if (result && result.role !== 'customer') {
+          setIsCustomerAuthPending(false);
+          throw new Error('Bu hesap bir mağaza hesabıdır. Lütfen müşteri hesabı kullanın.');
         }
       }
 
       if (!profile) {
         setIsCustomerAuthPending(false);
-        return;
+        throw new Error('Profil oluşturulamadı. Lütfen tekrar deneyin.');
       }
 
       syncCustomerProfile(profile);
@@ -479,9 +489,10 @@ const App: React.FC = () => {
       setCustomerFavorites(favorites);
       setCustomerHistoryItems(history);
       await navigateCustomerAfterAuth(profile, consumeCustomerPostAuthTarget());
-    } catch (error) {
+    } catch (error: any) {
       console.error('Email sign-in failed:', error);
       setIsCustomerAuthPending(false);
+      throw error;
     }
   };
 

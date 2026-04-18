@@ -37,7 +37,7 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({ onBack, onGoogleSignIn, onE
       return;
     }
 
-    if (password.length < 6) {
+    if (password.length < 6 && isRegister) {
       setError('Şifre en az 6 karakter olmalı.');
       return;
     }
@@ -47,16 +47,27 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({ onBack, onGoogleSignIn, onE
       setError('');
       await onEmailSignIn(email, password, isRegister);
     } catch (err: any) {
+      const errCode = err?.code || '';
       const errMsg = err?.message || '';
-      if (errMsg.includes('email-already-in-use')) {
+
+      if (errCode === 'auth/email-already-in-use' || errMsg.includes('email-already-in-use')) {
         setError('Bu e-posta zaten kayıtlı. Giriş yap\'ı seçin.');
-      } else if (errMsg.includes('wrong-password')) {
+        setIsRegister(false);
+      } else if (errCode === 'auth/wrong-password' || errMsg.includes('wrong-password')) {
         setError('Yanlış şifre.');
-      } else if (errMsg.includes('user-not-found')) {
+      } else if (errCode === 'auth/user-not-found' || errMsg.includes('user-not-found')) {
         setError('Kullanıcı bulunamadı. Kayıt ol\'u seçin.');
+        setIsRegister(true);
+      } else if (errCode === 'auth/weak-password') {
+        setError('Şifre çok zayıf. Daha karmaşık bir şifre seçin.');
+      } else if (errCode === 'auth/invalid-email') {
+        setError('Geçersiz e-posta adresi.');
+      } else if (errMsg.includes('too-many-requests')) {
+        setError('Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.');
       } else {
-        setError(errMsg || 'İşlem başarısız oldu.');
+        setError(errMsg || 'İşlem başarısız oldu. Lütfen tekrar deneyin.');
       }
+      console.error('Email auth error:', err);
     } finally {
       setIsSubmitting(false);
     }
