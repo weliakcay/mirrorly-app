@@ -1,8 +1,11 @@
 import React, { useRef, useState } from 'react';
 import {
   ArrowLeft,
+  Check,
   ChevronRight,
   Coins,
+  Copy,
+  Download,
   Image as ImageIcon,
   Instagram,
   Link as LinkIcon,
@@ -15,6 +18,7 @@ import {
   Printer,
   QrCode,
   Settings,
+  Share2,
   Sparkles,
   Store,
   Trash2,
@@ -67,6 +71,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   const [activeQrItem, setActiveQrItem] = useState<Garment | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [billingNotice, setBillingNotice] = useState('');
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const [newItemName, setNewItemName] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
@@ -468,8 +473,9 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-6 overflow-y-auto">
-          <div className="print-area bg-white p-6 rounded-[32px] border border-gray-200 flex flex-col items-center shadow-2xl">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4 overflow-y-auto">
+          {/* QR Code Display */}
+          <div className="print-area bg-white p-6 rounded-[32px] border border-gray-200 flex flex-col items-center shadow-2xl max-w-sm">
             <div className="relative w-[320px] h-[320px] mb-5">
               <svg viewBox="0 0 320 320" className="absolute inset-0 w-full h-full">
                 <defs>
@@ -508,27 +514,111 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
             </div>
           </div>
 
-          <div className="no-print w-full max-w-xs text-center">
-            <p className="text-[10px] text-gray-400 font-mono break-all bg-gray-50 p-2 rounded border border-gray-100">
+          {/* Action Buttons */}
+          <div className="no-print w-full max-w-sm space-y-3">
+            <button
+              onClick={handlePrint}
+              className="w-full bg-gray-900 text-white py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-black shadow-lg shadow-gray-200 transition-all"
+            >
+              <Printer className="w-4 h-4" />
+              Etiketi Yazdır
+            </button>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={async () => {
+                  const deepLink = getProductDeepLink(activeQrItem.id);
+                  await navigator.clipboard.writeText(deepLink);
+                  setCopiedLink(true);
+                  setTimeout(() => setCopiedLink(false), 2000);
+                }}
+                className="bg-white text-gray-700 py-2 rounded-lg flex items-center justify-center gap-2 border border-gray-200 hover:bg-gray-50 transition-colors text-sm"
+              >
+                {copiedLink ? (
+                  <>
+                    <Check className="w-4 h-4 text-green-500" />
+                    <span>Kopyalandı</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    <span>Linki Kopyala</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => {
+                  const qrUrl = generateQrImage(activeQrItem.id);
+                  const a = document.createElement('a');
+                  a.href = qrUrl;
+                  a.download = `mirrorly-${activeQrItem.name.replace(/\s+/g, '-').toLowerCase()}-qr.png`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                }}
+                className="bg-white text-gray-700 py-2 rounded-lg flex items-center justify-center gap-2 border border-gray-200 hover:bg-gray-50 transition-colors text-sm"
+              >
+                <Download className="w-4 h-4" />
+                <span>Resim İndir</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Instructions */}
+          <div className="no-print w-full max-w-sm bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3">
+            <h4 className="font-serif text-base text-gray-900">QR Kodunu Nasıl Kullanırım?</h4>
+
+            <div className="space-y-2 text-left text-sm text-gray-700">
+              <div className="flex gap-3">
+                <span className="text-lg font-bold text-amber-600 flex-shrink-0">1</span>
+                <div>
+                  <p className="font-medium">Etiket olarak yazdır</p>
+                  <p className="text-xs text-gray-600">Yukarıdan "Etiketi Yazdır" butonunu tıkla, QR kodunu yazdır ve ürün etiketine yapıştır.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <span className="text-lg font-bold text-amber-600 flex-shrink-0">2</span>
+                <div>
+                  <p className="font-medium">Online ürün sayfasında göster</p>
+                  <p className="text-xs text-gray-600">QR kodunu indir ve web sitenizde / sosyal medya ürün görseline ekle. Müşteriler okuttuktan sonra sanal deneme yapabilir.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <span className="text-lg font-bold text-amber-600 flex-shrink-0">3</span>
+                <div>
+                  <p className="font-medium">Sosyal medyada paylaş</p>
+                  <p className="text-xs text-gray-600">Instagram, TikTok veya başka kanallarında bu ürünü paylaş. Takipçilerin QR ile deneyim yapmasını sağla.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <span className="text-lg font-bold text-amber-600 flex-shrink-0">4</span>
+                <div>
+                  <p className="font-medium">Linki kendi tasarımında kullan</p>
+                  <p className="text-xs text-gray-600">"Linki Kopyala" butonuyla bağlantıyı al, kendi tasarımın veya dökümanında kullan.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Link Display */}
+          <div className="no-print w-full max-w-sm text-center">
+            <p className="text-[10px] text-gray-400 mb-2 font-medium">QR Bağlantısı:</p>
+            <p className="text-[10px] text-gray-500 font-mono break-all bg-gray-50 p-3 rounded border border-gray-100 max-h-16 overflow-y-auto">
               {getProductDeepLink(activeQrItem.id)}
             </p>
           </div>
 
-          <div className="pt-2 flex flex-col gap-3 w-full max-w-xs no-print">
-            <button
-              onClick={handlePrint}
-              className="w-full bg-gray-900 text-white py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-black shadow-lg shadow-gray-200"
-            >
-              <Printer className="w-4 h-4" /> Etiketi Yazdir
-            </button>
-
-            <button
-              onClick={() => setActiveQrItem(null)}
-              className="w-full bg-white text-gray-500 py-3 rounded-lg font-medium border border-gray-200 hover:bg-gray-50 transition-colors"
-            >
-              Panele Don
-            </button>
-          </div>
+          {/* Close Button */}
+          <button
+            onClick={() => setActiveQrItem(null)}
+            className="w-full max-w-sm bg-white text-gray-600 py-3 rounded-lg font-medium border border-gray-200 hover:bg-gray-50 transition-colors no-print"
+          >
+            Panele Dön
+          </button>
         </div>
       </div>
     );
