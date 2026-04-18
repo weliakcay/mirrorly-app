@@ -469,28 +469,39 @@ const App: React.FC = () => {
   };
 
   const handleGoogleCustomerSignIn = async () => {
+    console.log('[SignIn] Google sign-in clicked');
     setIsCustomerAuthPending(true);
-    const profile = await signInCustomerWithGoogle();
-    if (!profile) {
-      return;
-    }
+    try {
+      const profile = await signInCustomerWithGoogle();
+      if (!profile) {
+        console.log('[SignIn] No profile returned (redirect flow initiated)');
+        return;
+      }
 
-    // Check if user is admin
-    if (adminEmails.includes(profile.email)) {
-      setIsAdmin(true);
-      setCurrentState(AppState.ADMIN_PANEL);
+      console.log('[SignIn] Got profile:', profile.email);
+      // Check if user is admin
+      if (adminEmails.includes(profile.email)) {
+        console.log('[SignIn] User is admin, routing to ADMIN_PANEL');
+        setIsAdmin(true);
+        setCurrentState(AppState.ADMIN_PANEL);
+        setIsCustomerAuthPending(false);
+        return;
+      }
+
+      console.log('[SignIn] Regular customer, syncing data...');
+      syncCustomerProfile(profile);
+      const [favorites, history] = await Promise.all([
+        getCustomerFavorites(profile.uid),
+        getCustomerHistoryItems(profile.uid),
+      ]);
+      setCustomerFavorites(favorites);
+      setCustomerHistoryItems(history);
+      console.log('[SignIn] Data synced, navigating...');
+      await navigateCustomerAfterAuth(profile, consumeCustomerPostAuthTarget());
+    } catch (error) {
+      console.error('[SignIn] Google sign-in error:', error);
       setIsCustomerAuthPending(false);
-      return;
     }
-
-    syncCustomerProfile(profile);
-    const [favorites, history] = await Promise.all([
-      getCustomerFavorites(profile.uid),
-      getCustomerHistoryItems(profile.uid),
-    ]);
-    setCustomerFavorites(favorites);
-    setCustomerHistoryItems(history);
-    await navigateCustomerAfterAuth(profile, consumeCustomerPostAuthTarget());
   };
 
   const handleEmailCustomerSignIn = async (email: string, password: string, isRegister: boolean) => {

@@ -863,10 +863,11 @@ const isMobileBrowser = () => {
 };
 
 const mapGoogleUserToCustomerProfile = async (user: any): Promise<CustomerProfile> => {
+  console.log('[Google Map] Mapping user:', user.uid, 'email:', user.email);
   const existing = await getCustomerProfileByUid(user.uid);
   const now = Date.now();
 
-  return upsertCustomerProfile({
+  const profile: CustomerProfile = {
     uid: user.uid,
     role: "customer",
     email: user.email || existing?.email || "",
@@ -878,7 +879,12 @@ const mapGoogleUserToCustomerProfile = async (user: any): Promise<CustomerProfil
         : DEFAULT_CUSTOMER_CREDITS,
     createdAt: existing?.createdAt || now,
     updatedAt: now,
-  });
+  };
+
+  console.log('[Google Map] Upserting profile:', profile.uid);
+  const result = await upsertCustomerProfile(profile);
+  console.log('[Google Map] Profile upserted successfully');
+  return result;
 };
 
 export const signInCustomerWithGoogle = async (): Promise<CustomerProfile | null> => {
