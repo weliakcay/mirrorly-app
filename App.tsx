@@ -225,6 +225,7 @@ const App: React.FC = () => {
         profile: CustomerProfile,
         target: AppState | null = null
       ) => {
+        console.log('[Bootstrap] Applying customer session for:', profile.email);
         clearGoogleRedirectPending();
         setIsCustomerAuthPending(false);
         syncCustomerProfile(profile);
@@ -232,11 +233,28 @@ const App: React.FC = () => {
         await syncCustomerCollections(profile.uid);
 
         if (target) {
+          console.log('[Bootstrap] Navigating to target:', target);
           await navigateCustomerAfterAuth(profile, target);
         }
       };
 
       const waitForRedirectSession = async (target: AppState | null) => {
+        // İlk olarak consumeGoogleRedirectCustomer'ı tekrar dene (gecikmiş result)
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          try {
+            const profile = await consumeGoogleRedirectCustomer();
+            if (profile) {
+              await applyCustomerSession(profile, target);
+              return true;
+            }
+          } catch (error) {
+            console.warn('Consume redirect attempt', attempt + 1, 'skipped:', error);
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        }
+
+        // Ardından getOrCreateCurrentCustomerProfile'ı dene
         for (let attempt = 0; attempt < 20; attempt += 1) {
           try {
             const profile = await getOrCreateCurrentCustomerProfile();
@@ -251,24 +269,29 @@ const App: React.FC = () => {
           await new Promise((resolve) => setTimeout(resolve, 800));
         }
 
-        console.warn('Redirect session timed out after 20 attempts');
+        console.warn('Redirect session timed out after 25 total attempts');
         return false;
       };
 
       let unsubscribe = () => {};
       const redirectPending = isGoogleRedirectPending();
+      console.log('[Bootstrap] Redirect pending:', redirectPending);
       if (redirectPending) {
+        console.log('[Bootstrap] Setting auth pending');
         setIsCustomerAuthPending(true);
       }
 
       try {
+        console.log('[Bootstrap] Consuming redirect customer...');
         const redirectProfile = await consumeGoogleRedirectCustomer();
         if (redirectProfile) {
+          console.log('[Bootstrap] Got redirect profile, applying session');
           await applyCustomerSession(redirectProfile, consumeCustomerPostAuthTarget());
           return;
         }
 
         if (redirectPending) {
+          console.log('[Bootstrap] Redirect pending, waiting for session...');
           const pendingTarget = localStorage.getItem(CUSTOMER_POST_AUTH_TARGET_KEY);
           const resolved = await waitForRedirectSession(
             pendingTarget ? consumeCustomerPostAuthTarget() : AppState.DISCOVER

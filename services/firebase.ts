@@ -854,9 +854,13 @@ export const clearGoogleRedirectPending = () => {
   window.localStorage.removeItem(GOOGLE_REDIRECT_PENDING_KEY);
 };
 
-const isMobileBrowser = () =>
-  typeof window !== "undefined" &&
-  /android|iphone|ipad|ipod/i.test(window.navigator.userAgent);
+const isMobileBrowser = () => {
+  if (typeof window === "undefined") return false;
+  const ua = window.navigator.userAgent.toLowerCase();
+  const isMobile = /android|iphone|ipad|ipod|mobile|tablet/i.test(ua);
+  console.log('[Google Auth] isMobileBrowser:', isMobile, 'UA:', ua);
+  return isMobile;
+};
 
 const mapGoogleUserToCustomerProfile = async (user: any): Promise<CustomerProfile> => {
   const existing = await getCustomerProfileByUid(user.uid);
@@ -882,24 +886,38 @@ export const signInCustomerWithGoogle = async (): Promise<CustomerProfile | null
     throw new Error("Google girisi icin Firebase hazir degil.");
   }
 
+  console.log('[Google Auth] Starting Google sign-in...');
+
   if (isMobileBrowser()) {
+    console.log('[Google Auth] Mobile browser detected, using redirect flow');
     if (typeof window !== "undefined") {
       window.localStorage.setItem(GOOGLE_REDIRECT_PENDING_KEY, "1");
+      console.log('[Google Auth] Redirect pending flag set');
     }
-    await signInWithRedirect(auth, googleProvider);
+    try {
+      await signInWithRedirect(auth, googleProvider);
+      console.log('[Google Auth] Redirect initiated, waiting for callback');
+    } catch (error) {
+      console.error('[Google Auth] Redirect failed:', error);
+      throw new Error(mapAuthErrorMessage(error));
+    }
     return null;
   }
 
   try {
+    console.log('[Google Auth] Desktop browser, using popup flow');
     const userCredential = await signInWithPopup(auth, googleProvider);
+    console.log('[Google Auth] Popup successful, mapping user to profile');
     return mapGoogleUserToCustomerProfile(userCredential.user);
   } catch (error: any) {
+    console.log('[Google Auth] Popup error:', error?.code);
     if (
       error?.code === "auth/popup-blocked" ||
       error?.code === "auth/popup-closed-by-user" ||
       error?.code === "auth/cancelled-popup-request" ||
       error?.code === "auth/operation-not-supported-in-this-environment"
     ) {
+      console.log('[Google Auth] Popup blocked/unsupported, falling back to redirect');
       if (typeof window !== "undefined") {
         window.localStorage.setItem(GOOGLE_REDIRECT_PENDING_KEY, "1");
       }
@@ -912,14 +930,38 @@ export const signInCustomerWithGoogle = async (): Promise<CustomerProfile | null
 };
 
 export const consumeGoogleRedirectCustomer = async (): Promise<CustomerProfile | null> => {
-  if (!auth || !googleProvider) return null;
-
-  const result = await getRedirectResult(auth);
-  if (!result?.user) {
+  if (!auth || !googleProvider) {
+    console.log('[Google Redirect] Auth/Provider not ready');
     return null;
   }
 
-  return mapGoogleUserToCustomerProfile(result.user);
+  try {
+    // İlk deneme: getRedirectResult'ı kontrol et
+    console.log('[Google Redirect] Checking getRedirectResult...');
+    const result = await getRedirectResult(auth);
+    if (result?.user) {
+      console.log('[Google Redirect] Found user from redirect result, mapping profile');
+      return mapGoogleUserToCustomerProfile(result.user);
+    }
+    console.log('[Google Redirect] No result from getRedirectResult');
+  } catch (error) {
+    console.warn('[Google Redirect] getRedirectResult error:', error);
+  }
+
+  // İkinci deneme: getCurrentUser varsa onu kullan
+  if (auth.currentUser) {
+    console.log('[Google Redirect] Using currentUser:', auth.currentUser.uid);
+    const existing = await getCustomerProfileByUid(auth.currentUser.uid);
+    if (existing) {
+      console.log('[Google Redirect] Found existing profile');
+      return existing;
+    }
+    console.log('[Google Redirect] Creating new profile from currentUser');
+    return mapGoogleUserToCustomerProfile(auth.currentUser);
+  }
+
+  console.log('[Google Redirect] No currentUser found');
+  return null;
 };
 
 export const loginUser = async (
