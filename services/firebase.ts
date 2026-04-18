@@ -936,12 +936,25 @@ export const loginUser = async (
     return { user, role: "merchant", profile: merchantProfile };
   }
 
-  const customerProfile = await getCustomerProfileByUid(user.uid);
+  let customerProfile = await getCustomerProfileByUid(user.uid);
   if (customerProfile) {
     return { user, role: "customer", profile: customerProfile };
   }
 
-  throw new Error("Kullanıcı profili bulunamadı.");
+  // Profil bulunamadıysa yeni customer profili oluştur
+  const newCustomer: CustomerProfile = {
+    uid: user.uid,
+    role: "customer",
+    email: user.email || email,
+    displayName: user.displayName || "",
+    photoURL: user.photoURL || "",
+    credits: DEFAULT_CUSTOMER_CREDITS,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+
+  customerProfile = await upsertCustomerProfile(newCustomer);
+  return { user, role: "customer", profile: customerProfile };
 };
 
 export const logoutUser = async () => {
