@@ -498,6 +498,8 @@ const App: React.FC = () => {
       setCustomerHistoryItems(history);
       console.log('[SignIn] Data synced, navigating...');
       await navigateCustomerAfterAuth(profile, consumeCustomerPostAuthTarget());
+      console.log('[SignIn] Navigation complete');
+      setIsCustomerAuthPending(false);
     } catch (error) {
       console.error('[SignIn] Google sign-in error:', error);
       setIsCustomerAuthPending(false);
@@ -534,6 +536,7 @@ const App: React.FC = () => {
         return;
       }
 
+      console.log('[SignIn] Email auth succeeded for:', profile.email);
       syncCustomerProfile(profile);
       const [favorites, history] = await Promise.all([
         getCustomerFavorites(profile.uid),
@@ -541,7 +544,10 @@ const App: React.FC = () => {
       ]);
       setCustomerFavorites(favorites);
       setCustomerHistoryItems(history);
+      console.log('[SignIn] Data synced, navigating...');
       await navigateCustomerAfterAuth(profile, consumeCustomerPostAuthTarget());
+      console.log('[SignIn] Navigation complete');
+      setIsCustomerAuthPending(false);
     } catch (error: any) {
       console.error('Email sign-in failed:', error);
       setIsCustomerAuthPending(false);
