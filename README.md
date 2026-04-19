@@ -57,3 +57,15 @@ npm run build
 - `RELEASE_CHECKLIST.md`: pre-launch ve smoke test listesi
 - `SOP.md`: gunluk kullanim ve operasyon proseduru
 - `BLUEPRINT.md`: guncel teknik mimari
+
+## Mobil Giriş Dokumanlari
+
+Mobil cihazdan Google ve Email ile giriş yapıldığında yaşanan sorunlar düzeltilmiştir:
+
+- `MOBILE_LOGIN_FIX_SUMMARY.md`: ✅ Yeni - Hızlı referans ve özet
+- `MOBILE_TESTING_GUIDE.md`: Gerçek cihazdan test etme adımları (iOS/Android)
+- `MOBILE_AUTH_FIX.md`: Teknik detaylar ve polling mekanizması
+- `GOOGLE_AUTH_IMPROVEMENTS.md`: Google auth architecture
+- `QR_MOBILE_LOGIN.md`: QR/link ile mobil giriş akışı
+
+**Hızlı Test**: `npm run dev` → `http://localhost:5173` (Desktop) veya `http://192.168.1.100:5173` (Mobile)
