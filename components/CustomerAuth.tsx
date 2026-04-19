@@ -11,7 +11,7 @@ interface CustomerAuthProps {
 const CustomerAuth: React.FC<CustomerAuthProps> = ({ onBack, onGoogleSignIn, onEmailSignIn, isPending = false }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [authMode, setAuthMode] = useState<'google' | 'email'>('google');
+  const [authMode, setAuthMode] = useState<'google' | 'email'>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRegister, setIsRegister] = useState(false);
@@ -94,7 +94,7 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({ onBack, onGoogleSignIn, onE
               Mirrorly
             </p>
             <h2 className="font-serif text-3xl text-gray-900 mb-3">
-              {isPending ? 'Giris tamamlanıyor' : authMode === 'google' ? 'Google ile devam et' : isRegister ? 'Kayıt Ol' : 'Giriş Yap'}
+              {isPending ? 'Giris tamamlanıyor' : authMode === 'email' ? (isRegister ? 'Kayıt Ol' : 'Giriş Yap') : 'Google ile Gir'}
             </h2>
             <p className="text-sm text-gray-500 leading-relaxed">
               {isPending
@@ -103,35 +103,9 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({ onBack, onGoogleSignIn, onE
             </p>
           </div>
 
-          {authMode === 'google' ? (
+          {authMode === 'email' ? (
             <>
-              <button
-                onClick={handleGoogleSignIn}
-                disabled={isSubmitting || isPending}
-                className="w-full flex items-center justify-center gap-3 rounded-2xl bg-gray-900 text-white py-4 shadow-xl hover:bg-black transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <Chrome className="w-5 h-5" />
-                <span className="font-medium">
-                  {isPending ? 'Oturum tamamlanıyor...' : isSubmitting ? 'Google bağlanıyor...' : 'Google ile giriş yap'}
-                </span>
-              </button>
-
-              <div className="mt-6 flex items-center gap-3">
-                <div className="flex-1 h-px bg-gray-200" />
-                <span className="text-xs text-gray-400">veya</span>
-                <div className="flex-1 h-px bg-gray-200" />
-              </div>
-
-              <button
-                onClick={() => setAuthMode('email')}
-                className="mt-6 w-full flex items-center justify-center gap-2 rounded-2xl border border-gray-300 bg-white text-gray-700 py-3 shadow-sm hover:bg-gray-50 transition-all"
-              >
-                <span className="font-medium">E-posta ile devam et</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <form onSubmit={handleEmailSubmit} className="space-y-4">
+              <form onSubmit={handleEmailSubmit} className="space-y-3">
                 <div>
                   <input
                     type="email"
@@ -156,13 +130,13 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({ onBack, onGoogleSignIn, onE
                 <button
                   type="submit"
                   disabled={isSubmitting || isPending}
-                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gray-900 text-white py-3 shadow-xl hover:bg-black transition-all disabled:opacity-60 disabled:cursor-not-allowed font-medium"
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gray-900 text-white py-3 shadow-xl hover:bg-black transition-all disabled:opacity-60 disabled:cursor-not-allowed font-medium mt-4"
                 >
                   {isSubmitting ? 'İşleniyor...' : isRegister ? 'Kayıt Ol' : 'Giriş Yap'}
                 </button>
               </form>
 
-              <div className="mt-4 text-center">
+              <div className="mt-3 text-center">
                 <button
                   onClick={() => {
                     setIsRegister(!isRegister);
@@ -175,12 +149,44 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({ onBack, onGoogleSignIn, onE
                 </button>
               </div>
 
+              <div className="mt-6 flex items-center gap-3">
+                <div className="flex-1 h-px bg-gray-200" />
+                <span className="text-xs text-gray-400">veya</span>
+                <div className="flex-1 h-px bg-gray-200" />
+              </div>
+
               <button
                 onClick={() => setAuthMode('google')}
                 className="mt-6 w-full flex items-center justify-center gap-2 rounded-2xl border border-gray-300 bg-white text-gray-700 py-3 shadow-sm hover:bg-gray-50 transition-all text-sm"
               >
                 <Chrome className="w-4 h-4" />
-                <span>Google ile geri dön</span>
+                <span>Google ile giriş yap</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleGoogleSignIn}
+                disabled={isSubmitting || isPending}
+                className="w-full flex items-center justify-center gap-3 rounded-2xl bg-gray-900 text-white py-4 shadow-xl hover:bg-black transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <Chrome className="w-5 h-5" />
+                <span className="font-medium">
+                  {isPending ? 'Oturum tamamlanıyor...' : isSubmitting ? 'Google bağlanıyor...' : 'Google ile devam et'}
+                </span>
+              </button>
+
+              <div className="mt-6 flex items-center gap-3">
+                <div className="flex-1 h-px bg-gray-200" />
+                <span className="text-xs text-gray-400">veya</span>
+                <div className="flex-1 h-px bg-gray-200" />
+              </div>
+
+              <button
+                onClick={() => setAuthMode('email')}
+                className="mt-6 w-full flex items-center justify-center gap-2 rounded-2xl border border-gray-300 bg-white text-gray-700 py-3 shadow-sm hover:bg-gray-50 transition-all"
+              >
+                <span className="font-medium">E-posta ile devam et</span>
               </button>
             </>
           )}
