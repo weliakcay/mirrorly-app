@@ -33,7 +33,9 @@ import {
   addCustomerFavorite,
   clearGoogleRedirectPending,
   clearCustomerHistoryItems,
+  completeMagicLinkSignIn,
   consumeGoogleRedirectCustomer,
+  forceTokenRefresh,
   getCustomerFavorites,
   getCustomerHistoryItems,
   getOrCreateCurrentCustomerProfile,
@@ -43,13 +45,16 @@ import {
   getMerchantPublicProfileByUid,
   isFirebaseConfigured,
   isGoogleRedirectPending,
+  isMagicLinkSignInUrl,
   loginUser,
   observeAuthSession,
   logoutUser,
   registerCustomer,
   removeCustomerFavorite,
   saveCustomerHistoryItem,
+  sendMagicLink,
   signInCustomerWithGoogle,
+  signInCustomerWithGoogleCredential,
   updateCustomerModelPreset,
 } from './services/firebase';
 import { clearHistory, getHistory, saveToHistory } from './services/historyService';
@@ -228,6 +233,8 @@ const App: React.FC = () => {
         console.log('[Bootstrap] Applying customer session for:', profile.email);
         clearGoogleRedirectPending();
         setIsCustomerAuthPending(false);
+        // Custom claim'lerin (admin gibi) yeni yazilan token'a yansimasi icin force refresh
+        await forceTokenRefresh();
         syncCustomerProfile(profile);
         identifyUser(profile.uid, { role: 'customer' });
         await syncCustomerCollections(profile.uid);
@@ -282,6 +289,41 @@ const App: React.FC = () => {
       }
 
       try {
+        // 1) Magic link URL: en spesifik tetikleyici - oncelikle kontrol edilir
+        if (isMagicLinkSignInUrl()) {
+          console.log('[Bootstrap] Magic link URL tespit edildi, sign-in tamamlaniyor');
+          setIsCustomerAuthPending(true);
+          try {
+            const profile = await completeMagicLinkSignIn();
+            if (profile) {
+              await applyCustomerSession(profile, consumeCustomerPostAuthTarget());
+              return;
+            }
+          } catch (magicError: any) {
+            if (magicError?.code === 'magic-link/email-required') {
+              // Mail farkli bir tarayici/cihazda acilmis: localStorage'da email yok.
+              // Firebase resmi pattern'i: kullaniciya tekrar email sor.
+              const promptedEmail = window.prompt(
+                'Magic link gondermek icin kullandigin e-posta adresini tekrar gir:'
+              );
+              if (promptedEmail) {
+                try {
+                  const profile = await completeMagicLinkSignIn(promptedEmail);
+                  if (profile) {
+                    await applyCustomerSession(profile, consumeCustomerPostAuthTarget());
+                    return;
+                  }
+                } catch (innerError) {
+                  console.error('[Bootstrap] Magic link 2. deneme basarisiz:', innerError);
+                }
+              }
+            } else {
+              console.error('[Bootstrap] Magic link hatasi:', magicError);
+            }
+            setIsCustomerAuthPending(false);
+          }
+        }
+
         console.log('[Bootstrap] Consuming redirect customer...');
         const redirectProfile = await consumeGoogleRedirectCustomer();
         if (redirectProfile) {
@@ -489,6 +531,7 @@ const App: React.FC = () => {
       }
 
       console.log('[SignIn] Regular customer, syncing data...');
+      await forceTokenRefresh();
       syncCustomerProfile(profile);
       const [favorites, history] = await Promise.all([
         getCustomerFavorites(profile.uid),
@@ -504,6 +547,54 @@ const App: React.FC = () => {
       console.error('[SignIn] Google sign-in error:', error);
       setIsCustomerAuthPending(false);
     }
+  };
+
+  // Modern GSI flow: window.google.accounts.id callback'inden gelen ID token'i Firebase'e
+  // signInWithCredential ile geciren handler. Popup/redirect olmadigi icin mobil takilma sorunu cozulur.
+  const handleGoogleCredentialSignIn = async (idToken: string) => {
+    console.log('[GSI] Credential alindi, Firebase sign-in basliyor');
+    setIsCustomerAuthPending(true);
+    try {
+      const profile = await signInCustomerWithGoogleCredential(idToken);
+      if (!profile) {
+        console.warn('[GSI] No profile returned from credential sign-in');
+        setIsCustomerAuthPending(false);
+        return;
+      }
+
+      // Admin emails - GSI flow icin de kontrol
+      if (adminEmails.includes(profile.email)) {
+        console.log('[GSI] User is admin, routing to ADMIN_PANEL');
+        setIsAdmin(true);
+        setCurrentState(AppState.ADMIN_PANEL);
+        setIsCustomerAuthPending(false);
+        return;
+      }
+
+      // Regular customer - syncCustomer + collections + navigate
+      // (signInCustomerWithGoogleCredential zaten icinde forceTokenRefresh cagiriyor)
+      syncCustomerProfile(profile);
+      identifyUser(profile.uid, { role: 'customer' });
+      const [favorites, history] = await Promise.all([
+        getCustomerFavorites(profile.uid),
+        getCustomerHistoryItems(profile.uid),
+      ]);
+      setCustomerFavorites(favorites);
+      setCustomerHistoryItems(history);
+      await navigateCustomerAfterAuth(profile, consumeCustomerPostAuthTarget());
+      setIsCustomerAuthPending(false);
+    } catch (error: any) {
+      console.error('[GSI] Sign-in error:', error);
+      setIsCustomerAuthPending(false);
+      throw error; // CustomerAuth componenti setError ile gosterir
+    }
+  };
+
+  // Magic Link: kullanici email girer, tek seferlik link postasina gider.
+  // Bootstrap'taki isMagicLinkSignInUrl() kontrolu link'e tiklandiginda devraliyor.
+  const handleMagicLinkSend = async (email: string) => {
+    await sendMagicLink(email);
+    console.log('[MagicLink] Link gonderildi:', email);
   };
 
   const handleEmailCustomerSignIn = async (email: string, password: string, isRegister: boolean) => {
@@ -537,6 +628,7 @@ const App: React.FC = () => {
       }
 
       console.log('[SignIn] Email auth succeeded for:', profile.email);
+      await forceTokenRefresh();
       syncCustomerProfile(profile);
       const [favorites, history] = await Promise.all([
         getCustomerFavorites(profile.uid),
@@ -878,7 +970,9 @@ const App: React.FC = () => {
           <CustomerAuth
             onBack={() => setCurrentState(AppState.LANDING)}
             onGoogleSignIn={handleGoogleCustomerSignIn}
+            onGoogleCredentialSignIn={handleGoogleCredentialSignIn}
             onEmailSignIn={handleEmailCustomerSignIn}
+            onMagicLinkSend={handleMagicLinkSend}
             isPending={isCustomerAuthPending}
           />
         );
@@ -943,6 +1037,9 @@ const App: React.FC = () => {
           <CustomerAuth
             onBack={() => setCurrentState(AppState.LANDING)}
             onGoogleSignIn={handleGoogleCustomerSignIn}
+            onGoogleCredentialSignIn={handleGoogleCredentialSignIn}
+            onEmailSignIn={handleEmailCustomerSignIn}
+            onMagicLinkSend={handleMagicLinkSend}
             isPending={isCustomerAuthPending}
           />
         );

@@ -18,7 +18,11 @@ import {
   getRedirectResult,
   GoogleAuthProvider,
   getAuth,
+  isSignInWithEmailLink,
   onAuthStateChanged,
+  sendSignInLinkToEmail,
+  signInWithCredential,
+  signInWithEmailLink,
   signInWithPopup,
   signInWithRedirect,
   signInWithEmailAndPassword,
@@ -894,6 +898,108 @@ const mapGoogleUserToCustomerProfile = async (user: any): Promise<CustomerProfil
   return result;
 };
 
+// ===== Modern Google Identity Services (GSI) flow =====
+// GSI'nin window.google.accounts.id callback'i ID token doner; biz bunu Firebase
+// AuthCredential'a cevirip signInWithCredential ile session'a baglariz.
+// Avantaji: popup veya redirect olmaz - 1st-party FedCM, ITP/3rd-party cookie
+// kisitlamalarina takilmaz. iOS Safari + Android Chrome'da mobil takilma sorunu cozulur.
+export const signInCustomerWithGoogleCredential = async (
+  idToken: string
+): Promise<CustomerProfile | null> => {
+  if (!auth) {
+    throw new Error("Firebase auth hazir degil.");
+  }
+
+  console.log("[GSI] Sign-in with credential basliyor");
+  const credential = GoogleAuthProvider.credential(idToken);
+  const userCredential = await signInWithCredential(auth, credential);
+  console.log("[GSI] Sign-in basarili, profil mapleniyor");
+
+  // Custom claim'lerin (admin gibi) yeni token'a yazilmasi icin force refresh
+  try {
+    await userCredential.user.getIdToken(true);
+  } catch (error) {
+    console.warn("[GSI] Token force-refresh skipped:", error);
+  }
+
+  return mapGoogleUserToCustomerProfile(userCredential.user);
+};
+
+// Mevcut session uzerinde ID token'i zorla yeniler. Custom claim degisikliginin
+// (ornegin admin verildikten sonra) hemen aktif olmasi icin login sonrasinda
+// veya admin paneline gecisten once cagirilabilir.
+export const forceTokenRefresh = async (): Promise<void> => {
+  if (!auth?.currentUser) return;
+  try {
+    await auth.currentUser.getIdToken(true);
+    console.log("[Auth] ID token zorla yenilendi");
+  } catch (error) {
+    console.warn("[Auth] Token refresh skipped:", error);
+  }
+};
+
+// ===== Magic Link (passwordless email) =====
+// Kullanici email girer -> mailine tek seferlik link gelir -> tikladiginda giris yapar.
+// Mobilde popup/redirect olmadigi icin mail uygulamasinin WebView'inde dahi calisir.
+const MAGIC_LINK_EMAIL_KEY = "mirrorly_magic_link_email";
+
+export const sendMagicLink = async (email: string): Promise<void> => {
+  if (!auth) throw new Error("Firebase auth hazir degil.");
+
+  const continueUrl = `${window.location.origin}${window.location.pathname}`;
+  await sendSignInLinkToEmail(auth, email, {
+    url: continueUrl,
+    handleCodeInApp: true,
+  });
+
+  // Email'i localStorage'a yaz; link'e tiklandiginda completeMagicLinkSignIn okur.
+  // Edge case: kullanici linki farkli tarayici/cihazda acarsa localStorage bos olur,
+  // o durumda kullaniciya tekrar email sorulur (Firebase resmi pattern'i).
+  window.localStorage.setItem(MAGIC_LINK_EMAIL_KEY, email);
+};
+
+export const isMagicLinkSignInUrl = (): boolean => {
+  if (!auth || typeof window === "undefined") return false;
+  return isSignInWithEmailLink(auth, window.location.href);
+};
+
+export const completeMagicLinkSignIn = async (
+  fallbackEmail?: string
+): Promise<CustomerProfile | null> => {
+  if (!auth) throw new Error("Firebase auth hazir degil.");
+  if (!isMagicLinkSignInUrl()) return null;
+
+  let email = window.localStorage.getItem(MAGIC_LINK_EMAIL_KEY);
+  if (!email && fallbackEmail) email = fallbackEmail;
+  if (!email) {
+    // Caller bu durumu yakalayip kullaniciya email sormak icin throw eder
+    const err = new Error("MAGIC_LINK_EMAIL_REQUIRED");
+    (err as any).code = "magic-link/email-required";
+    throw err;
+  }
+
+  console.log("[MagicLink] Sign-in tamamlaniyor:", email);
+  const userCredential = await signInWithEmailLink(auth, email, window.location.href);
+  window.localStorage.removeItem(MAGIC_LINK_EMAIL_KEY);
+
+  // URL'den oobCode/apiKey/mode parametrelerini temizle
+  try {
+    const cleanUrl = window.location.pathname;
+    window.history.replaceState({}, "", cleanUrl);
+  } catch {
+    // pushState/replaceState bazi ortamlarda kisitli
+  }
+
+  try {
+    await userCredential.user.getIdToken(true);
+  } catch {
+    // best-effort
+  }
+
+  return mapGoogleUserToCustomerProfile(userCredential.user);
+};
+
+// ===== Legacy popup/redirect Google flow (fallback) =====
 export const signInCustomerWithGoogle = async (): Promise<CustomerProfile | null> => {
   if (!auth || !googleProvider) {
     throw new Error("Google girisi icin Firebase hazir degil.");
