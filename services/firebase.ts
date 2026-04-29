@@ -18,11 +18,8 @@ import {
   getRedirectResult,
   GoogleAuthProvider,
   getAuth,
-  isSignInWithEmailLink,
   onAuthStateChanged,
-  sendSignInLinkToEmail,
   signInWithCredential,
-  signInWithEmailLink,
   signInWithPopup,
   signInWithRedirect,
   signInWithEmailAndPassword,
@@ -936,67 +933,6 @@ export const forceTokenRefresh = async (): Promise<void> => {
   } catch (error) {
     console.warn("[Auth] Token refresh skipped:", error);
   }
-};
-
-// ===== Magic Link (passwordless email) =====
-// Kullanici email girer -> mailine tek seferlik link gelir -> tikladiginda giris yapar.
-// Mobilde popup/redirect olmadigi icin mail uygulamasinin WebView'inde dahi calisir.
-const MAGIC_LINK_EMAIL_KEY = "mirrorly_magic_link_email";
-
-export const sendMagicLink = async (email: string): Promise<void> => {
-  if (!auth) throw new Error("Firebase auth hazir degil.");
-
-  const continueUrl = `${window.location.origin}${window.location.pathname}`;
-  await sendSignInLinkToEmail(auth, email, {
-    url: continueUrl,
-    handleCodeInApp: true,
-  });
-
-  // Email'i localStorage'a yaz; link'e tiklandiginda completeMagicLinkSignIn okur.
-  // Edge case: kullanici linki farkli tarayici/cihazda acarsa localStorage bos olur,
-  // o durumda kullaniciya tekrar email sorulur (Firebase resmi pattern'i).
-  window.localStorage.setItem(MAGIC_LINK_EMAIL_KEY, email);
-};
-
-export const isMagicLinkSignInUrl = (): boolean => {
-  if (!auth || typeof window === "undefined") return false;
-  return isSignInWithEmailLink(auth, window.location.href);
-};
-
-export const completeMagicLinkSignIn = async (
-  fallbackEmail?: string
-): Promise<CustomerProfile | null> => {
-  if (!auth) throw new Error("Firebase auth hazir degil.");
-  if (!isMagicLinkSignInUrl()) return null;
-
-  let email = window.localStorage.getItem(MAGIC_LINK_EMAIL_KEY);
-  if (!email && fallbackEmail) email = fallbackEmail;
-  if (!email) {
-    // Caller bu durumu yakalayip kullaniciya email sormak icin throw eder
-    const err = new Error("MAGIC_LINK_EMAIL_REQUIRED");
-    (err as any).code = "magic-link/email-required";
-    throw err;
-  }
-
-  console.log("[MagicLink] Sign-in tamamlaniyor:", email);
-  const userCredential = await signInWithEmailLink(auth, email, window.location.href);
-  window.localStorage.removeItem(MAGIC_LINK_EMAIL_KEY);
-
-  // URL'den oobCode/apiKey/mode parametrelerini temizle
-  try {
-    const cleanUrl = window.location.pathname;
-    window.history.replaceState({}, "", cleanUrl);
-  } catch {
-    // pushState/replaceState bazi ortamlarda kisitli
-  }
-
-  try {
-    await userCredential.user.getIdToken(true);
-  } catch {
-    // best-effort
-  }
-
-  return mapGoogleUserToCustomerProfile(userCredential.user);
 };
 
 // ===== Legacy popup/redirect Google flow (fallback) =====

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Chrome, Mail, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Chrome, ShieldCheck } from 'lucide-react';
 
 interface CustomerAuthProps {
   onBack: () => void;
@@ -9,12 +9,8 @@ interface CustomerAuthProps {
   onGoogleCredentialSignIn?: (idToken: string) => Promise<void>;
   /** Email + sifre login/kayit */
   onEmailSignIn?: (email: string, password: string, isRegister: boolean) => Promise<void>;
-  /** Sifresiz giris: emaile tek kullanimlik link gonderir */
-  onMagicLinkSend?: (email: string) => Promise<void>;
   isPending?: boolean;
 }
-
-type AuthMode = 'password' | 'magic-link';
 
 const GSI_POLL_INTERVAL_MS = 100;
 const GSI_POLL_MAX_ATTEMPTS = 50; // ~5 saniye
@@ -24,16 +20,13 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
   onGoogleSignIn,
   onGoogleCredentialSignIn,
   onEmailSignIn,
-  onMagicLinkSend,
   isPending = false,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [authMode, setAuthMode] = useState<AuthMode>('password');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRegister, setIsRegister] = useState(false);
-  const [magicLinkSent, setMagicLinkSent] = useState(false);
 
   const gsiContainerRef = useRef<HTMLDivElement>(null);
   const [gsiRendered, setGsiRendered] = useState(false);
@@ -123,8 +116,6 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
     };
   }, [onGoogleCredentialSignIn]);
 
-  // ===== Handlers =====
-
   const handleLegacyGoogle = async () => {
     try {
       setIsSubmitting(true);
@@ -137,7 +128,7 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
     }
   };
 
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!onEmailSignIn) return;
 
@@ -182,49 +173,10 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
     }
   };
 
-  const handleMagicLinkSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!onMagicLinkSend) {
-      setError('Sifresiz giris su an aktif degil.');
-      return;
-    }
-
-    if (!email) {
-      setError('Once e-posta adresini gir.');
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      setError('');
-      await onMagicLinkSend(email);
-      setMagicLinkSent(true);
-    } catch (err: any) {
-      const errCode = err?.code || '';
-      if (errCode === 'auth/invalid-email') {
-        setError('Gecersiz e-posta adresi.');
-      } else if (String(errCode).includes('operation-not-allowed')) {
-        setError('Sifresiz giris Firebase tarafinda etkin degil.');
-      } else {
-        setError(err?.message || 'Magic link gonderilemedi. Lutfen tekrar dene.');
-      }
-      console.error('Magic link send error:', err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const titleText = isPending
-    ? 'Giris tamamlaniyor'
-    : authMode === 'magic-link'
-      ? (magicLinkSent ? 'E-postani kontrol et' : 'Sifresiz Giris')
-      : (isRegister ? 'Kayit Ol' : 'Giris Yap');
-
+  const titleText = isPending ? 'Giris tamamlaniyor' : (isRegister ? 'Kayit Ol' : 'Giris Yap');
   const subtitleText = isPending
     ? 'Onaydan sonra oturumun cihaza geri yazilmasi birkac saniye surebilir.'
-    : authMode === 'magic-link' && magicLinkSent
-      ? `${email} adresine bir giris linki gonderdik. Postani kontrol et ve linke tikla; bu sekme acik kalsin.`
-      : 'Hesabina girerek favorilerini kaydet, deneme gecmisini gor ve kesfet akisini kullan.';
+    : 'Hesabina girerek favorilerini kaydet, deneme gecmisini gor ve kesfet akisini kullan.';
 
   const inputsDisabled = isSubmitting || isPending;
 
@@ -250,117 +202,71 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
             <p className="text-sm text-gray-500 leading-relaxed">{subtitleText}</p>
           </div>
 
-          {/* Email + (sifre || magic link) form */}
-          {!magicLinkSent && (
-            <form
-              onSubmit={authMode === 'password' ? handlePasswordSubmit : handleMagicLinkSubmit}
-              className="space-y-3"
+          <form onSubmit={handleEmailSubmit} className="space-y-3">
+            <input
+              type="email"
+              placeholder="E-posta"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={inputsDisabled}
+              autoComplete="email"
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm placeholder-gray-400 focus:border-gray-900 focus:outline-none disabled:opacity-60"
+            />
+
+            <input
+              type="password"
+              placeholder="Sifre"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={inputsDisabled}
+              autoComplete={isRegister ? 'new-password' : 'current-password'}
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm placeholder-gray-400 focus:border-gray-900 focus:outline-none disabled:opacity-60"
+            />
+
+            <button
+              type="submit"
+              disabled={inputsDisabled}
+              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gray-900 text-white py-3 shadow-xl hover:bg-black transition-all disabled:opacity-60 disabled:cursor-not-allowed font-medium mt-4"
             >
-              <input
-                type="email"
-                placeholder="E-posta"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={inputsDisabled}
-                autoComplete="email"
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm placeholder-gray-400 focus:border-gray-900 focus:outline-none disabled:opacity-60"
-              />
+              {isSubmitting ? 'Isleniyor...' : isRegister ? 'Kayit Ol' : 'Giris Yap'}
+            </button>
+          </form>
 
-              {authMode === 'password' && (
-                <input
-                  type="password"
-                  placeholder="Sifre"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={inputsDisabled}
-                  autoComplete={isRegister ? 'new-password' : 'current-password'}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm placeholder-gray-400 focus:border-gray-900 focus:outline-none disabled:opacity-60"
-                />
-              )}
-
-              <button
-                type="submit"
-                disabled={inputsDisabled}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gray-900 text-white py-3 shadow-xl hover:bg-black transition-all disabled:opacity-60 disabled:cursor-not-allowed font-medium mt-4"
-              >
-                {isSubmitting
-                  ? 'Isleniyor...'
-                  : authMode === 'magic-link'
-                    ? (<><Mail className="w-4 h-4" /><span>Giris Linki Gonder</span></>)
-                    : (isRegister ? 'Kayit Ol' : 'Giris Yap')}
-              </button>
-            </form>
-          )}
-
-          {magicLinkSent && (
+          <div className="mt-3 text-center">
             <button
               onClick={() => {
-                setMagicLinkSent(false);
+                setIsRegister(!isRegister);
                 setError('');
               }}
-              className="w-full rounded-2xl border border-gray-300 bg-white text-gray-700 py-3 text-sm hover:bg-gray-50 transition-all"
+              disabled={inputsDisabled}
+              className="text-xs text-gray-500 hover:text-gray-900 transition-colors underline disabled:opacity-60"
             >
-              Farkli bir e-posta dene
+              {isRegister ? 'Zaten hesabin var mi? Giris yap' : 'Henuz hesabin yok mu? Kayit ol'}
             </button>
-          )}
+          </div>
 
-          {/* Mod toggle: sifre <-> magic link */}
-          {!magicLinkSent && (
-            <div className="mt-3 flex flex-col items-center gap-2">
-              {authMode === 'password' && (
-                <button
-                  onClick={() => {
-                    setIsRegister(!isRegister);
-                    setError('');
-                  }}
-                  disabled={inputsDisabled}
-                  className="text-xs text-gray-500 hover:text-gray-900 transition-colors underline disabled:opacity-60"
-                >
-                  {isRegister ? 'Zaten hesabin var mi? Giris yap' : 'Henuz hesabin yok mu? Kayit ol'}
-                </button>
-              )}
-              <button
-                onClick={() => {
-                  setAuthMode(authMode === 'magic-link' ? 'password' : 'magic-link');
-                  setError('');
-                }}
-                disabled={inputsDisabled}
-                className="text-xs text-gray-500 hover:text-gray-900 transition-colors underline disabled:opacity-60"
-              >
-                {authMode === 'magic-link'
-                  ? 'Sifre ile giris yap'
-                  : 'Sifresiz giris (e-postaya link)'}
-              </button>
-            </div>
-          )}
-
-          {/* Ayrac */}
-          {!magicLinkSent && (
-            <div className="mt-6 flex items-center gap-3">
-              <div className="flex-1 h-px bg-gray-200" />
-              <span className="text-xs text-gray-400">veya</span>
-              <div className="flex-1 h-px bg-gray-200" />
-            </div>
-          )}
+          <div className="mt-6 flex items-center gap-3">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-gray-400">veya</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
 
           {/* Modern GSI button (script yuklendiyse) */}
-          {!magicLinkSent && (
-            <div className="mt-6 flex flex-col items-center gap-3">
-              <div ref={gsiContainerRef} className="flex justify-center min-h-[44px]" />
+          <div className="mt-6 flex flex-col items-center gap-3">
+            <div ref={gsiContainerRef} className="flex justify-center min-h-[44px]" />
 
-              {/* Fallback: GSI render edilemediyse legacy popup/redirect butonu */}
-              {!gsiRendered && (
-                <button
-                  onClick={handleLegacyGoogle}
-                  disabled={inputsDisabled}
-                  className="w-full flex items-center justify-center gap-2 rounded-2xl border border-gray-300 bg-white text-gray-700 py-3 shadow-sm hover:bg-gray-50 transition-all text-sm disabled:opacity-60"
-                >
-                  <Chrome className="w-4 h-4" />
-                  <span>Google ile devam et</span>
-                </button>
-              )}
-            </div>
-          )}
+            {/* Fallback: GSI render edilemediyse legacy popup/redirect butonu */}
+            {!gsiRendered && (
+              <button
+                onClick={handleLegacyGoogle}
+                disabled={inputsDisabled}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl border border-gray-300 bg-white text-gray-700 py-3 shadow-sm hover:bg-gray-50 transition-all text-sm disabled:opacity-60"
+              >
+                <Chrome className="w-4 h-4" />
+                <span>Google ile devam et</span>
+              </button>
+            )}
+          </div>
 
           {error && (
             <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">

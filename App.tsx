@@ -33,7 +33,6 @@ import {
   addCustomerFavorite,
   clearGoogleRedirectPending,
   clearCustomerHistoryItems,
-  completeMagicLinkSignIn,
   consumeGoogleRedirectCustomer,
   forceTokenRefresh,
   getCustomerFavorites,
@@ -45,14 +44,12 @@ import {
   getMerchantPublicProfileByUid,
   isFirebaseConfigured,
   isGoogleRedirectPending,
-  isMagicLinkSignInUrl,
   loginUser,
   observeAuthSession,
   logoutUser,
   registerCustomer,
   removeCustomerFavorite,
   saveCustomerHistoryItem,
-  sendMagicLink,
   signInCustomerWithGoogle,
   signInCustomerWithGoogleCredential,
   updateCustomerModelPreset,
@@ -289,41 +286,6 @@ const App: React.FC = () => {
       }
 
       try {
-        // 1) Magic link URL: en spesifik tetikleyici - oncelikle kontrol edilir
-        if (isMagicLinkSignInUrl()) {
-          console.log('[Bootstrap] Magic link URL tespit edildi, sign-in tamamlaniyor');
-          setIsCustomerAuthPending(true);
-          try {
-            const profile = await completeMagicLinkSignIn();
-            if (profile) {
-              await applyCustomerSession(profile, consumeCustomerPostAuthTarget());
-              return;
-            }
-          } catch (magicError: any) {
-            if (magicError?.code === 'magic-link/email-required') {
-              // Mail farkli bir tarayici/cihazda acilmis: localStorage'da email yok.
-              // Firebase resmi pattern'i: kullaniciya tekrar email sor.
-              const promptedEmail = window.prompt(
-                'Magic link gondermek icin kullandigin e-posta adresini tekrar gir:'
-              );
-              if (promptedEmail) {
-                try {
-                  const profile = await completeMagicLinkSignIn(promptedEmail);
-                  if (profile) {
-                    await applyCustomerSession(profile, consumeCustomerPostAuthTarget());
-                    return;
-                  }
-                } catch (innerError) {
-                  console.error('[Bootstrap] Magic link 2. deneme basarisiz:', innerError);
-                }
-              }
-            } else {
-              console.error('[Bootstrap] Magic link hatasi:', magicError);
-            }
-            setIsCustomerAuthPending(false);
-          }
-        }
-
         console.log('[Bootstrap] Consuming redirect customer...');
         const redirectProfile = await consumeGoogleRedirectCustomer();
         if (redirectProfile) {
@@ -588,13 +550,6 @@ const App: React.FC = () => {
       setIsCustomerAuthPending(false);
       throw error; // CustomerAuth componenti setError ile gosterir
     }
-  };
-
-  // Magic Link: kullanici email girer, tek seferlik link postasina gider.
-  // Bootstrap'taki isMagicLinkSignInUrl() kontrolu link'e tiklandiginda devraliyor.
-  const handleMagicLinkSend = async (email: string) => {
-    await sendMagicLink(email);
-    console.log('[MagicLink] Link gonderildi:', email);
   };
 
   const handleEmailCustomerSignIn = async (email: string, password: string, isRegister: boolean) => {
@@ -972,7 +927,6 @@ const App: React.FC = () => {
             onGoogleSignIn={handleGoogleCustomerSignIn}
             onGoogleCredentialSignIn={handleGoogleCredentialSignIn}
             onEmailSignIn={handleEmailCustomerSignIn}
-            onMagicLinkSend={handleMagicLinkSend}
             isPending={isCustomerAuthPending}
           />
         );
@@ -1039,7 +993,6 @@ const App: React.FC = () => {
             onGoogleSignIn={handleGoogleCustomerSignIn}
             onGoogleCredentialSignIn={handleGoogleCredentialSignIn}
             onEmailSignIn={handleEmailCustomerSignIn}
-            onMagicLinkSend={handleMagicLinkSend}
             isPending={isCustomerAuthPending}
           />
         );
