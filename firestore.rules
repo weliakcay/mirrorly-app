@@ -1,6 +1,10 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ===== Helpers =====
+
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -9,37 +13,73 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    match /merchant_public/{userId} {
-      allow read: if true;
-      allow write: if isOwner(userId);
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
     }
 
-    match /merchant_profiles/{userId} {
-      allow read, write: if isOwner(userId);
+    // Server-authoritative alanlar: client'tan create/update sirasinda degistirilemez.
+    // Yalnizca Admin SDK (server) yazar; Admin SDK rules'u bypass eder.
+    function protectedFieldsUntouched(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
 
+    // ===== Merchant =====
+
+    // Public merchant profili: QR sayfasinda herkes okur, sahibi/admin yazar
+    match /merchant_public/{userId} {
+      allow read: if true;
+      allow write: if isOwner(userId) || isAdmin();
+    }
+
+    // Private merchant profili: sahibi okur/yazar, ancak credits/status/subscriptionTier
+    // alanlarini degistiremez. Admin SDK (server) ve admin claim'li kullanici yazabilir.
+    match /merchant_profiles/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isAdmin() ||
+        (isOwner(userId) &&
+         protectedFieldsUntouched(['credits', 'status', 'subscriptionTier']));
+      allow delete: if isAdmin();
+
+      // Garments: kataloga herkes erisir, sahibi/admin yazar
       match /garments/{garmentId} {
         allow read: if true;
-        allow write: if isOwner(userId);
+        allow write: if isOwner(userId) || isAdmin();
       }
     }
 
+    // CollectionGroup query for garments: discover/feed icin public read
     match /{path=**}/garments/{garmentId} {
       allow read: if true;
     }
 
+    // ===== Customer =====
+
+    // Customer profili: sahibi okur/yazar, ancak credits alanini degistiremez.
+    // Admin SDK (server) ve admin claim'li kullanici yazabilir.
     match /customer_profiles/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isAdmin() ||
+        (isOwner(userId) &&
+         protectedFieldsUntouched(['credits']));
+      allow delete: if isAdmin();
 
+      // History: try-on sonuc gecmisi
       match /history/{historyId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isAdmin();
       }
 
+      // Favorites: kullanicinin begendigi urunler
       match /favorites/{favoriteId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isAdmin();
       }
 
+      // Credit transactions = append-only audit log
+      // Yalnizca server (Admin SDK) yazar; sahibi/admin sadece okur
       match /credit_transactions/{transactionId} {
-        allow read, write: if isOwner(userId);
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if isAdmin();
       }
     }
   }

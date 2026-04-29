@@ -315,7 +315,10 @@ export const saveMerchantProfile = async (profile: MerchantProfile): Promise<voi
   try {
     await setDoc(doc(db, COLLECTION_PUBLIC_PROFILE, profile.uid), publicProfileData, { merge: true });
   } catch (error: any) {
-    console.warn("merchant_public write skipped:", error?.message || error);
+    console.error("merchant_public write failed:", error?.code, error?.message || error);
+    throw new Error(
+      `Profilin ozel kismi kaydedildi ancak public bilgi guncellenemedi (${error?.code || 'unknown'}). QR sayfasinda eski bilgi gorunmeye devam edebilir. Lutfen tekrar deneyin.`
+    );
   }
 };
 
