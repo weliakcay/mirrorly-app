@@ -1,0 +1,7 @@
+{
+  "name": "Mirrorly",
+  "description": "QR tabanli butik virtual try-on deneyimi.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
