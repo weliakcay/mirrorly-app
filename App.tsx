@@ -590,9 +590,15 @@ const App: React.FC = () => {
       if (customerCreditsBackState === AppState.GARMENT_VIEW) {
         setCurrentState(AppState.GARMENT_VIEW);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Customer credit top-up failed:', error);
-      setCustomerCreditsNotice('Kredi yuklenemedi. Lutfen tekrar dene.');
+      // Server-authoritative gecisi sirasinda permission hatalari friendly mesaj gorunsun.
+      const isPermissionError = String(error?.code || error?.message || '').toLowerCase().includes('permission');
+      setCustomerCreditsNotice(
+        isPermissionError
+          ? 'Kredi yukleme yakinda aktif olacak. Su an icin destek ekibi ile iletisime gec.'
+          : (error?.message || 'Kredi yuklenemedi. Lutfen tekrar dene.')
+      );
     }
   };
 

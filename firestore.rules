@@ -17,10 +17,21 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.admin == true;
     }
 
-    // Server-authoritative alanlar: client'tan create/update sirasinda degistirilemez.
+    // Server-authoritative alanlar: client'tan UPDATE sirasinda degistirilemez.
     // Yalnizca Admin SDK (server) yazar; Admin SDK rules'u bypass eder.
     function protectedFieldsUntouched(fields) {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // CREATE icin "alanin yok ya da sinirli deger" kontrolu (string literal listesi ile)
+    function fieldIsAbsentOrIn(field, allowed) {
+      return !(field in request.resource.data) || (request.resource.data[field] in allowed);
+    }
+
+    // CREATE icin "alanin yok ya da sayisal ust limit" kontrolu
+    function fieldIsAbsentOrAtMost(field, max) {
+      return !(field in request.resource.data) ||
+             (request.resource.data[field] is int && request.resource.data[field] >= 0 && request.resource.data[field] <= max);
     }
 
     // ===== Merchant =====
@@ -31,20 +42,34 @@ service cloud.firestore {
       allow write: if isOwner(userId) || isAdmin();
     }
 
-    // Private merchant profili: sahibi okur/yazar, ancak credits/status/subscriptionTier
-    // alanlarini degistiremez. Admin SDK (server) ve admin claim'li kullanici yazabilir.
+    // Private merchant profili
+    // CREATE: sahibinin yapabilecegi ama protected alanlari sinirli olan ilk yazim
+    //         (credits max 10 = DEFAULT_PROFILE.credits, role kilitli, status whitelist)
+    // UPDATE: protected alanlari sahibi degistiremez (admin veya server SDK degistirir)
     match /merchant_profiles/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.role == 'merchant'
+        && request.resource.data.uid == userId
+        && fieldIsAbsentOrAtMost('credits', 10)
+        && fieldIsAbsentOrIn('status', ['active', 'pending'])
+        && fieldIsAbsentOrIn('subscriptionTier', ['none', 'starter', 'pro', 'scale']);
       allow update: if isAdmin() ||
         (isOwner(userId) &&
-         protectedFieldsUntouched(['credits', 'status', 'subscriptionTier']));
+         protectedFieldsUntouched(['credits', 'status', 'subscriptionTier', 'role', 'uid']));
       allow delete: if isAdmin();
 
       // Garments: kataloga herkes erisir, sahibi/admin yazar
       match /garments/{garmentId} {
         allow read: if true;
         allow write: if isOwner(userId) || isAdmin();
+      }
+
+      // Merchant credit transactions audit log: server (Admin SDK) yazar, sahibi/admin okur
+      // (Simdilik server tarafi merchant audit log yazmiyor; ileride eklendiginde rules hazir.)
+      match /credit_transactions/{transactionId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if isAdmin();
       }
     }
 
@@ -55,14 +80,18 @@ service cloud.firestore {
 
     // ===== Customer =====
 
-    // Customer profili: sahibi okur/yazar, ancak credits alanini degistiremez.
-    // Admin SDK (server) ve admin claim'li kullanici yazabilir.
+    // Customer profili
+    // CREATE: sahibinin yapabilecegi ama credits max DEFAULT_CUSTOMER_CREDITS (3) ile sinirli ilk yazim
+    // UPDATE: credits/role/uid alanlari sahibi tarafindan degistirilemez
     match /customer_profiles/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.role == 'customer'
+        && request.resource.data.uid == userId
+        && fieldIsAbsentOrAtMost('credits', 3);
       allow update: if isAdmin() ||
         (isOwner(userId) &&
-         protectedFieldsUntouched(['credits']));
+         protectedFieldsUntouched(['credits', 'role', 'uid']));
       allow delete: if isAdmin();
 
       // History: try-on sonuc gecmisi

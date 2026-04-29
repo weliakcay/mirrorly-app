@@ -61,6 +61,11 @@ async function verifyAdminToken(req) {
   return decoded;
 }
 
+function sanitizeIdemKey(key) {
+  // Firestore doc ID kisitlari: 1500 byte UTF-8, '/' yok, '__...__' rezervasyonu yok, '..' yok.
+  return `idem_${String(key).replace(/[\/\\.]/g, "_").slice(0, 1400)}`;
+}
+
 async function performTopup(payload) {
   const { ownerUid, ownerRole, creditsDelta, label, type, idempotencyKey, garmentId } = payload;
 
@@ -84,28 +89,28 @@ async function performTopup(payload) {
   const profileRef = db.collection(profileCollection).doc(ownerUid);
   const transactionsRef = profileRef.collection("credit_transactions");
 
-  // Idempotency: ayni anahtarla zaten islem yapilmissa onu dondur
-  if (idempotencyKey) {
-    const existing = await transactionsRef
-      .where("idempotencyKey", "==", idempotencyKey)
-      .limit(1)
-      .get();
+  // Idempotency: idempotencyKey verilmisse onu doc ID olarak kullan, atomik tx.get ile kontrol et.
+  // Ayni anahtarla 2 istek paralel gelse bile transaction izolasyonu sayesinde sadece biri yazar.
+  // Anahtar yoksa rastgele auto-id (idempotency yok demektir).
+  const txnRef = idempotencyKey
+    ? transactionsRef.doc(sanitizeIdemKey(idempotencyKey))
+    : transactionsRef.doc();
 
-    if (!existing.empty) {
-      const profileSnap = await profileRef.get();
-      const balance =
-        typeof profileSnap.data()?.credits === "number" ? profileSnap.data().credits : 0;
-      return {
-        success: true,
-        newBalance: balance,
-        transactionId: existing.docs[0].id,
-        alreadyProcessed: true,
-      };
-    }
-  }
-
-  // Atomik transaction: profili oku, krediyi guncelle, audit log yaz
   const result = await db.runTransaction(async (tx) => {
+    if (idempotencyKey) {
+      const existing = await tx.get(txnRef);
+      if (existing.exists) {
+        const profileSnap = await tx.get(profileRef);
+        const balance =
+          typeof profileSnap.data()?.credits === "number" ? profileSnap.data().credits : 0;
+        return {
+          newBalance: balance,
+          transactionId: txnRef.id,
+          alreadyProcessed: true,
+        };
+      }
+    }
+
     const profileSnap = await tx.get(profileRef);
     if (!profileSnap.exists) {
       throw Object.assign(new Error(`${ownerRole} profili bulunamadi: ${ownerUid}`), { status: 404 });
@@ -115,9 +120,8 @@ async function performTopup(payload) {
       typeof profileSnap.data()?.credits === "number" ? profileSnap.data().credits : 0;
     const newBalance = Math.max(0, currentCredits + creditsDelta);
 
-    const transactionDoc = transactionsRef.doc();
     const transactionData = {
-      id: transactionDoc.id,
+      id: txnRef.id,
       type: txType,
       credits: creditsDelta,
       label: txLabel,
@@ -128,16 +132,18 @@ async function performTopup(payload) {
     if (garmentId) transactionData.garmentId = garmentId;
 
     tx.set(profileRef, { credits: newBalance, updatedAt: Date.now() }, { merge: true });
-    tx.set(transactionDoc, transactionData);
+    tx.set(txnRef, transactionData);
 
-    return { newBalance, transactionId: transactionDoc.id };
+    return {
+      newBalance,
+      transactionId: txnRef.id,
+      alreadyProcessed: false,
+    };
   });
 
   return {
     success: true,
-    newBalance: result.newBalance,
-    transactionId: result.transactionId,
-    alreadyProcessed: false,
+    ...result,
   };
 }
 
