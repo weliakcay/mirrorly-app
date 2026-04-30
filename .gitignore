@@ -45,3 +45,6 @@ serviceAccountKey.json
 
 # Local secrets fallback
 .env.*.local
+
+.vercel
+.env*.local

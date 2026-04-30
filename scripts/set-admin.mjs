@@ -13,14 +13,31 @@ import { getAuth } from "firebase-admin/auth";
 
 loadDotenv({ path: ".env.local" });
 
-const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
-const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
-const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n");
+// server/firebaseAdmin.js ile ayni mantik: oncelik service account JSON,
+// yoksa split FIREBASE_ADMIN_* env'leri.
+let projectId, clientEmail, privateKey;
+
+if (process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON) {
+  try {
+    const sa = JSON.parse(process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON);
+    projectId = sa.project_id;
+    clientEmail = sa.client_email;
+    privateKey = sa.private_key;
+  } catch (err) {
+    console.error("[set-admin] FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON parse hatasi:", err?.message);
+    process.exit(1);
+  }
+} else {
+  projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
+  clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+  privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n");
+}
+
 const adminEmailsRaw = process.env.VITE_ADMIN_EMAILS || "";
 
 if (!projectId || !clientEmail || !privateKey) {
   console.error(
-    "[set-admin] FIREBASE_ADMIN_PROJECT_ID / CLIENT_EMAIL / PRIVATE_KEY env'leri eksik. .env.local dosyasini kontrol et."
+    "[set-admin] Firebase Admin credentials eksik. .env.local'da FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON veya FIREBASE_ADMIN_PROJECT_ID/CLIENT_EMAIL/PRIVATE_KEY tanimli olmali."
   );
   process.exit(1);
 }
