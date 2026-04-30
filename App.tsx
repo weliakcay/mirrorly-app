@@ -76,8 +76,18 @@ const buildFallbackMerchant = (
 const App: React.FC = () => {
   const CUSTOMER_PROFILE_KEY = 'mirrorly_customer_profile';
   const CUSTOMER_POST_AUTH_TARGET_KEY = 'mirrorly_customer_post_auth_target';
-  const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
-  // Debug (Asama 1 prod testi): build sirasinda env'in dogru bundle'a girip girmedigini dogrular
+  // Admin emails normalize: trim + lowercase. Google bazen profile.email'i farkli case ile
+  // dondurebilir; ayrica .env'e yanlislikla bosluk yazilirsa eslesme bozulmasin diye.
+  const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || '')
+    .split(',')
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  const isAdminEmail = (email: string | undefined | null): boolean => {
+    if (!email) return false;
+    return adminEmails.includes(email.trim().toLowerCase());
+  };
+
   if (typeof window !== 'undefined') {
     console.log(
       '[Auth Debug] VITE_ADMIN_EMAILS raw:',
@@ -496,9 +506,9 @@ const App: React.FC = () => {
       }
 
       console.log('[SignIn] Got profile:', profile.email);
-      console.log('[Legacy Google Debug] profile.email:', profile.email, '| adminEmails list:', adminEmails, '| match:', adminEmails.includes(profile.email));
+      console.log('[Legacy Google Debug] profile.email:', profile.email, '| adminEmails list:', adminEmails, '| match:', isAdminEmail(profile.email));
       // Check if user is admin
-      if (adminEmails.includes(profile.email)) {
+      if (isAdminEmail(profile.email)) {
         console.log('[SignIn] User is admin, routing to ADMIN_PANEL');
         setIsAdmin(true);
         setCurrentState(AppState.ADMIN_PANEL);
@@ -539,8 +549,8 @@ const App: React.FC = () => {
       }
 
       // Admin emails - GSI flow icin de kontrol
-      console.log('[GSI Debug] profile.email:', profile.email, '| adminEmails list:', adminEmails, '| match:', adminEmails.includes(profile.email));
-      if (adminEmails.includes(profile.email)) {
+      console.log('[GSI Debug] profile.email:', profile.email, '| adminEmails list:', adminEmails, '| match:', isAdminEmail(profile.email));
+      if (isAdminEmail(profile.email)) {
         console.log('[GSI] User is admin, routing to ADMIN_PANEL');
         setIsAdmin(true);
         setCurrentState(AppState.ADMIN_PANEL);
@@ -590,7 +600,7 @@ const App: React.FC = () => {
       }
 
       // Check if user is admin
-      if (adminEmails.includes(email)) {
+      if (isAdminEmail(email)) {
         setIsAdmin(true);
         setCurrentState(AppState.ADMIN_PANEL);
         setIsCustomerAuthPending(false);
