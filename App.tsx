@@ -77,6 +77,19 @@ const App: React.FC = () => {
   const CUSTOMER_PROFILE_KEY = 'mirrorly_customer_profile';
   const CUSTOMER_POST_AUTH_TARGET_KEY = 'mirrorly_customer_post_auth_target';
   const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
+  // Debug (Asama 1 prod testi): build sirasinda env'in dogru bundle'a girip girmedigini dogrular
+  if (typeof window !== 'undefined') {
+    console.log(
+      '[Auth Debug] VITE_ADMIN_EMAILS raw:',
+      JSON.stringify(import.meta.env.VITE_ADMIN_EMAILS || ''),
+      '| parsed list:',
+      adminEmails,
+      '| VITE_GOOGLE_CLIENT_ID set:',
+      !!import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      '| VITE_TRYON_MODE:',
+      import.meta.env.VITE_TRYON_MODE
+    );
+  }
   const [currentState, setCurrentState] = useState<AppState>(AppState.SPLASH);
   const [isAdmin, setIsAdmin] = useState(false);
   const [experienceOriginState, setExperienceOriginState] = useState<AppState>(AppState.LANDING);
@@ -483,6 +496,7 @@ const App: React.FC = () => {
       }
 
       console.log('[SignIn] Got profile:', profile.email);
+      console.log('[Legacy Google Debug] profile.email:', profile.email, '| adminEmails list:', adminEmails, '| match:', adminEmails.includes(profile.email));
       // Check if user is admin
       if (adminEmails.includes(profile.email)) {
         console.log('[SignIn] User is admin, routing to ADMIN_PANEL');
@@ -525,6 +539,7 @@ const App: React.FC = () => {
       }
 
       // Admin emails - GSI flow icin de kontrol
+      console.log('[GSI Debug] profile.email:', profile.email, '| adminEmails list:', adminEmails, '| match:', adminEmails.includes(profile.email));
       if (adminEmails.includes(profile.email)) {
         console.log('[GSI] User is admin, routing to ADMIN_PANEL');
         setIsAdmin(true);

@@ -311,12 +311,22 @@ export const saveMerchantProfile = async (profile: MerchantProfile): Promise<voi
     ...toPublicMerchantProfile(mergedProfile),
   });
 
-  await setDoc(doc(db, COLLECTION_PRIVATE_PROFILE, profile.uid), privateProfileData, { merge: true });
+  console.log("[saveMerchantProfile] private write payload keys:", Object.keys(privateProfileData), "uid:", profile.uid);
+  try {
+    await setDoc(doc(db, COLLECTION_PRIVATE_PROFILE, profile.uid), privateProfileData, { merge: true });
+    console.log("[saveMerchantProfile] private write OK");
+  } catch (error: any) {
+    console.error("[saveMerchantProfile] private write FAILED:", error?.code, error?.message || error);
+    throw new Error(
+      `Magaza profili kaydedilemedi (${error?.code || 'unknown'}): ${error?.message || 'bilinmeyen hata'}`
+    );
+  }
 
   try {
     await setDoc(doc(db, COLLECTION_PUBLIC_PROFILE, profile.uid), publicProfileData, { merge: true });
+    console.log("[saveMerchantProfile] public write OK");
   } catch (error: any) {
-    console.error("merchant_public write failed:", error?.code, error?.message || error);
+    console.error("[saveMerchantProfile] merchant_public write FAILED:", error?.code, error?.message || error);
     throw new Error(
       `Profilin ozel kismi kaydedildi ancak public bilgi guncellenemedi (${error?.code || 'unknown'}). QR sayfasinda eski bilgi gorunmeye devam edebilir. Lutfen tekrar deneyin.`
     );
