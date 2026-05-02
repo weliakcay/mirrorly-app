@@ -12,35 +12,32 @@ const GOOGLE_BILLING_DISABLED_PATTERNS = [
 type KiePresetConfig =
   {
     type: "market";
-    family: "flux-2" | "nano-banana" | "gpt-image";
+    family: "flux-2" | "nano-banana" | "gpt-image" | "gpt-image-2";
     model: string;
     resolution?: "1K" | "2K";
+    aspectRatio?: string;
   };
 
+// Tek model stratejisi: tum istekler GPT Image 2 1K. Maliyet/yazi+detay
+// dengesinde flux-2'den iyi sonuc veriyor. Preset secimi UI'dan kaldirildi.
+const PRIMARY_CONFIG: KiePresetConfig = {
+  type: "market",
+  family: "gpt-image-2",
+  model: process.env.KIE_MODEL_PRIMARY || "gpt-image-2-image-to-image",
+  resolution: "1K",
+  aspectRatio: "3:4",
+};
+
 const PRESET_CONFIG: Record<ModelPreset, KiePresetConfig> = {
-  economy: {
-    type: "market",
-    family: "gpt-image",
-    model: process.env.KIE_MODEL_ECONOMY || "gpt-image/1.5-image-to-image",
-  },
-  balanced: {
-    type: "market",
-    family: "nano-banana",
-    model: process.env.KIE_MODEL_BALANCED || "nano-banana-2",
-    resolution: "1K",
-  },
-  premium: {
-    type: "market",
-    family: "flux-2",
-    model: process.env.KIE_MODEL_PREMIUM || "flux-2/pro-image-to-image",
-    resolution: "2K",
-  },
+  economy: PRIMARY_CONFIG,
+  balanced: PRIMARY_CONFIG,
+  premium: PRIMARY_CONFIG,
 };
 
 const MARKET_FALLBACK_CONFIG: KiePresetConfig = {
   type: "market",
   family: "flux-2",
-  model: process.env.KIE_MODEL_MARKET_FALLBACK || "flux-2/pro-image-to-image",
+  model: process.env.KIE_MODEL_MARKET_FALLBACK || "flux-2/flex-image-to-image",
   resolution: "1K",
 };
 
@@ -57,17 +54,27 @@ const getKieApiKey = () => {
 const buildPrompt = (garmentName: string, garmentDescription: string) => `
 Create a photorealistic virtual try-on image.
 
-Image 1 is the person. Image 2 is the garment.
+INPUTS:
+- Image 1 = the CUSTOMER (real person). This is the SUBJECT of the final image.
+- Image 2 = the GARMENT reference. It may show the garment alone, on a hanger,
+  on a mannequin, or worn by a model. Image 2 is ONLY a reference for the
+  garment's design, color, fabric, pattern, cut, length and details.
 
-Goals:
-- Put the garment (${garmentName}) on the person naturally.
-- Preserve the person's face, hair, skin tone, pose, and body proportions.
-- Replace the original clothing only where needed.
-- Keep the garment details accurate to the reference image.
-- Match lighting and shadows to the original scene.
-- Return a clean, realistic final image only.
+CRITICAL RULES:
+- The final image MUST show the CUSTOMER from Image 1, NOT the mannequin/model
+  from Image 2. Never swap, replace, or merge Image 1's person with anyone from
+  Image 2. Only the garment is transferred.
+- Preserve from Image 1: face, identity, hair, skin tone, pose, body proportions,
+  background and lighting environment.
+- Take from Image 2 ONLY: the garment ("${garmentName}") with its exact design,
+  color, fabric, pattern and silhouette. Ignore the mannequin/model body, their
+  skin, head, hair, hands, background and pose entirely.
+- Replace the customer's existing clothing only in the garment's coverage area.
+- Match the garment's lighting and shadows to Image 1's scene so it looks natural.
 
-Garment details: ${garmentDescription || garmentName}
+Garment details for reference: ${garmentDescription || garmentName}
+
+Return only the final composited image of the customer from Image 1 wearing the garment from Image 2.
 `;
 
 const isFlux2ImageEditModel = (model: string) => String(model || "").startsWith("flux-2/");
@@ -107,7 +114,15 @@ const createMarketTask = async (
 ) => {
   let input: Record<string, unknown>;
 
-  if (config.family === "flux-2" || isFlux2ImageEditModel(config.model)) {
+  if (config.family === "gpt-image-2") {
+    // GPT Image 2 i2i. Aspect ratio enum'unda 2:3 yok, en yakin portrait 3:4.
+    input = {
+      prompt,
+      input_urls: [userImageUrl, garmentImageUrl],
+      aspect_ratio: config.aspectRatio || "3:4",
+      resolution: config.resolution || "1K",
+    };
+  } else if (config.family === "flux-2" || isFlux2ImageEditModel(config.model)) {
     input = {
       input_urls: [userImageUrl, garmentImageUrl],
       prompt,

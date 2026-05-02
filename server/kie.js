@@ -3,29 +3,27 @@ const KIE_UPLOAD_API_BASE = "https://kieai.redpandaai.co";
 const DEFAULT_TIMEOUT_MS = 90000;
 const POLL_INTERVAL_MS = 2500;
 
+// Tek model stratejisi: tum istekler GPT Image 2 1K. Maliyet/yazi+detay
+// koruma dengesinde flux-2'den iyi sonuc veriyor. Preset secimi UI'dan
+// kaldirildi; eski profillerin modelPreset alanindan ne gelirse gelsin
+// hep ayni config'e maplenir. Fallback: flux-2/flex (GPT hatasinda).
+const PRIMARY_CONFIG = {
+  type: "market",
+  family: "gpt-image-2",
+  model: process.env.KIE_MODEL_PRIMARY || "gpt-image-2-image-to-image",
+  resolution: "1K",
+  aspectRatio: "3:4",
+};
+
 const PRESET_CONFIG = {
-  economy: {
-    type: "market",
-    family: "gpt-image",
-    model: process.env.KIE_MODEL_ECONOMY || "gpt-image/1.5-image-to-image",
-  },
-  balanced: {
-    type: "market",
-    family: "nano-banana",
-    model: process.env.KIE_MODEL_BALANCED || "nano-banana-2",
-    resolution: "1K",
-  },
-  premium: {
-    type: "market",
-    family: "flux-2",
-    model: process.env.KIE_MODEL_PREMIUM || "flux-2/pro-image-to-image",
-    resolution: "2K",
-  },
+  economy: PRIMARY_CONFIG,
+  balanced: PRIMARY_CONFIG,
+  premium: PRIMARY_CONFIG,
 };
 
 const MARKET_FALLBACK_CONFIG = {
   family: "flux-2",
-  model: process.env.KIE_MODEL_MARKET_FALLBACK || "flux-2/pro-image-to-image",
+  model: process.env.KIE_MODEL_MARKET_FALLBACK || "flux-2/flex-image-to-image",
   resolution: "1K",
 };
 
@@ -48,15 +46,24 @@ const getKieApiKey = () => {
 const buildPrompt = (garmentName, garmentDescription) => `
 Create one single photorealistic virtual try-on image.
 
-Image 1: the person photo. Keep this as the base image.
-Image 2: the garment reference (${garmentName}). Use it only as the clothing reference.
+INPUTS:
+- Image 1 = the CUSTOMER (real person). This is the SUBJECT of the final image.
+- Image 2 = the GARMENT reference (${garmentName}). It may show the garment alone,
+  on a hanger, on a mannequin, or worn by a model. Image 2 is ONLY a reference for
+  the garment's design, color, fabric, pattern, cut and details.
 
-Strict instructions:
-- Dress the person in image 1 with the garment from image 2.
-- Preserve the person's face, hair, body proportions, pose, skin tone, camera angle, and background.
-- Preserve the garment's cut, color, texture, fabric details, and silhouette from the reference.
-- Replace only the relevant clothing area. Do not unnecessarily change uncovered body parts.
-- Match lighting, folds, shadows, and perspective naturally.
+CRITICAL RULES:
+- The final image MUST show the CUSTOMER from Image 1, NOT the mannequin/model
+  from Image 2. Never swap, replace, or merge Image 1's person with anyone from
+  Image 2. Only the garment is transferred.
+- Preserve from Image 1: face, identity, hair, skin tone, pose, body proportions,
+  camera angle, background and lighting environment.
+- Take from Image 2 ONLY: the garment with its exact design, color, fabric, pattern,
+  cut and silhouette. Ignore the mannequin/model body, their skin, head, hair,
+  hands, background and pose entirely.
+- Replace the customer's existing clothing only in the garment's coverage area.
+- Match the garment's lighting, folds, shadows, and perspective to Image 1's scene
+  so it looks natural.
 - Output only one final edited image.
 
 Do not:
@@ -64,7 +71,7 @@ Do not:
 - do not create a collage, split screen, moodboard, before/after, or picture-in-picture
 - do not show the original garment as a floating item, corner card, or extra object
 - do not duplicate the person
-- do not change the scene into a fashion poster unless required by the original image
+- do not use the mannequin/model from Image 2 as the person in the final image
 
 Garment details: ${garmentDescription || garmentName}
 `;
@@ -137,7 +144,15 @@ const isGoogleBillingDisabledError = (error) => {
 const createMarketTask = async (config, userImageUrl, garmentImageUrl, prompt) => {
   let input;
 
-  if (config.family === "flux-2" || isFlux2ImageEditModel(config.model)) {
+  if (config.family === "gpt-image-2") {
+    // GPT Image 2 i2i. Aspect ratio enum'unda 2:3 yok, en yakin portrait 3:4.
+    input = {
+      prompt,
+      input_urls: [userImageUrl, garmentImageUrl],
+      aspect_ratio: config.aspectRatio || "3:4",
+      resolution: config.resolution || "1K",
+    };
+  } else if (config.family === "flux-2" || isFlux2ImageEditModel(config.model)) {
     input = {
       input_urls: [userImageUrl, garmentImageUrl],
       prompt,

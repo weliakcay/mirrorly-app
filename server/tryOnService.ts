@@ -208,51 +208,26 @@ export const handleTryOnRequest = async (payload: {
         },
       };
     }
-    let activeModelPreset = merchant.modelPreset || DEFAULT_PROFILE.modelPreset;
-    let creditCost = PRESET_CREDIT_COSTS[activeModelPreset] || 1;
-    let creditOwner: "merchant" | "customer" = "merchant";
+    // QR ile gelen deneme = magaza pazarlama butcesinden dusulur. Customer'in
+    // kendi kredisi su an pasif (ileride self-upload/remix icin kullanilacak).
+    // Customer profili sadece istatistik/identify icin cekilir, dusulmez.
+    const activeModelPreset = merchant.modelPreset || DEFAULT_PROFILE.modelPreset;
+    const creditCost = PRESET_CREDIT_COSTS[activeModelPreset] || 1;
+    const creditOwner: "merchant" | "customer" = "merchant";
     let customerProfile: CustomerProfile | null = null;
-    let remainingCredits = merchant.credits - creditCost;
+    const remainingCredits = merchant.credits - creditCost;
 
     if (customerUid) {
       customerProfile = await getCustomerProfile(customerUid);
-      if (!customerProfile) {
-        return {
-          status: 404,
-          body: {
-            success: false,
-            imageUrl: "",
-            message: "Musteri bakiyesi bulunamadi. Lutfen tekrar giris yapin.",
-          },
-        };
-      }
+    }
 
-      activeModelPreset = customerProfile.modelPreset || activeModelPreset;
-      creditCost = PRESET_CREDIT_COSTS[activeModelPreset] || 1;
-
-      if ((customerProfile.credits || 0) < creditCost) {
-        return {
-          status: 402,
-          body: {
-            success: false,
-            imageUrl: "",
-            message: `Bu deneme icin ${creditCost} kredi gerekiyor. Bakiyeni yukleyip tekrar dene.`,
-            creditOwner: "customer",
-            remainingCredits: customerProfile.credits || 0,
-            creditCost,
-          },
-        };
-      }
-
-      creditOwner = "customer";
-      remainingCredits = (customerProfile.credits || 0) - creditCost;
-    } else if (merchant.credits < creditCost) {
+    if (merchant.credits < creditCost) {
       return {
         status: 402,
         body: {
           success: false,
           imageUrl: "",
-          message: `Bu magaza icin yeterli kredi yok. Bu deneme ${creditCost} kredi gerektiriyor.`,
+          message: `Bu magazanin yeterli kredisi yok. Magaza yetkilisi krediyi yuklediginde tekrar deneyebilirsin.`,
           creditOwner: "merchant",
           remainingCredits: merchant.credits,
           creditCost,
@@ -275,28 +250,12 @@ export const handleTryOnRequest = async (payload: {
         userImageUrl: userTemp.signedUrl,
       });
 
-      if (creditOwner === "customer" && customerUid) {
-        await updateCustomerCredits(customerUid, remainingCredits);
-        await createCreditTransaction({
-          customerUid,
-          credits: creditCost,
-          label: `${garment.name} denemesi`,
-          garmentId: garment.id,
-          balanceAfter: remainingCredits,
-        });
+      // QR-attributed try-on: krediyi her zaman magazadan dus.
+      await updateMerchantCredits(garment.merchantUid, remainingCredits);
 
-        if (customerProfile?.email && remainingCredits <= 3 && (remainingCredits + creditCost) > 3) {
-          const { sendLowCreditAlert } = await import("./emailService");
-          await sendLowCreditAlert(customerProfile.email, remainingCredits).catch(e => console.error("Email error:", e));
-        }
-
-      } else {
-        await updateMerchantCredits(garment.merchantUid, remainingCredits);
-        
-        if (merchant.email && remainingCredits <= 10 && (remainingCredits + creditCost) > 10) {
-          const { sendLowCreditAlert } = await import("./emailService");
-          await sendLowCreditAlert(merchant.email, remainingCredits).catch(e => console.error("Email error:", e));
-        }
+      if (merchant.email && remainingCredits <= 10 && (remainingCredits + creditCost) > 10) {
+        const { sendLowCreditAlert } = await import("./emailService");
+        await sendLowCreditAlert(merchant.email, remainingCredits).catch(e => console.error("Email error:", e));
       }
 
       return {

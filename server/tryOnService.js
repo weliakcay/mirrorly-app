@@ -156,47 +156,25 @@ export const handleTryOnRequest = async (payload) => {
       };
     }
 
+    // QR ile gelen deneme = magaza pazarlama butcesinden dusulur. Customer kredisi
+    // su an pasif (ileride self-upload/remix icin). Customer profili sadece
+    // identify amaciyla cekilir, krediden dusulmez.
     const creditCost = PRESET_CREDIT_COSTS[merchant.modelPreset || DEFAULT_MODEL_PRESET] || 1;
-    let creditOwner = "merchant";
-    let remainingCredits = (merchant.credits || 0) - creditCost;
+    const creditOwner = "merchant";
+    const remainingCredits = (merchant.credits || 0) - creditCost;
     let customerProfile = null;
 
     if (customerUid) {
       customerProfile = await getCustomerProfile(customerUid);
-      if (!customerProfile) {
-        return {
-          status: 404,
-          body: {
-            success: false,
-            imageUrl: "",
-            message: "Musteri bakiyesi bulunamadi. Lutfen tekrar giris yapin.",
-          },
-        };
-      }
+    }
 
-      if ((customerProfile.credits || 0) < creditCost) {
-        return {
-          status: 402,
-          body: {
-            success: false,
-            imageUrl: "",
-            message: `Bu deneme icin ${creditCost} kredi gerekiyor. Bakiyeni yukleyip tekrar dene.`,
-            creditOwner: "customer",
-            remainingCredits: customerProfile.credits || 0,
-            creditCost,
-          },
-        };
-      }
-
-      creditOwner = "customer";
-      remainingCredits = (customerProfile.credits || 0) - creditCost;
-    } else if ((merchant.credits || 0) < creditCost) {
+    if ((merchant.credits || 0) < creditCost) {
       return {
         status: 402,
         body: {
           success: false,
           imageUrl: "",
-          message: `Bu magaza icin yeterli kredi yok. Bu deneme ${creditCost} kredi gerektiriyor.`,
+          message: `Bu magazanin yeterli kredisi yok. Magaza yetkilisi krediyi yuklediginde tekrar deneyebilirsin.`,
           creditOwner: "merchant",
           remainingCredits: merchant.credits || 0,
           creditCost,
@@ -220,18 +198,8 @@ export const handleTryOnRequest = async (payload) => {
         userImageUrl,
       });
 
-      if (creditOwner === "customer" && customerUid) {
-        await updateCustomerCredits(customerUid, remainingCredits);
-        await createCreditTransaction({
-          customerUid,
-          credits: creditCost,
-          label: `${garment.name} denemesi`,
-          garmentId: garment.id,
-          balanceAfter: remainingCredits,
-        });
-      } else {
-        await updateMerchantCredits(garment.merchantUid, remainingCredits);
-      }
+      // QR-attributed try-on: krediyi her zaman magazadan dus.
+      await updateMerchantCredits(garment.merchantUid, remainingCredits);
 
       return {
         status: 200,

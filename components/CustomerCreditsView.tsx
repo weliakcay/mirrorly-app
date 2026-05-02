@@ -1,10 +1,9 @@
 import React from 'react';
-import { ArrowLeft, ChevronRight, Clock, Coins, Sparkles } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Coins, Sparkles } from 'lucide-react';
 import {
   CUSTOMER_CREDIT_PACKAGES,
   CustomerCreditPack,
   CustomerProfile,
-  MODEL_PRESET_OPTIONS,
 } from '../types';
 import { openCustomerCheckout } from '../services/billingService';
 
@@ -13,7 +12,6 @@ interface CustomerCreditsViewProps {
   notice?: string;
   onBack: () => void;
   onAddCredits: (pack: CustomerCreditPack) => Promise<void>;
-  onSelectModelPreset: (preset: typeof MODEL_PRESET_OPTIONS[number]['value']) => Promise<void>;
 }
 
 const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
@@ -21,7 +19,6 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
   notice,
   onBack,
   onAddCredits,
-  onSelectModelPreset,
 }) => {
   return (
     <div className="h-full min-h-0 flex flex-col bg-boutique-cream animate-fade-in overflow-y-auto">
@@ -102,37 +99,6 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
           ))}
         </div>
 
-        <div className="rounded-[1.75rem] bg-white/82 border border-white px-5 py-5 shadow-sm">
-          <h3 className="font-serif text-2xl text-gray-900">Model Bazli Kullanim</h3>
-          <div className="mt-4 space-y-3">
-            {MODEL_PRESET_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => void onSelectModelPreset(option.value)}
-                className={`w-full text-left flex flex-col gap-2 rounded-2xl border px-4 py-4 transition-colors ${
-                  (customerProfile.modelPreset || 'balanced') === option.value
-                    ? 'border-boutique-gold bg-boutique-gold/10'
-                    : 'border-gray-100 bg-gray-50 hover:bg-gray-100'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <p className="font-medium text-gray-900">{option.label}</p>
-                  <span className="text-xs px-2 py-1 rounded-full bg-gray-200 text-gray-700">{option.badge}</span>
-                </div>
-                <p className="text-sm text-gray-500">{option.tool}</p>
-                <div className="flex items-center justify-between gap-4 pt-1">
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="font-medium text-gray-900">{option.creditCost} kredi</span>
-                    <span className="flex items-center gap-1 text-gray-500">
-                      <Clock className="w-4 h-4" />
-                      {option.waitTime}
-                    </span>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
