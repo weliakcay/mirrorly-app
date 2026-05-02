@@ -29,6 +29,7 @@ import DiscoverFeed from './components/DiscoverFeed';
 import FavoritesView from './components/FavoritesView';
 import { generateTryOnImage } from './services/tryOnService';
 import {
+  auth,
   addCustomerCredits,
   addCustomerFavorite,
   clearGoogleRedirectPending,
@@ -38,6 +39,7 @@ import {
   getCustomerFavorites,
   getCustomerHistoryItems,
   getOrCreateCurrentCustomerProfile,
+  getMerchantProfileByUid,
   getGarmentById,
   getGarmentsByMerchant,
   getPublicCatalog,
@@ -246,6 +248,15 @@ const App: React.FC = () => {
         }
       };
 
+      // QR scan deep-link (?id=xxx) varsa, auth bootstrap navigation'i override etmemeli.
+      // Splash → loadGarmentExperience akisi GARMENT_VIEW'a yonlendiriyor; auth flow
+      // sadece profile state'lerini sync etsin, currentState'e dokunmasin.
+      const hasQrDeepLink = () => {
+        if (typeof window === 'undefined') return false;
+        const params = new URLSearchParams(window.location.search);
+        return Boolean(params.get('id'));
+      };
+
       const applyCustomerSession = async (
         profile: CustomerProfile,
         target: AppState | null = null
@@ -255,13 +266,59 @@ const App: React.FC = () => {
         setIsCustomerAuthPending(false);
         // Custom claim'lerin (admin gibi) yeni yazilan token'a yansimasi icin force refresh
         await forceTokenRefresh();
+
+        if (isAdminEmail(profile.email)) {
+          setIsAdmin(true);
+          identifyUser(profile.uid, { role: 'admin' });
+          if (hasQrDeepLink()) {
+            console.log('[Bootstrap] Admin detected but QR deep-link present, skipping nav override');
+            return;
+          }
+          console.log('[Bootstrap] User is admin, routing to ADMIN_PANEL (skipping customer flow)');
+          setCurrentState(AppState.ADMIN_PANEL);
+          return;
+        }
+
         syncCustomerProfile(profile);
         identifyUser(profile.uid, { role: 'customer' });
         await syncCustomerCollections(profile.uid);
 
+        if (hasQrDeepLink()) {
+          console.log('[Bootstrap] QR deep-link present, skipping customer nav');
+          return;
+        }
+
         if (target) {
           console.log('[Bootstrap] Navigating to target:', target);
           await navigateCustomerAfterAuth(profile, target);
+        }
+      };
+
+      // Refresh sonrasi merchant kullanicilar customer akisina dusmesin diye, customer
+      // profile cagrilmadan once merchant_profiles'i kontrol ediyoruz. Merchant ise
+      // MERCHANT_DASHBOARD'a yonlendirip return ediyoruz.
+      const tryApplyMerchantSession = async (uid: string): Promise<boolean> => {
+        try {
+          const merchant = await getMerchantProfileByUid(uid);
+          if (!merchant) return false;
+
+          clearGoogleRedirectPending();
+          setIsCustomerAuthPending(false);
+          await forceTokenRefresh();
+          setMerchantProfile(merchant);
+          identifyUser(uid, { role: 'merchant' });
+
+          if (hasQrDeepLink()) {
+            console.log('[Bootstrap] Merchant detected but QR deep-link present, skipping nav override:', merchant.email);
+            return true;
+          }
+
+          console.log('[Bootstrap] Merchant detected, routing to MERCHANT_DASHBOARD:', merchant.email);
+          setCurrentState(AppState.MERCHANT_DASHBOARD);
+          return true;
+        } catch (error) {
+          console.warn('[Bootstrap] Merchant lookup skipped:', error);
+          return false;
         }
       };
 
@@ -332,6 +389,14 @@ const App: React.FC = () => {
           clearGoogleRedirectPending();
         }
 
+        // Once merchant kontrolu - currentUser uid ile direkt sorgu, customer profile
+        // olusturulmadan once merchant ise routing dogru yapilsin diye.
+        const currentUser = auth?.currentUser;
+        if (currentUser) {
+          const isMerchant = await tryApplyMerchantSession(currentUser.uid);
+          if (isMerchant) return;
+        }
+
         const existingCustomer = await getOrCreateCurrentCustomerProfile();
         if (existingCustomer) {
           const pendingTarget = localStorage.getItem(CUSTOMER_POST_AUTH_TARGET_KEY);
@@ -351,6 +416,10 @@ const App: React.FC = () => {
         if (!user) return;
 
         try {
+          // Merchant ise customer profile olusturma, MERCHANT_DASHBOARD'a yonlendir
+          const isMerchant = await tryApplyMerchantSession(user.uid);
+          if (isMerchant) return;
+
           const profile = await getOrCreateCurrentCustomerProfile();
           if (!profile) return;
 
@@ -990,6 +1059,8 @@ const App: React.FC = () => {
             onBack={() => setCurrentState(AppState.CUSTOMER_ACCOUNT)}
             onSelectItem={handleSelectCatalogItem}
             onToggleFavorite={handleToggleFavorite}
+            customerProfile={customerProfile}
+            onOpenAccount={() => setCurrentState(AppState.CUSTOMER_ACCOUNT)}
           />
         );
 
@@ -1010,7 +1081,6 @@ const App: React.FC = () => {
             notice={customerCreditsNotice}
             onBack={() => setCurrentState(customerCreditsBackState)}
             onAddCredits={handleAddCustomerCredits}
-            onSelectModelPreset={handleSelectCustomerModelPreset}
           />
         ) : (
           <CustomerAuth

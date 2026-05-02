@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Check,
@@ -56,7 +56,15 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   onBack,
   onCustomerLogin,
 }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // Refresh sonrasi App.tsx merchant detection ile dolu profil pass eder; bu durumda
+  // login formunu gostermeden direkt dashboard'a girilsin diye prop'tan turetiyoruz.
+  const [isLoggedIn, setIsLoggedIn] = useState(() => Boolean(merchantProfile.uid));
+
+  useEffect(() => {
+    if (merchantProfile.uid && !isLoggedIn) {
+      setIsLoggedIn(true);
+    }
+  }, [merchantProfile.uid]);
   const [isRegistering, setIsRegistering] = useState(false);
   const [storeName, setStoreName] = useState('');
   const [password, setPassword] = useState('');
@@ -86,7 +94,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   const [profileInstagram, setProfileInstagram] = useState(merchantProfile.instagramUrl || '');
   const [profileShopUrl, setProfileShopUrl] = useState(merchantProfile.defaultShopUrl || '');
   const [profileWhatsapp, setProfileWhatsapp] = useState(merchantProfile.whatsappNumber || '');
-  const [profileCurrency, setProfileCurrency] = useState<Currency>(merchantProfile.currency || 'USD');
+  const [profileCurrency, setProfileCurrency] = useState<Currency>(merchantProfile.currency || 'TRY');
   const [profileModelPreset, setProfileModelPreset] = useState<ModelPreset>(
     merchantProfile.modelPreset || 'balanced'
   );
@@ -239,7 +247,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         description: newItemDesc || 'Exclusive Piece',
         imageUrl: newItemImage,
         price: parseFloat(newItemPrice) || 0,
-        currency: merchantProfile.currency || 'USD',
+        currency: merchantProfile.currency || 'TRY',
         boutiqueName: merchantProfile.name,
         shopUrl: newItemShopUrl.trim(),
       };
@@ -485,9 +493,9 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   />
                 </defs>
                 <circle cx="160" cy="160" r="140" fill="#fdfbf7" stroke="#d4af37" strokeWidth="1.5" />
-                <text fill="#111827" fontSize="11" letterSpacing="4">
+                <text fill="#111827" fontSize="11" letterSpacing="3">
                   <textPath href={`#${qrTextPathId}`} startOffset="50%" textAnchor="middle">
-                    MIRRORLY • SCAN TO SEE IT ON YOU • AI TRY-ON EXPERIENCE •
+                    MIRRORLY • TRY IT ON • MIRRORLY • TRY IT ON • MIRRORLY • TRY IT ON • MIRRORLY • TRY IT ON •
                   </textPath>
                 </text>
               </svg>
@@ -1110,44 +1118,6 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   <option value="EUR">EUR (€)</option>
                   <option value="TRY">TRY (₺)</option>
                 </select>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Settings className="w-4 h-4 text-gray-500" />
-                  <p className="text-sm font-medium text-gray-900">AI Model Profili</p>
-                </div>
-
-                <div className="space-y-3">
-                  {MODEL_PRESET_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setProfileModelPreset(option.value)}
-                      className={`w-full text-left rounded-xl border p-4 transition-colors ${
-                        profileModelPreset === option.value
-                          ? 'border-boutique-gold bg-boutique-gold/10'
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="font-medium text-gray-900">{option.label}</p>
-                          <p className="text-sm text-gray-500 mt-1">{option.description}</p>
-                          <div className="mt-3 space-y-1">
-                            <p className="text-[11px] uppercase tracking-[0.18em] text-gray-400">
-                              {option.tool}
-                            </p>
-                            <p className="text-xs text-gray-500">{option.cost}</p>
-                          </div>
-                        </div>
-                        <span className="text-[10px] uppercase tracking-[0.22em] text-gray-400">
-                          {option.badge}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
               </div>
 
               <button

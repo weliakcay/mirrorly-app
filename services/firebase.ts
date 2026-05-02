@@ -184,6 +184,7 @@ const toPublicMerchantProfile = (profile: MerchantProfile): MerchantPublicProfil
   instagramUrl: profile.instagramUrl,
   defaultShopUrl: profile.defaultShopUrl,
   whatsappNumber: profile.whatsappNumber,
+  currency: profile.currency,
 });
 
 const mergeMerchantDocs = (
@@ -305,6 +306,7 @@ export const saveMerchantProfile = async (profile: MerchantProfile): Promise<voi
     credits: mergedProfile.credits,
     modelPreset: mergedProfile.modelPreset,
     status: mergedProfile.status || "active",
+    currency: mergedProfile.currency || "TRY",
   });
 
   const publicProfileData = cleanData({
@@ -1013,16 +1015,24 @@ export const consumeGoogleRedirectCustomer = async (): Promise<CustomerProfile |
     console.warn('[Google Redirect] getRedirectResult error:', error);
   }
 
-  // İkinci deneme: getCurrentUser varsa onu kullan
+  // İkinci deneme: currentUser varsa, ONLY mevcut customer profili dondur.
+  // Merchant kullaniciya yanlislikla customer profili yaratmamak icin yeni profil
+  // olusturmuyoruz - eger gercekten customer ise getOrCreateCurrentCustomerProfile
+  // bootstrap'in ilerleyen adimlarinda zaten cagriliyor.
   if (auth.currentUser) {
-    console.log('[Google Redirect] Using currentUser:', auth.currentUser.uid);
+    console.log('[Google Redirect] Checking currentUser for existing profile:', auth.currentUser.uid);
+    const merchantProfile = await getMerchantProfileByUid(auth.currentUser.uid);
+    if (merchantProfile) {
+      console.log('[Google Redirect] User is merchant, skipping customer redirect path');
+      return null;
+    }
     const existing = await getCustomerProfileByUid(auth.currentUser.uid);
     if (existing) {
-      console.log('[Google Redirect] Found existing profile');
+      console.log('[Google Redirect] Found existing customer profile');
       return existing;
     }
-    console.log('[Google Redirect] Creating new profile from currentUser');
-    return mapGoogleUserToCustomerProfile(auth.currentUser);
+    console.log('[Google Redirect] No existing profile, returning null (no auto-create)');
+    return null;
   }
 
   console.log('[Google Redirect] No currentUser found');
