@@ -2,6 +2,7 @@
 import React from 'react';
 import { ArrowRight, Chrome, History, Scan, Sparkles, Store } from 'lucide-react';
 import { CustomerProfile } from '../types';
+import Avatar from './Avatar';
 
 interface LandingProps {
   onMerchantLogin: () => void;
@@ -26,11 +27,15 @@ const Landing: React.FC<LandingProps> = ({
         <div className="px-6 pt-4 pb-2 flex items-center justify-end">
           <button
             onClick={onCustomerAccount}
-            className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm font-semibold hover:bg-black transition-colors shadow-sm"
+            className="rounded-full overflow-hidden hover:shadow-md transition-shadow"
+            title="Hesabim"
           >
-            {customerProfile.displayName
-              ? customerProfile.displayName.charAt(0).toUpperCase()
-              : 'U'}
+            <Avatar
+              photoURL={customerProfile.photoURL}
+              displayName={customerProfile.displayName}
+              email={customerProfile.email}
+              size={40}
+            />
           </button>
         </div>
       )}

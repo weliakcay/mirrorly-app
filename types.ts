@@ -248,5 +248,5 @@ export const DEFAULT_PROFILE: MerchantProfile = {
   credits: 10,
   modelPreset: 'balanced',
   status: 'active',
-  currency: 'USD',
+  currency: 'TRY',
 };

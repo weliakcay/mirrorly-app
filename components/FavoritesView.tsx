@@ -67,7 +67,7 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({
                     <h4 className="font-serif text-lg text-gray-900 line-clamp-2">
                       {item.garment.name}
                     </h4>
-                    <p className="text-sm text-gray-900 mt-3 font-medium">{formatPrice(item.garment.price, item.garment.currency || item.merchant.currency)}</p>
+                    <p className="text-sm text-gray-900 mt-3 font-medium">{formatPrice(item.garment.price, item.merchant.currency || item.garment.currency)}</p>
                   </div>
                 </button>
                 <div className="px-4 pb-4">

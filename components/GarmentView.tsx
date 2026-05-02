@@ -76,11 +76,6 @@ const GarmentView: React.FC<GarmentViewProps> = ({
               onError={() => setImageError(true)}
             />
           )}
-          <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-white/85 backdrop-blur-md border border-white/80 shadow-sm">
-            <span className="text-[10px] tracking-[0.24em] uppercase text-gray-600">
-              {merchantProfile.name}
-            </span>
-          </div>
           {onToggleFavorite && (
             <button
               onClick={onToggleFavorite}
@@ -92,6 +87,9 @@ const GarmentView: React.FC<GarmentViewProps> = ({
             </button>
           )}
           <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent p-6 pt-12 text-left">
+            <p className="text-[10px] font-sans tracking-[0.28em] uppercase text-white/75 mb-1.5">
+              {merchantProfile.name}
+            </p>
             <h3 className="text-white font-serif text-2xl leading-tight">{garment.name}</h3>
           </div>
         </div>
@@ -140,7 +138,7 @@ const GarmentView: React.FC<GarmentViewProps> = ({
                 {garment.description}
               </p>
               <div className="inline-block px-3 py-1 border border-gray-200 rounded-full bg-gray-50">
-                <p className="font-sans font-medium text-sm text-gray-900">{formatPrice(garment.price, garment.currency || merchantProfile.currency)}</p>
+                <p className="font-sans font-medium text-sm text-gray-900">{formatPrice(garment.price, merchantProfile.currency || garment.currency)}</p>
               </div>
             </div>
 
@@ -243,7 +241,7 @@ const GarmentView: React.FC<GarmentViewProps> = ({
                   <img src={item.imageUrl} alt={item.name} className="w-full aspect-[3/4] object-cover" />
                   <div className="p-3">
                     <h4 className="font-serif text-sm text-gray-900 truncate">{item.name}</h4>
-                    <p className="text-xs text-gray-500 font-medium">{formatPrice(item.price, item.currency || merchantProfile.currency)}</p>
+                    <p className="text-xs text-gray-500 font-medium">{formatPrice(item.price, merchantProfile.currency || item.currency)}</p>
                   </div>
                 </button>
               ))}

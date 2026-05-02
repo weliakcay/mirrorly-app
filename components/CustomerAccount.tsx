@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, ChevronRight, Coins, Compass, Heart, History, LogOut } from 'lucide-react';
 import { CustomerProfile } from '../types';
+import Avatar from './Avatar';
 
 interface CustomerAccountProps {
   customerProfile: CustomerProfile;
@@ -21,12 +22,7 @@ const CustomerAccount: React.FC<CustomerAccountProps> = ({
   onOpenCredits,
   onLogout,
 }) => {
-  const initials = (customerProfile.displayName || customerProfile.email || 'M')
-    .split(' ')
-    .map((chunk) => chunk[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+  const greetingName = customerProfile.displayName?.split(' ')[0] || customerProfile.email?.split('@')[0];
 
   return (
     <div className="h-full min-h-0 flex flex-col bg-boutique-cream animate-fade-in overflow-y-auto">
@@ -50,21 +46,17 @@ const CustomerAccount: React.FC<CustomerAccountProps> = ({
         <div className="rounded-[2rem] bg-white/80 backdrop-blur-sm border border-white shadow-xl px-6 py-7">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 min-w-0">
-              {customerProfile.photoURL ? (
-                <img
-                  src={customerProfile.photoURL}
-                  alt={customerProfile.displayName || customerProfile.email}
-                  className="w-16 h-16 rounded-2xl object-cover"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-2xl bg-gray-900 text-white flex items-center justify-center font-serif text-xl">
-                  {initials}
-                </div>
-              )}
+              <Avatar
+                photoURL={customerProfile.photoURL}
+                displayName={customerProfile.displayName}
+                email={customerProfile.email}
+                size={64}
+                shape="rounded"
+              />
 
               <div className="min-w-0">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400 mb-1">
-                  Hesabim
+                  {greetingName ? `Merhaba ${greetingName}` : 'Hesabim'}
                 </p>
                 <h2 className="font-serif text-2xl text-gray-900">
                   {customerProfile.displayName || 'Mirrorly Member'}

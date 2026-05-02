@@ -1,7 +1,8 @@
 import React, { useDeferredValue, useMemo, useState } from 'react';
 import { ArrowLeft, Compass, Heart, Search, Sparkles, Store } from 'lucide-react';
-import { CatalogItem } from '../types';
+import { CatalogItem, CustomerProfile } from '../types';
 import { formatPrice } from '../utils/currency';
+import Avatar from './Avatar';
 
 interface DiscoverFeedProps {
   items: CatalogItem[];
@@ -9,6 +10,8 @@ interface DiscoverFeedProps {
   onBack: () => void;
   onSelectItem: (item: CatalogItem) => void;
   onToggleFavorite: (item: CatalogItem) => void;
+  customerProfile?: CustomerProfile | null;
+  onOpenAccount?: () => void;
 }
 
 const sectionize = (items: CatalogItem[]) => {
@@ -44,6 +47,8 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
   onBack,
   onSelectItem,
   onToggleFavorite,
+  customerProfile,
+  onOpenAccount,
 }) => {
   const [query, setQuery] = useState('');
   const [hiddenItemIds, setHiddenItemIds] = useState<string[]>([]);
@@ -81,6 +86,23 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
         </button>
 
         <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400">Kesfet</p>
+
+        {customerProfile && onOpenAccount ? (
+          <button
+            onClick={onOpenAccount}
+            className="rounded-full overflow-hidden shadow-sm bg-white/80 backdrop-blur-md p-0.5 hover:shadow-md transition-shadow"
+            title="Hesabim"
+          >
+            <Avatar
+              photoURL={customerProfile.photoURL}
+              displayName={customerProfile.displayName}
+              email={customerProfile.email}
+              size={40}
+            />
+          </button>
+        ) : (
+          <span className="w-11 h-11" />
+        )}
       </div>
 
       <div className="px-6 pb-5">
@@ -200,7 +222,7 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
                         <p className="text-xs text-gray-500 mt-1 line-clamp-2">
                           {item.garment.description}
                         </p>
-                        <p className="text-sm text-gray-900 mt-3 font-medium">{formatPrice(item.garment.price, item.garment.currency || item.merchant.currency)}</p>
+                        <p className="text-sm text-gray-900 mt-3 font-medium">{formatPrice(item.garment.price, item.merchant.currency || item.garment.currency)}</p>
                       </div>
                     </button>
                     <button
