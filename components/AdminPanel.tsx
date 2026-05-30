@@ -41,14 +41,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
 
       for (const doc of merchantDocs.docs) {
         const profile = doc.data() as MerchantProfile;
-        const garmentDocs = await getDocs(collection(db, `merchant_inventory/${doc.id}/garments`));
+        const garmentDocs = await getDocs(collection(db, `merchant_profiles/${doc.id}/garments`));
         const productCount = garmentDocs.size;
 
         // Count total try-ons from history
         let totalTryOns = 0;
         try {
           const historyDocs = await getDocs(
-            collection(db, `merchant_inventory/${doc.id}/history`)
+            collection(db, `merchant_profiles/${doc.id}/history`)
           );
           totalTryOns = historyDocs.size;
         } catch (e) {

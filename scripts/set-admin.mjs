@@ -19,7 +19,11 @@ let projectId, clientEmail, privateKey;
 
 if (process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON) {
   try {
-    const sa = JSON.parse(process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON);
+    const raw = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON;
+    const sanitized = raw.replace(/"([^"]*)"/g, (m, p1) => {
+      return '"' + p1.replace(/\n/g, '\\n').replace(/\r/g, '\\r') + '"';
+    });
+    const sa = JSON.parse(sanitized);
     projectId = sa.project_id;
     clientEmail = sa.client_email;
     privateKey = sa.private_key;

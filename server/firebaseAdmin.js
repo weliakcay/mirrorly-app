@@ -6,7 +6,11 @@ let adminApp = null;
 
 const readServiceAccount = () => {
   if (process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON) {
-    return JSON.parse(process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON);
+    const raw = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON;
+    const sanitized = raw.replace(/"([^"]*)"/g, (m, p1) => {
+      return '"' + p1.replace(/\n/g, '\\n').replace(/\r/g, '\\r') + '"';
+    });
+    return JSON.parse(sanitized);
   }
 
   if (

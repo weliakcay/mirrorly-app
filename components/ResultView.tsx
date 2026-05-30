@@ -24,9 +24,14 @@ interface ResultViewProps {
 }
 
 const buildWhatsAppHref = (phone: string, garmentName: string) => {
-  const sanitizedPhone = phone.replace(/[^\d]/g, '');
+  let phoneNum = phone.replace(/[^\d]/g, '');
+  if (phoneNum.startsWith('0') && phoneNum.length === 11) {
+    phoneNum = '90' + phoneNum.substring(1);
+  } else if (phoneNum.startsWith('5') && phoneNum.length === 10) {
+    phoneNum = '90' + phoneNum;
+  }
   const text = encodeURIComponent(`${garmentName} urunu hakkinda bilgi almak istiyorum.`);
-  return sanitizedPhone ? `https://wa.me/${sanitizedPhone}?text=${text}` : '';
+  return phoneNum ? `https://wa.me/${phoneNum}?text=${text}` : '';
 };
 
 const resolvePurchaseAction = (

@@ -24,13 +24,29 @@ const MERCHANT_CHECKOUT_URLS: Record<string, string | undefined> = {
     "https://mirrorly-tr.lemonsqueezy.com/checkout/buy/63edab1f-bf75-40f0-a538-6dd5458dced1",
 };
 
-const appendCustomData = (rawUrl: string, customData: Record<string, string>) => {
+// Odeme sonrasi LS bizi geri yonlendirsin diye success_url ekleniyor.
+// "?payment=success" ile geldigi an Mirrorly'de "Odemen alindi" toast/banner
+// gosterilebilir; webhook zaten arka planda krediyi yuklemis olur.
+const getReturnUrl = (path = '/?payment=success') => {
+  if (typeof window === 'undefined') return '';
+  return `${window.location.origin}${path}`;
+};
+
+const appendCustomData = (
+  rawUrl: string,
+  customData: Record<string, string>,
+  successUrl?: string
+) => {
   const url = new URL(rawUrl);
 
   Object.entries(customData).forEach(([key, value]) => {
     if (!value) return;
     url.searchParams.set(`checkout[custom][${key}]`, value);
   });
+
+  if (successUrl) {
+    url.searchParams.set('checkout[success_url]', successUrl);
+  }
 
   return url.toString();
 };
@@ -42,10 +58,14 @@ export const buildCustomerCheckoutUrl = (
   const rawUrl = CUSTOMER_CHECKOUT_URLS[pack.id] || pack.checkoutUrl;
   if (!rawUrl || !customerUid) return null;
 
-  return appendCustomData(rawUrl, {
-    customer_uid: customerUid,
-    package_id: pack.id,
-  });
+  return appendCustomData(
+    rawUrl,
+    {
+      customer_uid: customerUid,
+      package_id: pack.id,
+    },
+    getReturnUrl('/?payment=success&role=customer')
+  );
 };
 
 export const buildMerchantCheckoutUrl = (
@@ -55,11 +75,15 @@ export const buildMerchantCheckoutUrl = (
   const rawUrl = MERCHANT_CHECKOUT_URLS[pack.packType] || pack.checkoutUrl;
   if (!rawUrl || !merchantUid) return null;
 
-  return appendCustomData(rawUrl, {
-    merchant_uid: merchantUid,
-    package_id: pack.id,
-    pack_type: pack.packType,
-  });
+  return appendCustomData(
+    rawUrl,
+    {
+      merchant_uid: merchantUid,
+      package_id: pack.id,
+      pack_type: pack.packType,
+    },
+    getReturnUrl('/?payment=success&role=merchant')
+  );
 };
 
 export const openCustomerCheckout = (

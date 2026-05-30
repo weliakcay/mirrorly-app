@@ -3,16 +3,17 @@ const KIE_UPLOAD_API_BASE = "https://kieai.redpandaai.co";
 const DEFAULT_TIMEOUT_MS = 90000;
 const POLL_INTERVAL_MS = 2500;
 
-// Tek model stratejisi: tum istekler GPT Image 2 1K. Maliyet/yazi+detay
-// koruma dengesinde flux-2'den iyi sonuc veriyor. Preset secimi UI'dan
-// kaldirildi; eski profillerin modelPreset alanindan ne gelirse gelsin
-// hep ayni config'e maplenir. Fallback: flux-2/flex (GPT hatasinda).
+// Tek model stratejisi: tum istekler flux-2/pro-image-to-image 1K.
+// GPT Image 2 multi-image try-on icin uygun degil (2. image'i oldugu
+// gibi geri donduruyor); flux-2 [user, garment] kompozisyonunu basariyla
+// yapiyor. Preset secimi UI'dan kaldirildi; eski profillerin modelPreset
+// alanindan ne gelirse gelsin hep ayni config'e maplenir. Fallback: flux
+// flex (pro hatasinda).
 const PRIMARY_CONFIG = {
   type: "market",
-  family: "gpt-image-2",
-  model: process.env.KIE_MODEL_PRIMARY || "gpt-image-2-image-to-image",
+  family: "flux-2",
+  model: process.env.KIE_MODEL_PRIMARY || "flux-2/pro-image-to-image",
   resolution: "1K",
-  aspectRatio: "3:4",
 };
 
 const PRESET_CONFIG = {
@@ -48,32 +49,47 @@ Create one single photorealistic virtual try-on image.
 
 INPUTS:
 - Image 1 = the CUSTOMER (real person). This is the SUBJECT of the final image.
-- Image 2 = the GARMENT reference (${garmentName}). It may show the garment alone,
-  on a hanger, on a mannequin, or worn by a model. Image 2 is ONLY a reference for
-  the garment's design, color, fabric, pattern, cut and details.
+- Image 2 = the EXACT GARMENT to transfer (${garmentName}). It may show the
+  garment alone, on a hanger, on a mannequin, or worn by a model of any
+  gender/age/body type.
 
 CRITICAL RULES:
-- The final image MUST show the CUSTOMER from Image 1, NOT the mannequin/model
-  from Image 2. Never swap, replace, or merge Image 1's person with anyone from
-  Image 2. Only the garment is transferred.
-- Preserve from Image 1: face, identity, hair, skin tone, pose, body proportions,
-  camera angle, background and lighting environment.
-- Take from Image 2 ONLY: the garment with its exact design, color, fabric, pattern,
-  cut and silhouette. Ignore the mannequin/model body, their skin, head, hair,
-  hands, background and pose entirely.
-- Replace the customer's existing clothing only in the garment's coverage area.
-- Match the garment's lighting, folds, shadows, and perspective to Image 1's scene
-  so it looks natural.
-- Output only one final edited image.
 
-Do not:
+1. PERSON (Image 1): The final image MUST show the CUSTOMER from Image 1.
+   Preserve their face, identity, hair, skin tone, pose, body proportions,
+   camera angle, background and lighting environment. NEVER swap, replace
+   or merge the customer with the mannequin/model from Image 2.
+
+2. GARMENT (Image 2): Transfer the EXACT garment piece from Image 2 onto the
+   customer with NO modifications:
+   - Keep the EXACT design, color, fabric, pattern, neckline, sleeves, hem,
+     length, cut and silhouette as shown in Image 2.
+   - DO NOT redesign, restyle, lengthen, shorten, gender-swap, or "adapt"
+     the garment to the customer's gender, age or body. If Image 2 shows
+     a crop top with short shorts, the result must show the SAME crop top
+     and SAME short shorts on the customer - even if it looks unusual.
+   - This is a faithful try-on, NOT personal styling. Treat the garment as
+     a fixed costume to be worn as-is.
+   - Ignore the mannequin/model body, skin, head, hair, hands, background
+     and pose from Image 2 entirely.
+
+3. COMPOSITION: Replace ONLY the customer's existing clothing in the area
+   the new garment covers. Match the garment's lighting, folds, shadows and
+   perspective to Image 1's scene so it sits naturally on their body.
+
+DO NOT:
+- do not redesign the garment to "suit" the customer's gender or body
+- do not change the garment's length, cut, neckline, or silhouette
 - do not place the garment beside the person
-- do not create a collage, split screen, moodboard, before/after, or picture-in-picture
-- do not show the original garment as a floating item, corner card, or extra object
-- do not duplicate the person
+- do not create a collage, split screen, moodboard, before/after, or
+  picture-in-picture
+- do not duplicate the person or show the garment as a floating object
 - do not use the mannequin/model from Image 2 as the person in the final image
 
-Garment details: ${garmentDescription || garmentName}
+Garment reference details: ${garmentDescription || garmentName}
+
+Output ONLY the final composited image of the customer from Image 1 wearing
+the EXACT garment from Image 2.
 `;
 
 const isFlux2ImageEditModel = (model) => String(model || "").startsWith("flux-2/");
