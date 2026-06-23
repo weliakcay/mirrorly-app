@@ -947,6 +947,19 @@ export const forceTokenRefresh = async (): Promise<void> => {
   }
 };
 
+// Mevcut oturumdaki musterinin Firebase ID token'ini dondurur. Sunucunun
+// customerUid'i guvenilir sekilde dogrulamasi (server-authoritative kredi)
+// icin try-on istegiyle birlikte gonderilir.
+export const getCurrentCustomerIdToken = async (): Promise<string | undefined> => {
+  if (!auth?.currentUser) return undefined;
+  try {
+    return await auth.currentUser.getIdToken();
+  } catch (error) {
+    console.warn("[Auth] ID token alinamadi:", error);
+    return undefined;
+  }
+};
+
 // ===== Legacy popup/redirect Google flow (fallback) =====
 export const signInCustomerWithGoogle = async (): Promise<CustomerProfile | null> => {
   if (!auth || !googleProvider) {

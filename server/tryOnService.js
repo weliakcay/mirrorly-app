@@ -1,4 +1,4 @@
-import { getAdminDb } from "./firebaseAdmin.js";
+import { getAdminAuth, getAdminDb } from "./firebaseAdmin.js";
 import { generateTryOnWithKie, uploadBase64FileToKie } from "./kie.js";
 
 const COLLECTION_PRIVATE_PROFILE = "merchant_profiles";
@@ -119,7 +119,8 @@ export const handleTryOnRequest = async (payload) => {
   try {
     const garmentId = payload?.garmentId?.trim();
     const userPhotoDataUrl = payload?.userPhotoDataUrl?.trim();
-    const customerUid = payload?.customerUid?.trim();
+    const requestedCustomerUid = payload?.customerUid?.trim();
+    const customerAuthToken = payload?.customerAuthToken?.trim();
 
     if (!garmentId || !userPhotoDataUrl) {
       return {
@@ -130,6 +131,48 @@ export const handleTryOnRequest = async (payload) => {
           message: "Garment ID ve kullanıcı görseli zorunlu.",
         },
       };
+    }
+
+    // Server-authoritative dogrulama: customerUid'e guvenmeden once Firebase
+    // ID token'i ile sahibini dogrula. Anonim (guest) try-on'da bu adim atlanir.
+    let customerUid;
+    if (requestedCustomerUid) {
+      if (!customerAuthToken) {
+        return {
+          status: 401,
+          body: {
+            success: false,
+            imageUrl: "",
+            message: "Musteri oturumu dogrulanamadi. Lutfen tekrar giris yapin.",
+          },
+        };
+      }
+
+      try {
+        const decodedToken = await getAdminAuth().verifyIdToken(customerAuthToken);
+        if (decodedToken.uid !== requestedCustomerUid) {
+          return {
+            status: 403,
+            body: {
+              success: false,
+              imageUrl: "",
+              message: "Musteri oturumu eslesmedi. Lutfen tekrar giris yapin.",
+            },
+          };
+        }
+
+        customerUid = decodedToken.uid;
+      } catch (error) {
+        console.warn("Customer token verify failed:", error);
+        return {
+          status: 401,
+          body: {
+            success: false,
+            imageUrl: "",
+            message: "Musteri oturumu gecersiz. Lutfen tekrar giris yapin.",
+          },
+        };
+      }
     }
 
     const garment = await getGarmentById(garmentId);
