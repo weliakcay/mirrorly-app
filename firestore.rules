@@ -9,13 +9,47 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function isMerchantCreate(userId) {
+      return isOwner(userId)
+        && request.resource.data.uid == userId
+        && request.resource.data.role == "merchant"
+        && request.resource.data.credits == 10
+        && request.resource.data.status == "active";
+    }
+
+    function isMerchantSafeUpdate() {
+      return request.resource.data.uid == resource.data.uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.credits == resource.data.credits
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.subscriptionTier == resource.data.subscriptionTier
+        && request.resource.data.email == resource.data.email;
+    }
+
+    function isCustomerCreate(userId) {
+      return isOwner(userId)
+        && request.resource.data.uid == userId
+        && request.resource.data.role == "customer"
+        && request.resource.data.credits == 3;
+    }
+
+    function isCustomerSafeUpdate() {
+      return request.resource.data.uid == resource.data.uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.credits == resource.data.credits
+        && request.resource.data.createdAt == resource.data.createdAt;
+    }
+
     match /merchant_public/{userId} {
       allow read: if true;
       allow write: if isOwner(userId);
     }
 
     match /merchant_profiles/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow create: if isMerchantCreate(userId);
+      allow update: if isOwner(userId) && isMerchantSafeUpdate();
 
       match /garments/{garmentId} {
         allow read: if true;
@@ -28,7 +62,9 @@ service cloud.firestore {
     }
 
     match /customer_profiles/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow create: if isCustomerCreate(userId);
+      allow update: if isOwner(userId) && isCustomerSafeUpdate();
 
       match /history/{historyId} {
         allow read, write: if isOwner(userId);
@@ -39,7 +75,8 @@ service cloud.firestore {
       }
 
       match /credit_transactions/{transactionId} {
-        allow read, write: if isOwner(userId);
+        allow read: if isOwner(userId);
+        allow write: if false;
       }
     }
   }

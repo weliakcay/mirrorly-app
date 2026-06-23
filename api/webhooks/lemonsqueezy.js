@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { getAdminDb } from '../../server/firebaseAdmin.js';
 
 async function readRawBody(req) {
   const chunks = [];
@@ -36,6 +37,14 @@ export default async function handler(req, res) {
     }
 
     const payload = JSON.parse(rawBody.toString('utf8'));
+    const eventFingerprint = crypto.createHash('sha256').update(rawBody).digest('hex');
+    const eventRef = getAdminDb().collection('billing_webhook_events').doc(eventFingerprint);
+    const existingEvent = await eventRef.get();
+
+    if (existingEvent.exists) {
+      return res.status(200).json({ success: true, duplicate: true });
+    }
+
     const { meta, data } = payload;
     const eventName = meta.event_name;
     const customData = meta.custom_data || {};
@@ -93,6 +102,16 @@ export default async function handler(req, res) {
         }
       }
     }
+
+    await eventRef.set({
+      id: eventFingerprint,
+      eventName,
+      processedAt: Date.now(),
+      customerUid: customerUid || null,
+      merchantUid: merchantUid || null,
+      packageId: packageId || null,
+      variantId: data?.attributes?.variant_id || null,
+    });
 
     return res.status(200).json({ success: true });
   } catch (error) {

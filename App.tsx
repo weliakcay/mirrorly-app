@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import {
   AppState,
   CustomerProfile,
@@ -19,22 +19,14 @@ import GarmentView from './components/GarmentView';
 import PhotoInput from './components/PhotoInput';
 import Processing from './components/Processing';
 import ResultView from './components/ResultView';
-import MerchantDashboard from './components/MerchantDashboard';
-import AdminPanel from './components/AdminPanel';
-import CustomerHistory from './components/CustomerHistory';
-import CustomerAuth from './components/CustomerAuth';
-import CustomerAccount from './components/CustomerAccount';
-import CustomerCreditsView from './components/CustomerCreditsView';
-import DiscoverFeed from './components/DiscoverFeed';
-import FavoritesView from './components/FavoritesView';
 import { generateTryOnImage } from './services/tryOnService';
 import {
-  addCustomerCredits,
   addCustomerFavorite,
   clearGoogleRedirectPending,
   clearCustomerHistoryItems,
   consumeGoogleRedirectCustomer,
   getCustomerFavorites,
+  getCurrentCustomerIdToken,
   getCustomerHistoryItems,
   getOrCreateCurrentCustomerProfile,
   getGarmentById,
@@ -54,6 +46,15 @@ import {
 } from './services/firebase';
 import { clearHistory, getHistory, saveToHistory } from './services/historyService';
 import { initAnalytics, identifyUser, trackTryOnStarted, trackTryOnCompleted } from './services/analytics';
+
+const MerchantDashboard = lazy(() => import('./components/MerchantDashboard'));
+const AdminPanel = lazy(() => import('./components/AdminPanel'));
+const CustomerHistory = lazy(() => import('./components/CustomerHistory'));
+const CustomerAuth = lazy(() => import('./components/CustomerAuth'));
+const CustomerAccount = lazy(() => import('./components/CustomerAccount'));
+const CustomerCreditsView = lazy(() => import('./components/CustomerCreditsView'));
+const DiscoverFeed = lazy(() => import('./components/DiscoverFeed'));
+const FavoritesView = lazy(() => import('./components/FavoritesView'));
 
 const buildFallbackMerchant = (
   garment: Garment,
@@ -578,22 +579,10 @@ const App: React.FC = () => {
   };
 
   const handleAddCustomerCredits = async (pack: CustomerCreditPack) => {
-    if (!customerProfile) return;
-
-    try {
-      const updatedProfile = await addCustomerCredits(customerProfile.uid, pack);
-      if (!updatedProfile) return;
-
-      syncCustomerProfile(updatedProfile);
-      setCustomerCreditsNotice('');
-
-      if (customerCreditsBackState === AppState.GARMENT_VIEW) {
-        setCurrentState(AppState.GARMENT_VIEW);
-      }
-    } catch (error) {
-      console.error('Customer credit top-up failed:', error);
-      setCustomerCreditsNotice('Kredi yuklenemedi. Lutfen tekrar dene.');
-    }
+    console.warn('Customer checkout unavailable for pack:', pack.id);
+    setCustomerCreditsNotice(
+      'Odeme sayfasi su an acilamadi. Lutfen birazdan tekrar dene.'
+    );
   };
 
   const handleSelectCustomerModelPreset = async (preset: ModelPreset) => {
@@ -720,7 +709,8 @@ const App: React.FC = () => {
             selectedGarment.id,
             selectedGarment.imageUrl,
             selectedGarment.name,
-            customerProfile?.uid
+            customerProfile?.uid,
+            customerProfile ? await getCurrentCustomerIdToken() : undefined
           );
 
           setResult(apiResult);
@@ -1048,15 +1038,15 @@ const App: React.FC = () => {
     <div className="w-full min-h-[100dvh] bg-neutral-100 flex items-stretch justify-center overflow-x-hidden">
       {isAdminScreen ? (
         <div className="w-full min-h-[100dvh] bg-slate-50 relative overflow-hidden">
-          {renderContent()}
+          <Suspense fallback={<Processing />}>{renderContent()}</Suspense>
         </div>
       ) : isMerchantScreen ? (
         <div className="w-full min-h-[100dvh] bg-boutique-cream relative overflow-hidden">
-          {renderContent()}
+          <Suspense fallback={<Processing />}>{renderContent()}</Suspense>
         </div>
       ) : (
         <div className="w-full min-h-[100dvh] bg-boutique-cream relative overflow-hidden sm:min-h-0 sm:max-w-md sm:h-[calc(100dvh-2rem)] sm:max-h-[900px] sm:my-4 sm:rounded-3xl sm:shadow-2xl sm:border sm:border-gray-200">
-          {renderContent()}
+          <Suspense fallback={<Processing />}>{renderContent()}</Suspense>
         </div>
       )}
     </div>

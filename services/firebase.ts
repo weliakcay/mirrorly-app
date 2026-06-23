@@ -7,7 +7,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  increment,
   getFirestore,
   query,
   setDoc,
@@ -26,8 +25,6 @@ import {
 } from "firebase/auth";
 import {
   CatalogItem,
-  CustomerCreditPack,
-  CustomerCreditTransaction,
   CustomerProfile,
   DEFAULT_CUSTOMER_CREDITS,
   DEFAULT_PROFILE,
@@ -658,46 +655,6 @@ export const addCustomerFavorite = async (
   return favorite;
 };
 
-export const addCustomerCredits = async (
-  uid: string,
-  pack: CustomerCreditPack
-): Promise<CustomerProfile | null> => {
-  if (!db || !uid) return null;
-
-  await setDoc(
-    doc(db, COLLECTION_CUSTOMER_PROFILE, uid),
-    {
-      credits: increment(pack.credits),
-      updatedAt: Date.now(),
-    },
-    { merge: true }
-  );
-
-  const transactionRef = doc(
-    collection(db, COLLECTION_CUSTOMER_PROFILE, uid, COLLECTION_CUSTOMER_CREDIT_TRANSACTIONS)
-  );
-
-  const transaction: CustomerCreditTransaction = {
-    id: transactionRef.id,
-    type: "topup",
-    credits: pack.credits,
-    label: pack.label,
-    createdAt: Date.now(),
-  };
-
-  try {
-    await setDoc(transactionRef, cleanData(transaction));
-  } catch (error: any) {
-    if (isPermissionError(error)) {
-      console.warn("customer credit transaction write skipped:", error?.message || error);
-    } else {
-      throw error;
-    }
-  }
-
-  return getCustomerProfileByUid(uid);
-};
-
 export const removeCustomerFavorite = async (uid: string, garmentId: string): Promise<void> => {
   if (!db || !uid || !garmentId) return;
 
@@ -719,17 +676,6 @@ export const deleteGarmentFromUserInventory = async (uid: string, itemId: string
   if (!db) return false;
 
   await deleteDoc(doc(db, COLLECTION_PRIVATE_PROFILE, uid, COLLECTION_GARMENTS, itemId));
-  return true;
-};
-
-export const updateMerchantCredits = async (uid: string, newCredits: number): Promise<boolean> => {
-  if (!db || !uid) return false;
-
-  await setDoc(
-    doc(db, COLLECTION_PRIVATE_PROFILE, uid),
-    { credits: newCredits },
-    { merge: true }
-  );
   return true;
 };
 
@@ -1015,6 +961,17 @@ export const logoutUser = async () => {
 };
 
 export const isFirebaseConfigured = () => !!db;
+
+export const getCurrentCustomerIdToken = async (): Promise<string | null> => {
+  if (!auth?.currentUser) return null;
+
+  try {
+    return await auth.currentUser.getIdToken();
+  } catch (error) {
+    console.warn("Customer token read failed:", error);
+    return null;
+  }
+};
 
 export const updateCustomerModelPreset = async (
   uid: string,
