@@ -41,57 +41,56 @@ export default async function handler(req, res) {
     const customData = meta.custom_data || {};
     const merchantUid = customData.merchant_uid;
     const customerUid = customData.customer_uid;
-    const packageId = customData.package_id;
+    // packageId ARTIK kredi kararinda KULLANILMAZ (client-kontrollu) — sadece log icin.
+    const packageIdForLog = customData.package_id;
 
     if (!merchantUid && !customerUid) {
       console.warn("Webhook ignoring event without merchant_uid or customer_uid");
       return res.status(200).json({ message: 'Ignored: No target uid found' });
     }
 
-    if (eventName === 'order_created' || eventName === 'subscription_created' || eventName === 'subscription_updated') {
-      const { addCreditsToMerchant, addCreditsToCustomer } = await import("../../server/billingService.js");
-      
-      const variantId = String(data.attributes.variant_id);
-      const customerStarterVariantId = String(process.env.VITE_LS_CUSTOMER_STARTER_VARIANT_ID || "");
-      const customerStandardVariantId = String(process.env.VITE_LS_CUSTOMER_STANDARD_VARIANT_ID || "");
-      const customerPlusVariantId = String(process.env.VITE_LS_CUSTOMER_PLUS_VARIANT_ID || "");
-      const merchantStarterVariantId =
-        String(process.env.VITE_LS_MERCHANT_STARTER_VARIANT_ID || process.env.LS_STARTER_VARIANT_ID || "");
-      const merchantProVariantId =
-        String(process.env.VITE_LS_MERCHANT_PRO_VARIANT_ID || process.env.LS_PRO_VARIANT_ID || "");
-      const merchantScaleVariantId =
-        String(process.env.VITE_LS_MERCHANT_SCALE_VARIANT_ID || process.env.LS_SCALE_VARIANT_ID || "");
-      let creditsToAdd = 0;
-      let newTier = undefined;
+    // Yalniz gercek odemeyi temsil eden event'ler kredi yukler. subscription_created/updated
+    // KAPSAM DISI: yenileme/iptal/odeme-yontemi degisiminde tekrar tam kredi yuklemesin.
+    const CREDIT_EVENTS = new Set(['order_created', 'subscription_payment_success']);
+    if (!CREDIT_EVENTS.has(eventName)) {
+      return res.status(200).json({ message: `Ignored event: ${eventName}` });
+    }
 
-      if (customerUid) {
-        if (variantId === customerStarterVariantId || packageId === 'starter') creditsToAdd = 12;
-        else if (variantId === customerStandardVariantId || packageId === 'standard') creditsToAdd = 30;
-        else if (variantId === customerPlusVariantId || packageId === 'plus') creditsToAdd = 75;
-        
-        if (creditsToAdd > 0) {
-          await addCreditsToCustomer(customerUid, creditsToAdd);
-          console.log(`Granted ${creditsToAdd} customer credits to ${customerUid}`);
-        }
-      } else if (merchantUid) {
-        if (packageId === 'merchant_starter' || variantId === merchantStarterVariantId) {
-          creditsToAdd = 300;
-          newTier = 'starter';
-        } else if (packageId === 'merchant_pro' || variantId === merchantProVariantId) {
-          creditsToAdd = 1200;
-          newTier = 'pro';
-        } else if (packageId === 'merchant_scale' || variantId === merchantScaleVariantId) {
-          creditsToAdd = 5000;
-          newTier = 'scale';
-        } else if (variantId === process.env.LS_TOPUP_100_VARIANT_ID) {
-          creditsToAdd = 100;
-        }
+    // Kredi miktari YALNIZ server-side variant_id -> kredi tablosundan belirlenir.
+    // Variant ID'leri Vercel env'e girilmeli; eslesmezse kredi yuklenmez (fail-safe).
+    const variantId = String(data?.attributes?.variant_id || "");
+    const put = (map, envVal, value) => { const k = String(envVal || "").trim(); if (k) map[k] = value; };
 
-        if (creditsToAdd > 0) {
-          await addCreditsToMerchant(merchantUid, creditsToAdd, newTier);
-          console.log(`Granted ${creditsToAdd} merchant credits to ${merchantUid}`);
-        }
+    const CUSTOMER_VARIANTS = {};
+    put(CUSTOMER_VARIANTS, process.env.VITE_LS_CUSTOMER_STARTER_VARIANT_ID, { credits: 12 });
+    put(CUSTOMER_VARIANTS, process.env.VITE_LS_CUSTOMER_STANDARD_VARIANT_ID, { credits: 30 });
+    put(CUSTOMER_VARIANTS, process.env.VITE_LS_CUSTOMER_PLUS_VARIANT_ID, { credits: 75 });
+
+    const MERCHANT_VARIANTS = {};
+    put(MERCHANT_VARIANTS, process.env.VITE_LS_MERCHANT_STARTER_VARIANT_ID || process.env.LS_STARTER_VARIANT_ID, { credits: 300, tier: 'starter' });
+    put(MERCHANT_VARIANTS, process.env.VITE_LS_MERCHANT_PRO_VARIANT_ID || process.env.LS_PRO_VARIANT_ID, { credits: 1200, tier: 'pro' });
+    put(MERCHANT_VARIANTS, process.env.VITE_LS_MERCHANT_SCALE_VARIANT_ID || process.env.LS_SCALE_VARIANT_ID, { credits: 5000, tier: 'scale' });
+    put(MERCHANT_VARIANTS, process.env.LS_TOPUP_100_VARIANT_ID, { credits: 100 });
+
+    const idempotencyKey = `${eventName}:${data?.id || variantId}`;
+    const { addCreditsToMerchant, addCreditsToCustomer } = await import("../../server/billingService.js");
+
+    if (customerUid) {
+      const match = CUSTOMER_VARIANTS[variantId];
+      if (!match) {
+        console.warn(`Webhook: unmatched customer variant ${variantId} (pkg=${packageIdForLog}) — no credit granted`);
+        return res.status(200).json({ message: 'Ignored: variant not mapped' });
       }
+      const r = await addCreditsToCustomer(customerUid, match.credits, idempotencyKey);
+      console.log(`Customer ${customerUid}: +${match.credits} (variant ${variantId}, ${r.alreadyProcessed ? 'DUP-skipped' : 'granted'})`);
+    } else {
+      const match = MERCHANT_VARIANTS[variantId];
+      if (!match) {
+        console.warn(`Webhook: unmatched merchant variant ${variantId} (pkg=${packageIdForLog}) — no credit granted`);
+        return res.status(200).json({ message: 'Ignored: variant not mapped' });
+      }
+      const r = await addCreditsToMerchant(merchantUid, match.credits, match.tier, idempotencyKey);
+      console.log(`Merchant ${merchantUid}: +${match.credits} tier=${match.tier || '-'} (variant ${variantId}, ${r.alreadyProcessed ? 'DUP-skipped' : 'granted'})`);
     }
 
     return res.status(200).json({ success: true });

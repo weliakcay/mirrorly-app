@@ -1,5 +1,14 @@
 # Mirrorly V1 Release Checklist
 
+## 0. GÜVENLİK LAUNCH-GATE (2026-07-13 Fable incelemesi — ZORUNLU)
+
+- [ ] **LemonSqueezy variant ID'leri Vercel env'e girildi** (`VITE_LS_CUSTOMER_*` + `VITE_LS_MERCHANT_*` + `LS_TOPUP_100`). ⚠️ Boşsa ödeme kredi YÜKLEMEZ (webhook artık yalnız variant_id'den kredi belirler; client `package_id` istismarı kapatıldı).
+- [ ] **Test ödemesi** (müşteri + merchant) → doğru kredi + idempotency (aynı webhook 2× → tek yükleme).
+- [ ] **Firebase Storage rules** konsoldan doğrulandı/kilitlendi (repo'da yok; test modundaysa herkese açık — `users/{uid}` yazımı korunmalı).
+- [ ] **Rate limit**: in-memory limiter aktif (best-effort). Prod trafiği için Upstash Redis / Vercel WAF ile IP+merchant tavanı planlandı.
+- [ ] Vercel `maxDuration: 90` planda destekleniyor mu doğrulandı (Hobby'de sınır olabilir); kie poll 80s'e çekildi.
+- [ ] `RESEND_API_KEY`, `LEMON_SQUEEZY_WEBHOOK_SECRET`, `VITE_ADMIN_EMAILS` prod'da tanımlı.
+
 ## 1. Pre-launch
 
 - [ ] `npm run build` hatasiz tamamlandi

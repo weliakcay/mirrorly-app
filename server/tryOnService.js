@@ -6,11 +6,6 @@ const COLLECTION_CUSTOMER_PROFILE = "customer_profiles";
 const COLLECTION_GARMENTS = "garments";
 const COLLECTION_CUSTOMER_CREDIT_TRANSACTIONS = "credit_transactions";
 const DEFAULT_MODEL_PRESET = "balanced";
-const PRESET_CREDIT_COSTS = {
-  economy: 1,
-  balanced: 2,
-  premium: 3,
-};
 
 const sanitizeFilename = (value) =>
   value.replace(/[^a-z0-9]/gi, "_").toLowerCase() || "mirrorly";
@@ -60,11 +55,28 @@ const getCustomerProfile = async (customerUid) => {
   };
 };
 
-const updateMerchantCredits = async (merchantUid, credits) => {
-  await getAdminDb()
-    .collection(COLLECTION_PRIVATE_PROFILE)
-    .doc(merchantUid)
-    .set({ credits }, { merge: true });
+// Atomik kredi dusumu + merchant audit log. Transaction re-read ile lost-update
+// (paralel try-on) onlenir; bakiye asla negatif olmaz.
+const deductMerchantCreditAtomic = async (merchantUid, creditCost, garmentId) => {
+  const db = getAdminDb();
+  const ref = db.collection(COLLECTION_PRIVATE_PROFILE).doc(merchantUid);
+  const txnRef = ref.collection(COLLECTION_CUSTOMER_CREDIT_TRANSACTIONS).doc();
+  return db.runTransaction(async (t) => {
+    const snap = await t.get(ref);
+    const current = snap.exists && typeof snap.data()?.credits === "number" ? snap.data().credits : 0;
+    const newBalance = Math.max(0, current - creditCost);
+    t.set(ref, { credits: newBalance, updatedAt: Date.now() }, { merge: true });
+    t.set(txnRef, {
+      id: txnRef.id,
+      type: "spend",
+      credits: -creditCost,
+      label: "Try-on denemesi",
+      createdAt: Date.now(),
+      balanceAfter: newBalance,
+      ...(garmentId ? { garmentId } : {}),
+    });
+    return newBalance;
+  });
 };
 
 const updateCustomerCredits = async (customerUid, credits) => {
@@ -202,9 +214,10 @@ export const handleTryOnRequest = async (payload) => {
     // QR ile gelen deneme = magaza pazarlama butcesinden dusulur. Customer kredisi
     // su an pasif (ileride self-upload/remix icin). Customer profili sadece
     // identify amaciyla cekilir, krediden dusulmez.
-    const creditCost = PRESET_CREDIT_COSTS[merchant.modelPreset || DEFAULT_MODEL_PRESET] || 1;
+    // Tek model stratejisi: tum preset'ler ayni flux-2 ciktisini uretir, bu yuzden
+    // deneme basi sabit 1 kredi (eski 1/2/3 preset ucreti adaletsizdi).
+    const creditCost = 1;
     const creditOwner = "merchant";
-    const remainingCredits = (merchant.credits || 0) - creditCost;
     let customerProfile = null;
 
     if (customerUid) {
@@ -241,8 +254,8 @@ export const handleTryOnRequest = async (payload) => {
         userImageUrl,
       });
 
-      // QR-attributed try-on: krediyi her zaman magazadan dus.
-      await updateMerchantCredits(garment.merchantUid, remainingCredits);
+      // QR-attributed try-on: krediyi atomik olarak magazadan dus + audit log.
+      const remainingCredits = await deductMerchantCreditAtomic(garment.merchantUid, creditCost, garmentId);
 
       return {
         status: 200,

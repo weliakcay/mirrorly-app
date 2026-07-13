@@ -1,6 +1,9 @@
 const KIE_API_BASE = "https://api.kie.ai";
 const KIE_UPLOAD_API_BASE = "https://kieai.redpandaai.co";
-const DEFAULT_TIMEOUT_MS = 90000;
+// Vercel maxDuration 90s'e paylı kalması icin poll butcesi 80s (upload + createTask +
+// fallback icin ~10s pay birakilir). Aksi halde fonksiyon Vercel tarafindan kesilir
+// ve client'a JSON'suz cevap doner.
+const DEFAULT_TIMEOUT_MS = 80000;
 const POLL_INTERVAL_MS = 2500;
 
 // Tek model stratejisi: tum istekler flux-2/pro-image-to-image 1K.
@@ -9,11 +12,15 @@ const POLL_INTERVAL_MS = 2500;
 // yapiyor. Preset secimi UI'dan kaldirildi; eski profillerin modelPreset
 // alanindan ne gelirse gelsin hep ayni config'e maplenir. Fallback: flux
 // flex (pro hatasinda).
+// family env'den turetilir → KIE_MODEL_PRIMARY ile model, KIE_MODEL_PRIMARY_FAMILY ile
+// input semasi (flux-2 | nano-banana | gpt-image-2 | generic) env-only degistirilebilir.
+// Ornek: Google'in yeni modeli icin KIE_MODEL_PRIMARY=nano-banana-2-lite +
+// KIE_MODEL_PRIMARY_FAMILY=nano-banana yeter (kod degisikligi gerekmez).
 const PRIMARY_CONFIG = {
   type: "market",
-  family: "flux-2",
+  family: process.env.KIE_MODEL_PRIMARY_FAMILY || "flux-2",
   model: process.env.KIE_MODEL_PRIMARY || "flux-2/pro-image-to-image",
-  resolution: "1K",
+  resolution: process.env.KIE_MODEL_PRIMARY_RESOLUTION || "1K",
 };
 
 const PRESET_CONFIG = {
