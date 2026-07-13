@@ -8,15 +8,50 @@ const Splash: React.FC<SplashProps> = ({ onComplete }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onComplete();
-    }, 1500); // 1.5s duration
+    }, 2000); // logolu intro suresi
 
     return () => clearTimeout(timer);
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-boutique-cream animate-fade-out" style={{ animationDelay: '1s' }}>
-      <div className="text-center animate-fade-in">
-        <h1 className="font-serif text-5xl italic text-gray-900 tracking-wide">Mirrorly</h1>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center animate-fade-out overflow-hidden"
+      style={{ animationDelay: '1.5s', backgroundColor: '#ffffff' }}
+    >
+      {/* Sicak butik parildamasi */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(ellipse 60% 45% at 50% 45%, rgba(212,175,55,0.10), rgba(253,251,247,0) 70%)',
+        }}
+      />
+
+      <div className="relative flex flex-col items-center animate-fade-in px-8">
+        <img
+          src="/mirrorly-logo.png"
+          alt="Mirrorly"
+          className="w-56 sm:w-64 max-w-[70vw] h-auto select-none"
+          draggable={false}
+          onError={(e) => {
+            // Logo yuklenemezse zarif metin fallback
+            const el = e.currentTarget;
+            el.style.display = 'none';
+            const fb = el.nextElementSibling as HTMLElement | null;
+            if (fb) fb.style.display = 'block';
+          }}
+        />
+        <h1
+          className="font-serif text-5xl italic text-gray-900 tracking-wide"
+          style={{ display: 'none' }}
+        >
+          Mirrorly
+        </h1>
+
+        {/* Ince altin shimmer cizgisi */}
+        <div className="mt-6 h-px w-40 overflow-hidden rounded-full bg-boutique-gold/20">
+          <div className="h-full w-1/2 bg-boutique-gold/80 animate-shimmer" />
+        </div>
       </div>
     </div>
   );
