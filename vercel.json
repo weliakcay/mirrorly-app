@@ -10,9 +10,6 @@
     "api/credits/topup.js": {
       "maxDuration": 15
     },
-    "api/email/welcome.js": {
-      "maxDuration": 10
-    },
     "api/webhooks/lemonsqueezy.js": {
       "maxDuration": 15
     }
