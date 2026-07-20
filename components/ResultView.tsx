@@ -80,34 +80,34 @@ const ResultView: React.FC<ResultViewProps> = ({
             onClick={onRetake}
             className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-900" />
+            <ArrowLeft className="w-5 h-5 text-mirrorly-black" />
           </button>
 
           <button
             onClick={onHome}
             className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
           >
-            <Home className="w-5 h-5 text-gray-900" />
+            <Home className="w-5 h-5 text-mirrorly-black" />
           </button>
         </div>
 
         {isMerchantCreditError ? (
           <>
-            <h3 className="font-serif text-2xl text-gray-900 mb-4">Bu Butik Şu An Dolu</h3>
-            <p className="text-gray-500 text-sm leading-relaxed mb-8 max-w-xs">
+            <h3 className="font-serif text-2xl text-mirrorly-black mb-4">Bu Butik Şu An Dolu</h3>
+            <p className="text-mirrorly-stone text-sm leading-relaxed mb-8 max-w-xs">
               Bu mağazanın deneme kapasitesi dolmuş. Daha sonra tekrar deneyin veya başka bir butiki keşfedin.
             </p>
           </>
         ) : (
           <>
-            <h3 className="font-serif text-2xl text-gray-900 mb-4">Ayna netlesemedi</h3>
+            <h3 className="font-serif text-2xl text-mirrorly-black mb-4">Ayna netlesemedi</h3>
             <p className="text-gray-600 mb-8">{result.message}</p>
           </>
         )}
 
         <button
           onClick={onRetake}
-          className="px-8 py-3 bg-gray-900 text-white rounded-full font-sans text-sm uppercase tracking-wide"
+          className="px-8 py-3 bg-mirrorly-black text-white rounded-full font-sans text-sm uppercase tracking-wide"
         >
           Tekrar Dene
         </button>
@@ -207,14 +207,14 @@ const ResultView: React.FC<ResultViewProps> = ({
           onClick={onRetake}
           className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-900" />
+          <ArrowLeft className="w-5 h-5 text-mirrorly-black" />
         </button>
 
         <button
           onClick={onHome}
           className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
         >
-          <Home className="w-5 h-5 text-gray-900" />
+          <Home className="w-5 h-5 text-mirrorly-black" />
         </button>
       </div>
 
@@ -242,7 +242,7 @@ const ResultView: React.FC<ResultViewProps> = ({
 
         {/* Ürün ve butik bilgisi */}
         <div className="mx-auto max-w-sm mb-5 text-center">
-          <h2 className="font-serif text-xl text-gray-900 mb-1">{garment.name}</h2>
+          <h2 className="font-serif text-xl text-mirrorly-black mb-1">{garment.name}</h2>
           {merchantProfile && (
             <div className="flex items-center justify-center gap-2">
               {merchantProfile.logoUrl && (
@@ -252,7 +252,7 @@ const ResultView: React.FC<ResultViewProps> = ({
                   className="w-5 h-5 rounded-full object-cover"
                 />
               )}
-              <span className="text-sm text-gray-500 font-sans">{merchantProfile.name}</span>
+              <span className="text-sm text-mirrorly-stone font-sans">{merchantProfile.name}</span>
             </div>
           )}
         </div>
@@ -262,7 +262,7 @@ const ResultView: React.FC<ResultViewProps> = ({
           {/* Ana CTA — tam genişlik */}
           <button
             onClick={handleBuy}
-            className="w-full h-14 bg-gray-900 text-white rounded-full shadow-xl flex items-center justify-center gap-2 hover:bg-black transition-all active:scale-[0.98]"
+            className="w-full h-14 bg-mirrorly-black text-white rounded-full shadow-xl flex items-center justify-center gap-2 hover:bg-mirrorly-stone transition-all active:scale-[0.98]"
           >
             <ShoppingBag className="w-5 h-5" />
             <span className="font-sans font-semibold text-base tracking-wide">{purchaseAction.label}</span>
@@ -308,18 +308,18 @@ const ResultView: React.FC<ResultViewProps> = ({
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-end justify-center z-50 animate-fade-in">
           <div className="w-full max-w-md bg-white rounded-t-3xl p-6 pb-10 space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="font-serif text-xl text-gray-900">Gorunumu Paylas</h3>
+              <h3 className="font-serif text-xl text-mirrorly-black">Gorunumu Paylas</h3>
               <button
                 onClick={() => setShowShareModal(false)}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-5 h-5 text-mirrorly-stone" />
               </button>
             </div>
 
             <button
               onClick={handleDownload}
-              className="w-full flex items-center justify-center gap-3 bg-gray-900 text-white py-4 rounded-xl font-medium hover:bg-black transition-colors"
+              className="w-full flex items-center justify-center gap-3 bg-mirrorly-black text-white py-4 rounded-xl font-medium hover:bg-mirrorly-stone transition-colors"
             >
               <Download className="w-5 h-5" />
               Gorseli Indir
@@ -360,7 +360,7 @@ const ResultView: React.FC<ResultViewProps> = ({
 
             <button
               onClick={handleCopyLink}
-              className="w-full flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-3 border border-mirrorly-paper rounded-xl text-gray-600 hover:bg-mirrorly-cream transition-colors"
             >
               {copied ? (
                 <>

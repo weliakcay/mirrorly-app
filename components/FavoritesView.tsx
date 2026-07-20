@@ -23,7 +23,7 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({
           onClick={onBack}
           className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-900" />
+          <ArrowLeft className="w-5 h-5 text-mirrorly-black" />
         </button>
 
         <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400">Favoriler</p>
@@ -31,8 +31,8 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({
 
       <div className="px-6 pb-5">
         <div className="rounded-[2rem] bg-white/82 border border-white px-5 py-5 shadow-lg">
-          <h2 className="font-serif text-3xl text-gray-900">Favoriler</h2>
-          <p className="text-sm text-gray-500 mt-2">
+          <h2 className="font-serif text-3xl text-mirrorly-black">Favoriler</h2>
+          <p className="text-sm text-mirrorly-stone mt-2">
             Kesfette begenip sonra donmek istedigin urunleri burada tut.
           </p>
         </div>
@@ -42,8 +42,8 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({
         {items.length === 0 ? (
           <div className="rounded-[2rem] bg-white/82 border border-white px-6 py-10 text-center shadow-sm">
             <Heart className="w-8 h-8 text-gray-300 mx-auto mb-4" />
-            <h3 className="font-serif text-2xl text-gray-900 mb-2">Henuz favori yok</h3>
-            <p className="text-sm text-gray-500">Kesfet ekranindan urunleri kalbine ekleyebilirsin.</p>
+            <h3 className="font-serif text-2xl text-mirrorly-black mb-2">Henuz favori yok</h3>
+            <p className="text-sm text-mirrorly-stone">Kesfet ekranindan urunleri kalbine ekleyebilirsin.</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4">
@@ -64,16 +64,16 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({
                     <p className="text-[10px] uppercase tracking-[0.24em] text-gray-400 mb-2">
                       {item.merchant.name}
                     </p>
-                    <h4 className="font-serif text-lg text-gray-900 line-clamp-2">
+                    <h4 className="font-serif text-lg text-mirrorly-black line-clamp-2">
                       {item.garment.name}
                     </h4>
-                    <p className="text-sm text-gray-900 mt-3 font-medium">{formatPrice(item.garment.price, item.merchant.currency || item.garment.currency)}</p>
+                    <p className="text-sm text-mirrorly-black mt-3 font-medium">{formatPrice(item.garment.price, item.merchant.currency || item.garment.currency)}</p>
                   </div>
                 </button>
                 <div className="px-4 pb-4">
                   <button
                     onClick={() => onRemove(item)}
-                    className="w-full rounded-xl border border-gray-200 py-2 text-xs uppercase tracking-[0.18em] text-gray-500 hover:text-gray-900 hover:border-gray-300 transition-colors"
+                    className="w-full rounded-xl border border-mirrorly-paper py-2 text-xs uppercase tracking-[0.18em] text-mirrorly-stone hover:text-mirrorly-black hover:border-gray-300 transition-colors"
                   >
                     Favoriden Cikar
                   </button>

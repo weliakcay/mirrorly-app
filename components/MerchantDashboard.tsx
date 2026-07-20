@@ -338,7 +338,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
   if (!isLoggedIn) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-gray-900 text-white animate-fade-in px-8 overflow-y-auto">
+      <div className="h-full flex flex-col items-center justify-center bg-mirrorly-black text-white animate-fade-in px-8 overflow-y-auto">
         <div className="w-full max-w-xs space-y-6 py-8">
           <div className="text-center mb-4">
             <h2 className="font-serif text-3xl mb-2 text-boutique-gold">Boutique Access</h2>
@@ -351,7 +351,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
             <button
               onClick={() => setIsRegistering(false)}
               className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-                !isRegistering ? 'bg-boutique-gold text-gray-900' : 'text-gray-400 hover:text-white'
+                !isRegistering ? 'bg-boutique-gold text-mirrorly-black' : 'text-gray-400 hover:text-white'
               }`}
             >
               Giris Yap
@@ -359,7 +359,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
             <button
               onClick={() => setIsRegistering(true)}
               className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-                isRegistering ? 'bg-boutique-gold text-gray-900' : 'text-gray-400 hover:text-white'
+                isRegistering ? 'bg-boutique-gold text-mirrorly-black' : 'text-gray-400 hover:text-white'
               }`}
             >
               Kayit Ol
@@ -402,7 +402,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               <button
                 type="submit"
                 disabled={authLoading}
-                className="w-full bg-boutique-gold text-gray-900 font-medium py-3 rounded-lg flex justify-center uppercase tracking-wide text-xs"
+                className="w-full bg-boutique-gold text-mirrorly-black font-medium py-3 rounded-lg flex justify-center uppercase tracking-wide text-xs"
               >
                 {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Hesap Olustur'}
               </button>
@@ -428,7 +428,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               <button
                 type="submit"
                 disabled={authLoading}
-                className="w-full bg-boutique-gold text-gray-900 font-medium py-3 rounded-lg flex justify-center uppercase tracking-wide text-xs"
+                className="w-full bg-boutique-gold text-mirrorly-black font-medium py-3 rounded-lg flex justify-center uppercase tracking-wide text-xs"
               >
                 {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Giris Yap'}
               </button>
@@ -437,18 +437,18 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
           <div className="relative flex items-center py-2">
             <div className="flex-grow border-t border-gray-700" />
-            <span className="flex-shrink-0 mx-4 text-gray-500 text-xs">veya</span>
+            <span className="flex-shrink-0 mx-4 text-mirrorly-stone text-xs">veya</span>
             <div className="flex-grow border-t border-gray-700" />
           </div>
 
           <button
             onClick={onCustomerLogin}
-            className="w-full bg-white text-gray-900 font-medium py-3 rounded-lg hover:bg-gray-100 transition-colors"
+            className="w-full bg-white text-mirrorly-black font-medium py-3 rounded-lg hover:bg-gray-100 transition-colors"
           >
             Musteri Girisine Gec
           </button>
 
-          <button onClick={onBack} className="w-full text-xs text-gray-500 hover:text-white mt-4">
+          <button onClick={onBack} className="w-full text-xs text-mirrorly-stone hover:text-white mt-4">
             Aynaya Don
           </button>
         </div>
@@ -461,11 +461,11 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
     return (
       <div className="h-full flex flex-col bg-white animate-fade-in relative z-50">
-        <div className="no-print sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 px-4 py-4">
+        <div className="no-print sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-mirrorly-paper px-4 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => setActiveQrItem(null)}
-              className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-mirrorly-black transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Panele Don
@@ -476,14 +476,14 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 shadow-sm transition-all active:scale-95"
               title="Kapat"
             >
-              <X className="w-5 h-5 text-gray-900" />
+              <X className="w-5 h-5 text-mirrorly-black" />
             </button>
           </div>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4 overflow-y-auto">
           {/* QR Code Display */}
-          <div className="print-area bg-white p-6 rounded-[32px] border border-gray-200 flex flex-col items-center shadow-2xl max-w-sm">
+          <div className="print-area bg-white p-6 rounded-[32px] border border-mirrorly-paper flex flex-col items-center shadow-2xl max-w-sm">
             <div className="relative w-[320px] h-[320px] mb-5">
               <svg viewBox="0 0 320 320" className="absolute inset-0 w-full h-full">
                 <defs>
@@ -499,7 +499,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   </textPath>
                 </text>
               </svg>
-              <div className="absolute inset-[58px] bg-white rounded-[28px] border border-gray-200 flex items-center justify-center shadow-lg">
+              <div className="absolute inset-[58px] bg-white rounded-[28px] border border-mirrorly-paper flex items-center justify-center shadow-lg">
                 <img
                   src={generateQrImage(activeQrItem.id)}
                   alt="QR Code"
@@ -509,12 +509,12 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
             </div>
 
             <div className="mt-2 text-center">
-              <span className="inline-flex items-center gap-2 bg-gray-900 text-white px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.25em] rounded-full">
+              <span className="inline-flex items-center gap-2 bg-mirrorly-black text-white px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.25em] rounded-full">
                 <Sparkles className="w-3.5 h-3.5 text-boutique-gold" />
                 Mirrorly
               </span>
-              <h3 className="font-serif text-3xl text-gray-900 mt-3">{activeQrItem.name}</h3>
-              <p className="text-sm text-gray-500 mt-1">{merchantProfile.name}</p>
+              <h3 className="font-serif text-3xl text-mirrorly-black mt-3">{activeQrItem.name}</h3>
+              <p className="text-sm text-mirrorly-stone mt-1">{merchantProfile.name}</p>
               <p className="text-xl font-medium mt-3 text-boutique-gold">{formatPrice(activeQrItem.price, merchantProfile.currency)}</p>
               <p className="text-[10px] text-gray-400 mt-3 uppercase tracking-widest">
                 QR kodu okutun, deneyin
@@ -526,7 +526,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
           <div className="no-print w-full max-w-sm space-y-3">
             <button
               onClick={handlePrint}
-              className="w-full bg-gray-900 text-white py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-black shadow-lg shadow-gray-200 transition-all"
+              className="w-full bg-mirrorly-black text-white py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-mirrorly-stone shadow-lg shadow-gray-200 transition-all"
             >
               <Printer className="w-4 h-4" />
               Etiketi Yazdır
@@ -540,7 +540,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   setCopiedLink(true);
                   setTimeout(() => setCopiedLink(false), 2000);
                 }}
-                className="bg-white text-gray-700 py-2 rounded-lg flex items-center justify-center gap-2 border border-gray-200 hover:bg-gray-50 transition-colors text-sm"
+                className="bg-white text-gray-700 py-2 rounded-lg flex items-center justify-center gap-2 border border-mirrorly-paper hover:bg-mirrorly-cream transition-colors text-sm"
               >
                 {copiedLink ? (
                   <>
@@ -565,7 +565,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   a.click();
                   document.body.removeChild(a);
                 }}
-                className="bg-white text-gray-700 py-2 rounded-lg flex items-center justify-center gap-2 border border-gray-200 hover:bg-gray-50 transition-colors text-sm"
+                className="bg-white text-gray-700 py-2 rounded-lg flex items-center justify-center gap-2 border border-mirrorly-paper hover:bg-mirrorly-cream transition-colors text-sm"
               >
                 <Download className="w-4 h-4" />
                 <span>Resim İndir</span>
@@ -575,7 +575,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
           {/* Instructions */}
           <div className="no-print w-full max-w-sm bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3">
-            <h4 className="font-serif text-base text-gray-900">QR Kodunu Nasıl Kullanırım?</h4>
+            <h4 className="font-serif text-base text-mirrorly-black">QR Kodunu Nasıl Kullanırım?</h4>
 
             <div className="space-y-2 text-left text-sm text-gray-700">
               <div className="flex gap-3">
@@ -615,7 +615,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
           {/* Link Display */}
           <div className="no-print w-full max-w-sm text-center">
             <p className="text-[10px] text-gray-400 mb-2 font-medium">QR Bağlantısı:</p>
-            <p className="text-[10px] text-gray-500 font-mono break-all bg-gray-50 p-3 rounded border border-gray-100 max-h-16 overflow-y-auto">
+            <p className="text-[10px] text-mirrorly-stone font-mono break-all bg-mirrorly-cream p-3 rounded border border-mirrorly-paper max-h-16 overflow-y-auto">
               {getProductDeepLink(activeQrItem.id)}
             </p>
           </div>
@@ -623,7 +623,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
           {/* Close Button */}
           <button
             onClick={() => setActiveQrItem(null)}
-            className="w-full max-w-sm bg-white text-gray-600 py-3 rounded-lg font-medium border border-gray-200 hover:bg-gray-50 transition-colors no-print"
+            className="w-full max-w-sm bg-white text-gray-600 py-3 rounded-lg font-medium border border-mirrorly-paper hover:bg-mirrorly-cream transition-colors no-print"
           >
             Panele Dön
           </button>
@@ -639,8 +639,8 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-6">
           <Sparkles className="w-7 h-7 text-amber-500" />
         </div>
-        <h2 className="font-serif text-2xl text-gray-900 mb-3">Başvurunuz İnceleniyor</h2>
-        <p className="text-gray-500 text-sm leading-relaxed max-w-xs mb-6">
+        <h2 className="font-serif text-2xl text-mirrorly-black mb-3">Başvurunuz İnceleniyor</h2>
+        <p className="text-mirrorly-stone text-sm leading-relaxed max-w-xs mb-6">
           Mağazanız Mirrorly ekibi tarafından inceleniyor. Onay sonrası panele tam erişim sağlayacaksınız.
         </p>
         <p className="text-xs text-gray-400">
@@ -658,8 +658,8 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
       </div>
     )}
     {isLoggedIn && merchantProfile.status !== 'pending' && (
-    <div className="flex flex-col min-h-[100dvh] bg-gray-50 animate-fade-in">
-      <div className="bg-white px-4 sm:px-8 md:px-12 pt-6 pb-2 border-b border-gray-100 sticky top-0 z-10">
+    <div className="flex flex-col min-h-[100dvh] bg-mirrorly-cream animate-fade-in">
+      <div className="bg-white px-4 sm:px-8 md:px-12 pt-6 pb-2 border-b border-mirrorly-paper sticky top-0 z-10">
         {/* Mağaza kimliği ve çıkış */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -667,22 +667,22 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               <img
                 src={merchantProfile.logoUrl}
                 alt={merchantProfile.name}
-                className="w-9 h-9 rounded-full object-cover border border-gray-200"
+                className="w-9 h-9 rounded-full object-cover border border-mirrorly-paper"
               />
             ) : (
               <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
-                <Store className="w-4 h-4 text-gray-500" />
+                <Store className="w-4 h-4 text-mirrorly-stone" />
               </div>
             )}
             <div>
               <p className="text-[10px] uppercase tracking-widest text-gray-400 font-sans">Mağaza Paneli</p>
-              <p className="font-serif text-lg leading-tight text-gray-900">{merchantProfile.name}</p>
+              <p className="font-serif text-lg leading-tight text-mirrorly-black">{merchantProfile.name}</p>
             </div>
           </div>
 
           <button
             onClick={() => setIsLoggedIn(false)}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs text-mirrorly-stone hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span className="font-sans">Çıkış</span>
@@ -701,14 +701,14 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as typeof activeTab)}
                 className={`pb-2 px-1 text-sm font-medium transition-colors relative ${
-                  activeTab === tab.key ? 'text-gray-900' : 'text-gray-400'
+                  activeTab === tab.key ? 'text-mirrorly-black' : 'text-gray-400'
                 }`}
               >
                 <div className="flex items-center gap-1.5">
                   <Icon className="w-4 h-4" /> {tab.label}
                 </div>
                 {activeTab === tab.key && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-mirrorly-gold" />
                 )}
               </button>
             );
@@ -751,7 +751,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
           <>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="font-sans font-medium text-gray-900">Envanter Listesi</h3>
+                <h3 className="font-sans font-medium text-mirrorly-black">Envanter Listesi</h3>
                 <p className="text-xs text-gray-400 mt-1">
                   Her urun icin benzersiz bir QR otomatik olusturulur. Kartlara dokunarak urun
                   detaylarini guncelleyebilirsin.
@@ -770,20 +770,20 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
             {itemEditorMode && (
               <form
                 onSubmit={handleSubmitItem}
-                className="bg-white p-5 rounded-xl shadow-md mb-6 space-y-4 border border-gray-100 relative"
+                className="bg-white p-5 rounded-xl shadow-md mb-6 space-y-4 border border-mirrorly-paper relative"
               >
                 {isSaving && (
                   <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center rounded-xl">
                     <div className="flex flex-col items-center">
                       <Loader2 className="w-8 h-8 text-boutique-gold animate-spin" />
-                      <span className="text-xs mt-2 text-gray-500">Kaydediliyor...</span>
+                      <span className="text-xs mt-2 text-mirrorly-stone">Kaydediliyor...</span>
                     </div>
                   </div>
                 )}
 
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h4 className="font-medium text-gray-900">
+                    <h4 className="font-medium text-mirrorly-black">
                       {itemEditorMode === 'edit' ? 'Urunu Duzenle' : 'Yeni Urun Ekle'}
                     </h4>
                     <p className="text-xs text-gray-400 mt-1">
@@ -795,7 +795,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   <button
                     type="button"
                     onClick={closeItemEditor}
-                    className="text-xs text-gray-500 hover:text-gray-900"
+                    className="text-xs text-mirrorly-stone hover:text-mirrorly-black"
                   >
                     Vazgec
                   </button>
@@ -803,7 +803,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full aspect-[4/3] bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden relative"
+                  className="w-full aspect-[4/3] bg-mirrorly-cream border-2 border-dashed border-mirrorly-paper rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden relative"
                 >
                   {newItemImage ? (
                     <img src={newItemImage} alt="Preview" className="w-full h-full object-cover" />
@@ -831,14 +831,14 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 <input
                   type="text"
                   placeholder="Urun adi"
-                  className="w-full bg-gray-50 rounded-lg p-3 text-sm"
+                  className="w-full bg-mirrorly-cream rounded-lg p-3 text-sm"
                   value={newItemName}
                   onChange={(e) => setNewItemName(e.target.value)}
                   required
                 />
                 <textarea
                   placeholder="Kisa aciklama"
-                  className="w-full bg-gray-50 rounded-lg p-3 text-sm min-h-24 resize-none"
+                  className="w-full bg-mirrorly-cream rounded-lg p-3 text-sm min-h-24 resize-none"
                   value={newItemDesc}
                   onChange={(e) => setNewItemDesc(e.target.value)}
                 />
@@ -846,7 +846,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   type="number"
                   step="0.01"
                   placeholder="Fiyat"
-                  className="w-full bg-gray-50 rounded-lg p-3 text-sm"
+                  className="w-full bg-mirrorly-cream rounded-lg p-3 text-sm"
                   value={newItemPrice}
                   onChange={(e) => setNewItemPrice(e.target.value)}
                   required
@@ -856,7 +856,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   <input
                     type="url"
                     placeholder="Urun linki (opsiyonel)"
-                    className="w-full bg-gray-50 rounded-lg p-3 pl-9 text-sm"
+                    className="w-full bg-mirrorly-cream rounded-lg p-3 pl-9 text-sm"
                     value={newItemShopUrl}
                     onChange={(e) => setNewItemShopUrl(e.target.value)}
                   />
@@ -864,7 +864,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
                 <button
                   type="submit"
-                  className="w-full bg-gray-900 text-white py-3 rounded-lg text-sm font-medium"
+                  className="w-full bg-mirrorly-black text-white py-3 rounded-lg text-sm font-medium"
                 >
                   {itemEditorMode === 'edit' ? 'Degisiklikleri Kaydet' : 'Envantere Ekle'}
                 </button>
@@ -887,7 +887,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   onClick={() => openEditItemForm(item)}
                   className={`bg-white p-3 rounded-xl shadow-sm border border-gray-50 flex items-center gap-4 ${
                     deletingItemId === item.id ? 'opacity-50' : ''
-                  } cursor-pointer transition-all hover:border-gray-200 hover:shadow-md`}
+                  } cursor-pointer transition-all hover:border-mirrorly-paper hover:shadow-md`}
                 >
                   <img
                     src={item.imageUrl}
@@ -895,9 +895,9 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                     className="w-16 h-20 rounded-lg object-cover bg-gray-100"
                   />
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-serif text-gray-900 truncate text-lg">{item.name}</h4>
+                    <h4 className="font-serif text-mirrorly-black truncate text-lg">{item.name}</h4>
                     <p className="text-xs text-gray-400 truncate mb-1">{item.description}</p>
-                    <span className="text-sm font-bold text-gray-900">{formatPrice(item.price, merchantProfile.currency)}</span>
+                    <span className="text-sm font-bold text-mirrorly-black">{formatPrice(item.price, merchantProfile.currency)}</span>
                   </div>
                   <div className="flex flex-col gap-2">
                     <button
@@ -905,7 +905,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                         event.stopPropagation();
                         setActiveQrItem(item);
                       }}
-                      className="p-2 bg-gray-50 rounded-lg hover:bg-gray-900 hover:text-white text-gray-600 transition-colors"
+                      className="p-2 bg-mirrorly-cream rounded-lg hover:bg-mirrorly-black hover:text-white text-gray-600 transition-colors"
                       title="QR Olustur"
                     >
                       <QrCode className="w-5 h-5" />
@@ -940,25 +940,25 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
         {activeTab === 'balance' && (
           <div className="space-y-4">
-            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm text-center">
+            <div className="p-6 bg-white rounded-2xl border border-mirrorly-paper shadow-sm text-center">
               <p className="text-[10px] uppercase tracking-widest text-gray-400 font-sans mb-2">Mevcut Kredi</p>
-              <p className="font-serif text-5xl text-gray-900 mb-1">{merchantProfile.credits}</p>
-              <p className="text-sm text-gray-500">kullanılabilir deneme kredisi</p>
+              <p className="font-serif text-5xl text-mirrorly-black mb-1">{merchantProfile.credits}</p>
+              <p className="text-sm text-mirrorly-stone">kullanılabilir deneme kredisi</p>
             </div>
 
-            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-2">
+            <div className="p-4 bg-mirrorly-cream rounded-2xl border border-mirrorly-paper space-y-2">
               <p className="text-sm font-medium text-gray-700">Kredi nasıl çalışır?</p>
-              <ul className="text-sm text-gray-500 space-y-1 list-disc list-inside">
+              <ul className="text-sm text-mirrorly-stone space-y-1 list-disc list-inside">
                 <li>Ekonomik mod: 1 kredi / deneme</li>
                 <li>Dengeli mod: 2 kredi / deneme</li>
                 <li>Premium mod: 3 kredi / deneme</li>
               </ul>
             </div>
 
-            <div className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-4">
+            <div className="p-5 bg-white rounded-2xl border border-mirrorly-paper shadow-sm space-y-4">
               <div>
-                <p className="text-sm font-medium text-gray-900">Magaza Paketleri</p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm font-medium text-mirrorly-black">Magaza Paketleri</p>
+                <p className="text-sm text-mirrorly-stone mt-1">
                   QR trafigini finanse etmek icin daha yuksek kredi paketlerini buradan yonet.
                 </p>
               </div>
@@ -987,19 +987,19 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                           );
                         }
                       }}
-                      className="w-full rounded-2xl border border-gray-200 bg-white px-5 py-5 text-left shadow-sm transition-all hover:shadow-md disabled:opacity-60"
+                      className="w-full rounded-2xl border border-mirrorly-paper bg-white px-5 py-5 text-left shadow-sm transition-all hover:shadow-md disabled:opacity-60"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
-                          <p className="font-serif text-xl text-gray-900">{pack.label}</p>
-                          <p className="text-sm text-gray-500 mt-1">{pack.description}</p>
+                          <p className="font-serif text-xl text-mirrorly-black">{pack.label}</p>
+                          <p className="text-sm text-mirrorly-stone mt-1">{pack.description}</p>
                           <p className="text-xs uppercase tracking-[0.22em] text-gray-400 mt-3">
                             {pack.credits} kredi yukler
                           </p>
                         </div>
 
                         <div className="flex items-center gap-3 flex-shrink-0">
-                          <div className="rounded-full bg-gray-900 px-4 py-2 text-sm font-medium text-white">
+                          <div className="rounded-full bg-mirrorly-black px-4 py-2 text-sm font-medium text-white">
                             +{pack.credits}
                           </div>
                           <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -1032,7 +1032,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center rounded-xl">
                 <div className="flex flex-col items-center">
                   <Loader2 className="w-8 h-8 text-boutique-gold animate-spin" />
-                  <span className="text-xs mt-2 text-gray-500">Guncelleniyor...</span>
+                  <span className="text-xs mt-2 text-mirrorly-stone">Guncelleniyor...</span>
                 </div>
               </div>
             )}
@@ -1063,14 +1063,14 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 type="text"
                 value={profileName}
                 onChange={(e) => setProfileName(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-lg p-3 text-gray-900"
+                className="w-full bg-white border border-mirrorly-paper rounded-lg p-3 text-mirrorly-black"
                 placeholder="Magaza adi"
               />
 
               <textarea
                 value={profileDescription}
                 onChange={(e) => setProfileDescription(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-lg p-3 text-gray-900 min-h-24 resize-none"
+                className="w-full bg-white border border-mirrorly-paper rounded-lg p-3 text-mirrorly-black min-h-24 resize-none"
                 placeholder="Magaza aciklamasi"
               />
 
@@ -1081,7 +1081,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   value={profileShopUrl}
                   onChange={(e) => setProfileShopUrl(e.target.value)}
                   placeholder="Varsayilan online satis linki"
-                  className="w-full bg-white border border-gray-200 rounded-lg p-3 pl-9 text-gray-900"
+                  className="w-full bg-white border border-mirrorly-paper rounded-lg p-3 pl-9 text-mirrorly-black"
                 />
               </div>
 
@@ -1092,7 +1092,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   value={profileWhatsapp}
                   onChange={(e) => setProfileWhatsapp(e.target.value)}
                   placeholder="WhatsApp numarasi"
-                  className="w-full bg-white border border-gray-200 rounded-lg p-3 pl-9 text-gray-900"
+                  className="w-full bg-white border border-mirrorly-paper rounded-lg p-3 pl-9 text-mirrorly-black"
                 />
               </div>
 
@@ -1103,7 +1103,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   value={profileInstagram}
                   onChange={(e) => setProfileInstagram(e.target.value)}
                   placeholder="Instagram kullanici adi veya linki"
-                  className="w-full bg-white border border-gray-200 rounded-lg p-3 pl-9 text-gray-900"
+                  className="w-full bg-white border border-mirrorly-paper rounded-lg p-3 pl-9 text-mirrorly-black"
                 />
               </div>
 
@@ -1112,7 +1112,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 <select
                   value={profileCurrency}
                   onChange={(e) => setProfileCurrency(e.target.value as Currency)}
-                  className="w-full bg-white border border-gray-200 rounded-lg p-3 pl-9 text-gray-900 appearance-none"
+                  className="w-full bg-white border border-mirrorly-paper rounded-lg p-3 pl-9 text-mirrorly-black appearance-none"
                 >
                   <option value="USD">USD ($)</option>
                   <option value="EUR">EUR (€)</option>
@@ -1122,7 +1122,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
               <button
                 type="submit"
-                className="w-full bg-gray-900 text-white py-4 rounded-xl font-medium shadow-lg hover:bg-black transition-colors"
+                className="w-full bg-mirrorly-black text-white py-4 rounded-xl font-medium shadow-lg hover:bg-mirrorly-stone transition-colors"
               >
                 Degisiklikleri Kaydet
               </button>

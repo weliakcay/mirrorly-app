@@ -32,22 +32,22 @@ const PhotoInput: React.FC<PhotoInputProps> = ({ onPhotoSelected, onBack, onHome
           onClick={onBack}
           className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-900" />
+          <ArrowLeft className="w-5 h-5 text-mirrorly-black" />
         </button>
 
         <button
           onClick={onHome}
           className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
         >
-          <Home className="w-5 h-5 text-gray-900" />
+          <Home className="w-5 h-5 text-mirrorly-black" />
         </button>
       </div>
 
       <div className="flex-1 flex flex-col justify-center px-6 pt-20 pb-10">
         <div className="w-full max-w-md mx-auto space-y-8">
           <div className="text-center space-y-2">
-            <h2 className="font-serif text-4xl text-gray-900">Goruntunu yukle</h2>
-            <p className="font-sans text-gray-500 font-light leading-relaxed">
+            <h2 className="font-serif text-4xl text-mirrorly-black">Goruntunu yukle</h2>
+            <p className="font-sans text-mirrorly-stone font-light leading-relaxed">
               Net kadraj ve iyi isik, daha iyi bir deneme sonucu verir.
             </p>
           </div>
@@ -63,12 +63,12 @@ const PhotoInput: React.FC<PhotoInputProps> = ({ onPhotoSelected, onBack, onHome
 
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full bg-white border border-gray-200 rounded-2xl p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-4 group active:bg-gray-50"
+              className="w-full bg-white border border-mirrorly-paper rounded-2xl p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-4 group active:bg-mirrorly-cream"
             >
-              <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
+              <div className="w-16 h-16 rounded-full bg-mirrorly-cream flex items-center justify-center group-hover:bg-gray-100 transition-colors">
                 <Camera className="w-8 h-8 text-gray-700" />
               </div>
-              <span className="font-serif text-xl text-gray-900">Fotograf cek</span>
+              <span className="font-serif text-xl text-mirrorly-black">Fotograf cek</span>
             </button>
 
             <button
@@ -82,13 +82,13 @@ const PhotoInput: React.FC<PhotoInputProps> = ({ onPhotoSelected, onBack, onHome
             </button>
           </div>
 
-          <div className="rounded-[1.75rem] bg-white/80 border border-white px-5 py-4 text-sm text-gray-500 leading-relaxed">
+          <div className="rounded-[1.75rem] bg-white/80 border border-white px-5 py-4 text-sm text-mirrorly-stone leading-relaxed">
             Tek bir fotograf yeterli. Urunun gorunecegi bolgeyi kapatmayan, temiz ve net bir
             kare secmeye calis.
           </div>
 
           {/* Rehber ipuçları */}
-          <div className="mt-4 p-4 bg-white/60 rounded-2xl border border-gray-100 space-y-2">
+          <div className="mt-4 p-4 bg-white/60 rounded-2xl border border-mirrorly-paper space-y-2">
             <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">En iyi sonuç için</p>
             <ul className="space-y-1.5">
               {[
@@ -97,7 +97,7 @@ const PhotoInput: React.FC<PhotoInputProps> = ({ onPhotoSelected, onBack, onHome
                 'İyi aydınlatılmış ortamda çekin',
                 'Sizi tam kaplayan kıyafet tercih edin',
               ].map((tip) => (
-                <li key={tip} className="flex items-start gap-2 text-xs text-gray-500">
+                <li key={tip} className="flex items-start gap-2 text-xs text-mirrorly-stone">
                   <span className="text-boutique-gold mt-0.5">✦</span>
                   {tip}
                 </li>

@@ -187,19 +187,19 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
           onClick={onBack}
           className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-900" />
+          <ArrowLeft className="w-5 h-5 text-mirrorly-black" />
         </button>
       </div>
 
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-7 pb-10">
         <div className="max-w-sm mx-auto w-full">
           <div className="mb-8 text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-[2rem] bg-white/80 border border-gray-200 shadow-xl flex items-center justify-center">
-              <ShieldCheck className="w-9 h-9 text-gray-900" />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-[2rem] bg-white/80 border border-mirrorly-paper shadow-xl flex items-center justify-center">
+              <ShieldCheck className="w-9 h-9 text-mirrorly-black" />
             </div>
             <p className="text-[11px] uppercase tracking-[0.32em] text-gray-400 mb-3">Mirrorly</p>
-            <h2 className="font-serif text-3xl text-gray-900 mb-3">{titleText}</h2>
-            <p className="text-sm text-gray-500 leading-relaxed">{subtitleText}</p>
+            <h2 className="font-serif text-3xl text-mirrorly-black mb-3">{titleText}</h2>
+            <p className="text-sm text-mirrorly-stone leading-relaxed">{subtitleText}</p>
           </div>
 
           <form onSubmit={handleEmailSubmit} className="space-y-3">
@@ -226,7 +226,7 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
             <button
               type="submit"
               disabled={inputsDisabled}
-              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gray-900 text-white py-3 shadow-xl hover:bg-black transition-all disabled:opacity-60 disabled:cursor-not-allowed font-medium mt-4"
+              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-mirrorly-black text-white py-3 shadow-xl hover:bg-mirrorly-stone transition-all disabled:opacity-60 disabled:cursor-not-allowed font-medium mt-4"
             >
               {isSubmitting ? 'Isleniyor...' : isRegister ? 'Kayit Ol' : 'Giris Yap'}
             </button>
@@ -239,7 +239,7 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
                 setError('');
               }}
               disabled={inputsDisabled}
-              className="text-xs text-gray-500 hover:text-gray-900 transition-colors underline disabled:opacity-60"
+              className="text-xs text-mirrorly-stone hover:text-mirrorly-black transition-colors underline disabled:opacity-60"
             >
               {isRegister ? 'Zaten hesabin var mi? Giris yap' : 'Henuz hesabin yok mu? Kayit ol'}
             </button>
@@ -260,7 +260,7 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
               <button
                 onClick={handleLegacyGoogle}
                 disabled={inputsDisabled}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl border border-gray-300 bg-white text-gray-700 py-3 shadow-sm hover:bg-gray-50 transition-all text-sm disabled:opacity-60"
+                className="w-full flex items-center justify-center gap-2 rounded-2xl border border-gray-300 bg-white text-gray-700 py-3 shadow-sm hover:bg-mirrorly-cream transition-all text-sm disabled:opacity-60"
               >
                 <Chrome className="w-4 h-4" />
                 <span>Google ile devam et</span>

@@ -121,11 +121,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
   return (
     <div className="h-full min-h-0 flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 animate-fade-in">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-gray-200 px-6 py-4">
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-mirrorly-paper px-6 py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div>
-            <h1 className="font-serif text-2xl text-gray-900">Admin Panel</h1>
-            <p className="text-xs text-gray-500 mt-1">Giriş: {userEmail}</p>
+            <h1 className="font-serif text-2xl text-mirrorly-black">Admin Panel</h1>
+            <p className="text-xs text-mirrorly-stone mt-1">Giriş: {userEmail}</p>
           </div>
           <button
             onClick={onLogout}
@@ -142,41 +142,41 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
         <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
           {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-xl p-6 border border-mirrorly-paper shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-widest text-gray-500 font-medium">Mağazalar</p>
-                  <p className="font-serif text-3xl text-gray-900 mt-2">{totalMerchants}</p>
+                  <p className="text-xs uppercase tracking-widest text-mirrorly-stone font-medium">Mağazalar</p>
+                  <p className="font-serif text-3xl text-mirrorly-black mt-2">{totalMerchants}</p>
                 </div>
                 <Store className="w-10 h-10 text-blue-500 opacity-20" />
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-xl p-6 border border-mirrorly-paper shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-widest text-gray-500 font-medium">Müşteriler</p>
-                  <p className="font-serif text-3xl text-gray-900 mt-2">{totalCustomers}</p>
+                  <p className="text-xs uppercase tracking-widest text-mirrorly-stone font-medium">Müşteriler</p>
+                  <p className="font-serif text-3xl text-mirrorly-black mt-2">{totalCustomers}</p>
                 </div>
                 <Users className="w-10 h-10 text-emerald-500 opacity-20" />
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-xl p-6 border border-mirrorly-paper shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-widest text-gray-500 font-medium">Ürünler</p>
-                  <p className="font-serif text-3xl text-gray-900 mt-2">{totalProducts}</p>
+                  <p className="text-xs uppercase tracking-widest text-mirrorly-stone font-medium">Ürünler</p>
+                  <p className="font-serif text-3xl text-mirrorly-black mt-2">{totalProducts}</p>
                 </div>
                 <Download className="w-10 h-10 text-amber-500 opacity-20" />
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-xl p-6 border border-mirrorly-paper shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-widest text-gray-500 font-medium">Denemeler</p>
-                  <p className="font-serif text-3xl text-gray-900 mt-2">{totalTryOns}</p>
+                  <p className="text-xs uppercase tracking-widest text-mirrorly-stone font-medium">Denemeler</p>
+                  <p className="font-serif text-3xl text-mirrorly-black mt-2">{totalTryOns}</p>
                 </div>
                 <TrendingUp className="w-10 h-10 text-purple-500 opacity-20" />
               </div>
@@ -184,14 +184,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
           </div>
 
           {/* Tabs */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="flex border-b border-gray-200">
+          <div className="bg-white rounded-xl border border-mirrorly-paper shadow-sm overflow-hidden">
+            <div className="flex border-b border-mirrorly-paper">
               <button
                 onClick={() => setActiveTab('merchants')}
                 className={`flex-1 px-6 py-4 text-center font-medium transition-colors ${
                   activeTab === 'merchants'
-                    ? 'text-gray-900 border-b-2 border-gray-900'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'text-mirrorly-black border-b-2 border-gray-900'
+                    : 'text-mirrorly-stone hover:text-gray-700'
                 }`}
               >
                 Mağazalar ({totalMerchants})
@@ -200,8 +200,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
                 onClick={() => setActiveTab('customers')}
                 className={`flex-1 px-6 py-4 text-center font-medium transition-colors ${
                   activeTab === 'customers'
-                    ? 'text-gray-900 border-b-2 border-gray-900'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'text-mirrorly-black border-b-2 border-gray-900'
+                    : 'text-mirrorly-stone hover:text-gray-700'
                 }`}
               >
                 Müşteriler ({totalCustomers})
@@ -211,7 +211,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
             <div className="p-6">
               {loading ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-500">Veriler yükleniyor...</p>
+                  <p className="text-mirrorly-stone">Veriler yükleniyor...</p>
                 </div>
               ) : activeTab === 'merchants' ? (
                 <div className="space-y-4">
@@ -221,7 +221,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
                       onClick={() => setSortBy('active')}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                         sortBy === 'active'
-                          ? 'bg-gray-900 text-white'
+                          ? 'bg-mirrorly-black text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
@@ -231,7 +231,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
                       onClick={() => setSortBy('products')}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                         sortBy === 'products'
-                          ? 'bg-gray-900 text-white'
+                          ? 'bg-mirrorly-black text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
@@ -241,7 +241,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
                       onClick={() => setSortBy('credits')}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                         sortBy === 'credits'
-                          ? 'bg-gray-900 text-white'
+                          ? 'bg-mirrorly-black text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
@@ -251,23 +251,23 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
 
                   {/* Merchants List */}
                   {sortedMerchants.map((merchant) => (
-                    <div key={merchant.uid} className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+                    <div key={merchant.uid} className="p-4 bg-mirrorly-cream rounded-lg border border-mirrorly-paper hover:border-gray-300 transition-colors">
                       <div className="grid grid-cols-12 gap-4 items-center">
                         <div className="col-span-4">
-                          <h3 className="font-serif text-lg text-gray-900">{merchant.name}</h3>
-                          <p className="text-xs text-gray-500 mt-1">{merchant.uid}</p>
+                          <h3 className="font-serif text-lg text-mirrorly-black">{merchant.name}</h3>
+                          <p className="text-xs text-mirrorly-stone mt-1">{merchant.uid}</p>
                         </div>
                         <div className="col-span-2 text-center">
-                          <p className="text-xs text-gray-500 uppercase tracking-widest">Ürünler</p>
-                          <p className="font-serif text-xl text-gray-900 mt-1">{merchant.productCount}</p>
+                          <p className="text-xs text-mirrorly-stone uppercase tracking-widest">Ürünler</p>
+                          <p className="font-serif text-xl text-mirrorly-black mt-1">{merchant.productCount}</p>
                         </div>
                         <div className="col-span-2 text-center">
-                          <p className="text-xs text-gray-500 uppercase tracking-widest">Denemeler</p>
-                          <p className="font-serif text-xl text-gray-900 mt-1">{merchant.totalTryOns}</p>
+                          <p className="text-xs text-mirrorly-stone uppercase tracking-widest">Denemeler</p>
+                          <p className="font-serif text-xl text-mirrorly-black mt-1">{merchant.totalTryOns}</p>
                         </div>
                         <div className="col-span-2 text-center">
-                          <p className="text-xs text-gray-500 uppercase tracking-widest">Kredi</p>
-                          <p className="font-serif text-xl text-gray-900 mt-1 flex items-center justify-center gap-1">
+                          <p className="text-xs text-mirrorly-stone uppercase tracking-widest">Kredi</p>
+                          <p className="font-serif text-xl text-mirrorly-black mt-1 flex items-center justify-center gap-1">
                             <Coins className="w-4 h-4" />
                             {merchant.credits}
                           </p>
@@ -291,26 +291,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
                 <div className="space-y-4">
                   {/* Customers List */}
                   {sortedCustomers.map((customer) => (
-                    <div key={customer.uid} className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+                    <div key={customer.uid} className="p-4 bg-mirrorly-cream rounded-lg border border-mirrorly-paper hover:border-gray-300 transition-colors">
                       <div className="grid grid-cols-12 gap-4 items-center">
                         <div className="col-span-5">
-                          <h3 className="font-serif text-lg text-gray-900">{customer.displayName || customer.email}</h3>
-                          <p className="text-xs text-gray-500 mt-1">{customer.email}</p>
+                          <h3 className="font-serif text-lg text-mirrorly-black">{customer.displayName || customer.email}</h3>
+                          <p className="text-xs text-mirrorly-stone mt-1">{customer.email}</p>
                         </div>
                         <div className="col-span-2 text-center">
-                          <p className="text-xs text-gray-500 uppercase tracking-widest">Denemeler</p>
-                          <p className="font-serif text-xl text-gray-900 mt-1">{customer.tryOnCount}</p>
+                          <p className="text-xs text-mirrorly-stone uppercase tracking-widest">Denemeler</p>
+                          <p className="font-serif text-xl text-mirrorly-black mt-1">{customer.tryOnCount}</p>
                         </div>
                         <div className="col-span-2 text-center">
-                          <p className="text-xs text-gray-500 uppercase tracking-widest">Kredi</p>
-                          <p className="font-serif text-xl text-gray-900 mt-1 flex items-center justify-center gap-1">
+                          <p className="text-xs text-mirrorly-stone uppercase tracking-widest">Kredi</p>
+                          <p className="font-serif text-xl text-mirrorly-black mt-1 flex items-center justify-center gap-1">
                             <Coins className="w-4 h-4" />
                             {customer.credits}
                           </p>
                         </div>
                         <div className="col-span-3 text-right">
                           {customer.lastActivity ? (
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-mirrorly-stone">
                               Son: {new Date(customer.lastActivity).toLocaleDateString('tr-TR')}
                             </span>
                           ) : (
@@ -328,10 +328,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
       </div>
 
       {/* Back Button */}
-      <div className="sticky bottom-0 bg-white/95 backdrop-blur-md border-t border-gray-200 px-6 py-4">
+      <div className="sticky bottom-0 bg-white/95 backdrop-blur-md border-t border-mirrorly-paper px-6 py-4">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors text-sm font-medium"
+          className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-mirrorly-black transition-colors text-sm font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
           Geri Dön

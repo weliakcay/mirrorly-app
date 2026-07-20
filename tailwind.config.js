@@ -23,8 +23,16 @@ module.exports = {
           900: '#111827',
         },
         boutique: {
-          gold: '#d4af37',
-          cream: '#fdfbf7',
+          gold: '#C9A961',
+          cream: '#F5EFE3',
+        },
+        // Landing ile birebir birleşik marka paleti (06-landing-page/tailwind.config.js)
+        mirrorly: {
+          cream: '#F5EFE3', // Ana zemin
+          paper: '#EBE3D2', // Kart/yüzey, kenarlık
+          gold: '#C9A961', // CTA, aksan, eyebrow
+          stone: '#6B6359', // Gövde/ikincil metin
+          black: '#1F1B16', // Başlık, koyu CTA
         },
       },
       animation: {

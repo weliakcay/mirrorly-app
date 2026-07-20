@@ -19,14 +19,14 @@ const Splash: React.FC<SplashProps> = ({ onComplete }) => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center animate-fade-out overflow-hidden"
-      style={{ animationDelay: '1.5s', backgroundColor: '#ffffff' }}
+      style={{ animationDelay: '1.5s', backgroundColor: '#F5EFE3' }}
     >
       {/* Sicak butik parildamasi */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 60% 45% at 50% 45%, rgba(212,175,55,0.10), rgba(253,251,247,0) 70%)',
+            'radial-gradient(ellipse 60% 45% at 50% 45%, rgba(201,169,97,0.14), rgba(245,239,227,0) 70%)',
         }}
       />
 
@@ -45,7 +45,7 @@ const Splash: React.FC<SplashProps> = ({ onComplete }) => {
           }}
         />
         <h1
-          className="font-serif text-5xl italic text-gray-900 tracking-wide"
+          className="font-serif text-5xl italic text-mirrorly-black tracking-wide"
           style={{ display: 'none' }}
         >
           Mirrorly

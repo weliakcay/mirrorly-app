@@ -30,7 +30,7 @@ const FUN_FACTS = [
 
 const LoadingRing: React.FC = () => (
   <div className="relative w-40 h-52 sm:w-56 sm:h-72 mb-4 sm:mb-6">
-    <div className="absolute inset-0 border border-gray-200 rounded-full animate-pulse" />
+    <div className="absolute inset-0 border border-mirrorly-paper rounded-full animate-pulse" />
     <div className="absolute inset-4 border border-boutique-gold/30 rounded-full animate-[spin_8s_linear_infinite]" />
     <div className="absolute inset-0 flex items-center justify-center">
       <Sparkles className="w-8 h-8 text-boutique-gold animate-bounce" />
@@ -64,12 +64,12 @@ const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome, varia
           <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
             {onBack ? (
               <button onClick={onBack} className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors">
-                <ArrowLeft className="w-5 h-5 text-gray-900" />
+                <ArrowLeft className="w-5 h-5 text-mirrorly-black" />
               </button>
             ) : <span />}
             {onHome ? (
               <button onClick={onHome} className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors">
-                <Home className="w-5 h-5 text-gray-900" />
+                <Home className="w-5 h-5 text-mirrorly-black" />
               </button>
             ) : <span />}
           </div>
@@ -99,14 +99,14 @@ const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome, varia
           onClick={onBack || onCancel}
           className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-900" />
+          <ArrowLeft className="w-5 h-5 text-mirrorly-black" />
         </button>
 
         <button
           onClick={onHome}
           className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
         >
-          <Home className="w-5 h-5 text-gray-900" />
+          <Home className="w-5 h-5 text-mirrorly-black" />
         </button>
       </div>
 
@@ -134,7 +134,7 @@ const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome, varia
       {onCancel && (
         <button
           onClick={onCancel}
-          className="mt-6 px-6 py-2 bg-white/70 border border-gray-200 rounded-full text-gray-600 hover:bg-white hover:text-gray-900 transition-colors text-xs uppercase tracking-wider font-medium"
+          className="mt-6 px-6 py-2 bg-white/70 border border-mirrorly-paper rounded-full text-gray-600 hover:bg-white hover:text-mirrorly-black transition-colors text-xs uppercase tracking-wider font-medium"
         >
           İptal Et
         </button>

@@ -82,7 +82,7 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
           onClick={onBack}
           className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-900" />
+          <ArrowLeft className="w-5 h-5 text-mirrorly-black" />
         </button>
 
         <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400">Kesfet</p>
@@ -110,12 +110,12 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400 mb-2">Mirrorly</p>
-              <h2 className="font-serif text-3xl text-gray-900">Kesfet</h2>
-              <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+              <h2 className="font-serif text-3xl text-mirrorly-black">Kesfet</h2>
+              <p className="text-sm text-mirrorly-stone mt-2 leading-relaxed">
                 Giris yapan musteri artik QR disinda da urun gezebiliyor.
               </p>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-gray-900 text-white flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 rounded-2xl bg-mirrorly-black text-white flex items-center justify-center shadow-lg">
               <Compass className="w-5 h-5 text-boutique-gold" />
             </div>
           </div>
@@ -126,7 +126,7 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Urun, aciklama veya butik ara"
-              className="w-full rounded-2xl bg-boutique-cream border border-gray-200 pl-11 pr-4 py-3 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-gray-900/10"
+              className="w-full rounded-2xl bg-boutique-cream border border-mirrorly-paper pl-11 pr-4 py-3 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-gray-900/10"
             />
           </div>
         </div>
@@ -163,7 +163,7 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
                 className={`w-5 h-5 ${
                   favoriteIds.has(heroItem.garment.id)
                     ? 'fill-rose-500 text-rose-500'
-                    : 'text-gray-500'
+                    : 'text-mirrorly-stone'
                 }`}
               />
             </button>
@@ -183,15 +183,15 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
         {sections.length === 0 ? (
           <div className="rounded-[2rem] bg-white/82 border border-white px-6 py-10 text-center shadow-sm">
             <Store className="w-8 h-8 text-gray-300 mx-auto mb-4" />
-            <h3 className="font-serif text-2xl text-gray-900 mb-2">Urun bulunamadi</h3>
-            <p className="text-sm text-gray-500">Aramani temizleyip tekrar deneyebilirsin.</p>
+            <h3 className="font-serif text-2xl text-mirrorly-black mb-2">Urun bulunamadi</h3>
+            <p className="text-sm text-mirrorly-stone">Aramani temizleyip tekrar deneyebilirsin.</p>
           </div>
         ) : (
           sections.map((section) => (
             <section key={section.key} className="mb-8">
               <div className="mb-4">
-                <h3 className="font-serif text-2xl text-gray-900">{section.title}</h3>
-                <p className="text-sm text-gray-500 mt-1">{section.subtitle}</p>
+                <h3 className="font-serif text-2xl text-mirrorly-black">{section.title}</h3>
+                <p className="text-sm text-mirrorly-stone mt-1">{section.subtitle}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -216,13 +216,13 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
                         <p className="text-[10px] uppercase tracking-[0.24em] text-gray-400 mb-2">
                           {item.merchant.name}
                         </p>
-                        <h4 className="font-serif text-lg text-gray-900 line-clamp-2">
+                        <h4 className="font-serif text-lg text-mirrorly-black line-clamp-2">
                           {item.garment.name}
                         </h4>
-                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                        <p className="text-xs text-mirrorly-stone mt-1 line-clamp-2">
                           {item.garment.description}
                         </p>
-                        <p className="text-sm text-gray-900 mt-3 font-medium">{formatPrice(item.garment.price, item.merchant.currency || item.garment.currency)}</p>
+                        <p className="text-sm text-mirrorly-black mt-3 font-medium">{formatPrice(item.garment.price, item.merchant.currency || item.garment.currency)}</p>
                       </div>
                     </button>
                     <button
@@ -233,7 +233,7 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
                         className={`w-4 h-4 ${
                           favoriteIds.has(item.garment.id)
                             ? 'fill-rose-500 text-rose-500'
-                            : 'text-gray-500'
+                            : 'text-mirrorly-stone'
                         }`}
                       />
                     </button>

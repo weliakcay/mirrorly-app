@@ -27,14 +27,14 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
           onClick={onBack}
           className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-900" />
+          <ArrowLeft className="w-5 h-5 text-mirrorly-black" />
         </button>
 
         <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400">Krediler</p>
       </div>
 
       <div className="px-6 pb-6 space-y-4">
-        <div className="rounded-[2rem] bg-gray-900 text-white px-6 py-6 shadow-xl">
+        <div className="rounded-[2rem] bg-mirrorly-black text-white px-6 py-6 shadow-xl">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-[0.28em] text-white/45 mb-2">
@@ -62,8 +62,8 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
         )}
 
         <div className="rounded-[1.75rem] bg-white/82 border border-white px-5 py-5 shadow-sm">
-          <h3 className="font-serif text-2xl text-gray-900">Kredi Paketleri</h3>
-          <p className="text-sm text-gray-500 mt-2">
+          <h3 className="font-serif text-2xl text-mirrorly-black">Kredi Paketleri</h3>
+          <p className="text-sm text-mirrorly-stone mt-2">
             Paket secerek bakiyene aninda kredi ekleyebilirsin.
           </p>
         </div>
@@ -77,19 +77,19 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
                   void onAddCredits(pack);
                 }
               }}
-              className="w-full rounded-[1.75rem] bg-white border border-gray-200 px-5 py-5 text-left shadow-sm hover:shadow-md transition-all"
+              className="w-full rounded-[1.75rem] bg-white border border-mirrorly-paper px-5 py-5 text-left shadow-sm hover:shadow-md transition-all"
             >
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="font-serif text-xl text-gray-900">{pack.label}</p>
-                  <p className="text-sm text-gray-500 mt-1">{pack.description}</p>
+                  <p className="font-serif text-xl text-mirrorly-black">{pack.label}</p>
+                  <p className="text-sm text-mirrorly-stone mt-1">{pack.description}</p>
                   <p className="text-xs uppercase tracking-[0.22em] text-gray-400 mt-3">
                     {pack.credits} kredi yukler
                   </p>
                 </div>
 
                 <div className="flex items-center gap-3 flex-shrink-0">
-                  <div className="rounded-full bg-gray-900 text-white px-4 py-2 text-sm font-medium">
+                  <div className="rounded-full bg-mirrorly-black text-white px-4 py-2 text-sm font-medium">
                     +{pack.credits}
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />

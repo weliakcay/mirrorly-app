@@ -59,7 +59,7 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
             <div className="h-full min-h-0 flex flex-col bg-boutique-cream animate-fade-in relative">
                 <div className="absolute top-4 left-4 z-10">
                     <button onClick={() => setSelectedItem(null)} className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors">
-                        <ArrowLeft className="w-5 h-5 text-gray-900" />
+                        <ArrowLeft className="w-5 h-5 text-mirrorly-black" />
                     </button>
                 </div>
 
@@ -74,8 +74,8 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
                 <div className="bg-white p-6 rounded-t-3xl -mt-6 relative z-0 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
                     <div className="flex justify-between items-start mb-4">
                         <div>
-                            <h3 className="font-serif text-2xl text-gray-900">{selectedItem.garment.name}</h3>
-                            <p className="text-sm text-gray-500">{selectedItem.garment.boutiqueName}</p>
+                            <h3 className="font-serif text-2xl text-mirrorly-black">{selectedItem.garment.name}</h3>
+                            <p className="text-sm text-mirrorly-stone">{selectedItem.garment.boutiqueName}</p>
                         </div>
                         <span className="font-sans font-medium text-lg">{formatPrice(selectedItem.garment.price, selectedItem.garment.currency)}</span>
                     </div>
@@ -88,7 +88,7 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
                                 alert("Bu urun su anda sadece magaza icinde gorunuyor.");
                             }
                         }}
-                        className="w-full bg-gray-900 text-white py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-black transition-colors"
+                        className="w-full bg-mirrorly-black text-white py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-mirrorly-stone transition-colors"
                     >
                         <ShoppingBag className="w-5 h-5" />
                         {selectedItem.garment.shopUrl ? 'Online Incele' : 'Magazada Sor'}
@@ -96,7 +96,7 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
 
                     <button
                         onClick={() => setSelectedItem(null)}
-                        className="w-full mt-3 py-3 rounded-xl border border-gray-200 text-sm text-gray-500 hover:text-gray-900 hover:border-gray-300 transition-colors"
+                        className="w-full mt-3 py-3 rounded-xl border border-mirrorly-paper text-sm text-mirrorly-stone hover:text-mirrorly-black hover:border-gray-300 transition-colors"
                     >
                         Gecmise Don
                     </button>
@@ -107,12 +107,12 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
 
     // List View
     return (
-        <div className="h-full min-h-0 flex flex-col bg-gray-50 animate-fade-in">
-            <div className="bg-white px-6 pt-6 pb-4 border-b border-gray-100 flex items-center justify-between sticky top-0 z-10">
-                <button onClick={onBack} className="p-2 -ml-2 text-gray-500 hover:text-gray-900">
+        <div className="h-full min-h-0 flex flex-col bg-mirrorly-cream animate-fade-in">
+            <div className="bg-white px-6 pt-6 pb-4 border-b border-mirrorly-paper flex items-center justify-between sticky top-0 z-10">
+                <button onClick={onBack} className="p-2 -ml-2 text-mirrorly-stone hover:text-mirrorly-black">
                     <ArrowLeft className="w-6 h-6" />
                 </button>
-                <h2 className="font-serif text-xl text-gray-900">
+                <h2 className="font-serif text-xl text-mirrorly-black">
                     {isCloudMode ? 'Deneme Gecmisi' : 'Son Denemeler'}
                 </h2>
                 {isCloudMode ? (
@@ -120,7 +120,7 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
                 ) : (
                     <button
                         onClick={() => onLogin?.()}
-                        className="px-3 py-1.5 rounded-full bg-gray-900 text-white text-[11px] uppercase tracking-[0.18em] hover:bg-black transition-colors"
+                        className="px-3 py-1.5 rounded-full bg-mirrorly-black text-white text-[11px] uppercase tracking-[0.18em] hover:bg-mirrorly-stone transition-colors"
                     >
                         Google ile Gir
                     </button>
@@ -135,7 +135,7 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
                         {!isCloudMode && onLogin && (
                             <button
                                 onClick={() => onLogin()}
-                                className="mt-2 px-5 py-3 rounded-full bg-gray-900 text-white text-xs uppercase tracking-[0.2em] opacity-100"
+                                className="mt-2 px-5 py-3 rounded-full bg-mirrorly-black text-white text-xs uppercase tracking-[0.2em] opacity-100"
                             >
                                 Google ile Gir
                             </button>

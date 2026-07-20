@@ -43,15 +43,15 @@ const Landing: React.FC<LandingProps> = ({
         <div className="w-full max-w-sm mx-auto text-center">
           <div className="relative mb-8">
             <div className="absolute inset-0 bg-boutique-gold/20 blur-2xl rounded-full"></div>
-            <div className="relative mx-auto w-36 h-48 sm:w-48 sm:h-64 border border-gray-200 rounded-[2.5rem] sm:rounded-[3rem] flex items-center justify-center bg-white/50 backdrop-blur-sm shadow-xl">
+            <div className="relative mx-auto w-36 h-48 sm:w-48 sm:h-64 border border-mirrorly-paper rounded-[2.5rem] sm:rounded-[3rem] flex items-center justify-center bg-white/50 backdrop-blur-sm shadow-xl">
               <Scan className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 opacity-50" />
             </div>
             <Sparkles className="absolute -top-3 right-6 sm:right-2 w-7 h-7 sm:w-8 sm:h-8 text-boutique-gold animate-bounce" />
           </div>
 
           <div className="space-y-3 mb-6">
-            <h2 className="font-serif text-3xl sm:text-4xl text-gray-900">Mirrorly seni bekliyor</h2>
-            <p className="font-sans text-sm sm:text-base text-gray-500 font-light leading-relaxed max-w-xs mx-auto">
+            <h2 className="font-serif text-3xl sm:text-4xl text-mirrorly-black">Mirrorly seni bekliyor</h2>
+            <p className="font-sans text-sm sm:text-base text-mirrorly-stone font-light leading-relaxed max-w-xs mx-auto">
               QR ile geldikten sonra Google ile gir, kesfete gec ve deneme gecmisini hesabinda tut.
             </p>
           </div>
@@ -60,7 +60,7 @@ const Landing: React.FC<LandingProps> = ({
         <div className="w-full max-w-sm mx-auto space-y-4">
           <button
             onClick={onCustomerLogin}
-            className="w-full rounded-[2rem] bg-gray-900 text-white px-5 py-5 shadow-[0_20px_50px_rgba(17,24,39,0.2)] hover:bg-black transition-all active:scale-[0.99] relative overflow-hidden"
+            className="w-full rounded-[2rem] bg-mirrorly-black text-white px-5 py-5 shadow-[0_20px_50px_rgba(17,24,39,0.2)] hover:bg-mirrorly-stone transition-all active:scale-[0.99] relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(212,175,55,0.22),_transparent_38%)]" />
             <div className="relative flex items-center justify-between gap-4">
@@ -91,13 +91,13 @@ const Landing: React.FC<LandingProps> = ({
 
           <button
             onClick={onOpenHistory}
-            className="w-full flex items-center gap-3 px-5 py-4 bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 group"
+            className="w-full flex items-center gap-3 px-5 py-4 bg-white border border-mirrorly-paper rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 group"
           >
-            <div className="p-2 bg-gray-50 rounded-full group-hover:bg-gray-100 flex-shrink-0">
+            <div className="p-2 bg-mirrorly-cream rounded-full group-hover:bg-gray-100 flex-shrink-0">
               <History className="w-5 h-5 text-gray-700" />
             </div>
             <div className="text-left min-w-0">
-              <span className="block font-serif text-lg text-gray-900 leading-none">Deneme Gecmisi</span>
+              <span className="block font-serif text-lg text-mirrorly-black leading-none">Deneme Gecmisi</span>
               <span className="text-[10px] text-gray-400 uppercase tracking-wider">Son gorunumlerini ac</span>
             </div>
           </button>
@@ -105,7 +105,7 @@ const Landing: React.FC<LandingProps> = ({
           <div className="pt-2">
             <button
               onClick={onMerchantLogin}
-              className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-white/60 border border-gray-200 rounded-2xl text-gray-500 hover:text-gray-800 hover:bg-white hover:border-gray-300 transition-all text-sm font-sans"
+              className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-white/60 border border-mirrorly-paper rounded-2xl text-mirrorly-stone hover:text-gray-800 hover:bg-white hover:border-gray-300 transition-all text-sm font-sans"
             >
               <Store className="w-4 h-4" />
               Mağaza Girişi

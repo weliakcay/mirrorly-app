@@ -1190,9 +1190,9 @@ const App: React.FC = () => {
   const isAdminScreen = currentState === AppState.ADMIN_PANEL;
 
   return (
-    <div className="w-full min-h-[100dvh] bg-neutral-100 flex items-stretch justify-center overflow-x-hidden">
+    <div className="w-full min-h-[100dvh] bg-mirrorly-paper flex items-stretch justify-center overflow-x-hidden">
       {isAdminScreen ? (
-        <div className="w-full min-h-[100dvh] bg-slate-50 relative overflow-hidden">
+        <div className="w-full min-h-[100dvh] bg-mirrorly-cream relative overflow-hidden">
           <Suspense fallback={<Processing variant="loading" />}>{renderContent()}</Suspense>
         </div>
       ) : isMerchantScreen ? (
@@ -1200,7 +1200,7 @@ const App: React.FC = () => {
           <Suspense fallback={<Processing variant="loading" />}>{renderContent()}</Suspense>
         </div>
       ) : (
-        <div className="w-full min-h-[100dvh] bg-boutique-cream relative overflow-hidden sm:min-h-0 sm:max-w-md sm:h-[calc(100dvh-2rem)] sm:max-h-[900px] sm:my-4 sm:rounded-3xl sm:shadow-2xl sm:border sm:border-gray-200">
+        <div className="w-full min-h-[100dvh] bg-boutique-cream relative overflow-hidden sm:min-h-0 sm:max-w-md sm:h-[calc(100dvh-2rem)] sm:max-h-[900px] sm:my-4 sm:rounded-3xl sm:shadow-2xl sm:border sm:border-mirrorly-paper">
           <Suspense fallback={<Processing variant="loading" />}>{renderContent()}</Suspense>
         </div>
       )}
