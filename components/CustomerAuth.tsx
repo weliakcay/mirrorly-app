@@ -194,10 +194,17 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-7 pb-10">
         <div className="max-w-sm mx-auto w-full">
           <div className="mb-8 text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-[2rem] bg-white/80 border border-mirrorly-paper shadow-xl flex items-center justify-center">
+            <div className="relative w-20 h-20 mx-auto mb-6 rounded-full bg-white/80 border border-mirrorly-gold/30 shadow-xl flex items-center justify-center overflow-hidden">
               <ShieldCheck className="w-9 h-9 text-mirrorly-black" />
+              <img
+                src="/brand/who-customer.jpg"
+                alt=""
+                loading="lazy"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
             </div>
-            <p className="text-[11px] uppercase tracking-[0.32em] text-gray-400 mb-3">Mirrorly</p>
+            <p className="text-[11px] uppercase tracking-[0.32em] text-mirrorly-gold font-semibold mb-3">Mirrorly</p>
             <h2 className="font-serif text-3xl text-mirrorly-black mb-3">{titleText}</h2>
             <p className="text-sm text-mirrorly-stone leading-relaxed">{subtitleText}</p>
           </div>
@@ -210,7 +217,7 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
               onChange={(e) => setEmail(e.target.value)}
               disabled={inputsDisabled}
               autoComplete="email"
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm placeholder-gray-400 focus:border-gray-900 focus:outline-none disabled:opacity-60"
+              className="w-full rounded-lg border border-mirrorly-paper bg-white px-4 py-3 text-sm placeholder-gray-400 focus:border-mirrorly-gold focus:outline-none disabled:opacity-60"
             />
 
             <input
@@ -220,7 +227,7 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
               onChange={(e) => setPassword(e.target.value)}
               disabled={inputsDisabled}
               autoComplete={isRegister ? 'new-password' : 'current-password'}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm placeholder-gray-400 focus:border-gray-900 focus:outline-none disabled:opacity-60"
+              className="w-full rounded-lg border border-mirrorly-paper bg-white px-4 py-3 text-sm placeholder-gray-400 focus:border-mirrorly-gold focus:outline-none disabled:opacity-60"
             />
 
             <button

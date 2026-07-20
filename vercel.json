@@ -5,7 +5,7 @@
   ],
   "functions": {
     "api/try-on.js": {
-      "maxDuration": 90
+      "maxDuration": 150
     },
     "api/credits/topup.js": {
       "maxDuration": 15

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ArrowRight, Chrome, History, Scan, Sparkles, Store } from 'lucide-react';
+import { ArrowRight, Chrome, History, Sparkles, Store } from 'lucide-react';
 import { CustomerProfile } from '../types';
 import Avatar from './Avatar';
 
@@ -43,13 +43,20 @@ const Landing: React.FC<LandingProps> = ({
         <div className="w-full max-w-sm mx-auto text-center">
           <div className="relative mb-8">
             <div className="absolute inset-0 bg-boutique-gold/20 blur-2xl rounded-full"></div>
-            <div className="relative mx-auto w-36 h-48 sm:w-48 sm:h-64 border border-mirrorly-paper rounded-[2.5rem] sm:rounded-[3rem] flex items-center justify-center bg-white/50 backdrop-blur-sm shadow-xl">
-              <Scan className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 opacity-50" />
+            <div className="relative mx-auto w-36 h-48 sm:w-48 sm:h-64 border border-mirrorly-paper rounded-[2.5rem] sm:rounded-[3rem] overflow-hidden bg-white/50 backdrop-blur-sm shadow-xl">
+              <img
+                src="/brand/who-customer.jpg"
+                alt=""
+                loading="lazy"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+                className="w-full h-full object-cover"
+              />
             </div>
             <Sparkles className="absolute -top-3 right-6 sm:right-2 w-7 h-7 sm:w-8 sm:h-8 text-boutique-gold animate-bounce" />
           </div>
 
           <div className="space-y-3 mb-6">
+            <p className="text-mirrorly-gold text-[11px] uppercase tracking-[0.3em] font-semibold mb-3">Mirrorly</p>
             <h2 className="font-serif text-3xl sm:text-4xl text-mirrorly-black">Mirrorly seni bekliyor</h2>
             <p className="font-sans text-sm sm:text-base text-mirrorly-stone font-light leading-relaxed max-w-xs mx-auto">
               QR ile geldikten sonra Google ile gir, kesfete gec ve deneme gecmisini hesabinda tut.

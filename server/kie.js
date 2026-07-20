@@ -1,9 +1,9 @@
 const KIE_API_BASE = "https://api.kie.ai";
 const KIE_UPLOAD_API_BASE = "https://kieai.redpandaai.co";
-// Vercel maxDuration 90s'e paylı kalması icin poll butcesi 80s (upload + createTask +
-// fallback icin ~10s pay birakilir). Aksi halde fonksiyon Vercel tarafindan kesilir
-// ve client'a JSON'suz cevap doner.
-const DEFAULT_TIMEOUT_MS = 80000;
+// Vercel maxDuration 150s'e (Pro) paylı kalması icin poll butcesi 135s (upload +
+// createTask + fallback icin ~15s pay birakilir). Boylece yavas mobil/Kie
+// calismalari sert hata yerine tamamlanabilir; sunucu kendi hata JSON'unu doner.
+const DEFAULT_TIMEOUT_MS = 135000;
 const POLL_INTERVAL_MS = 2500;
 
 // Tek model stratejisi: tum istekler flux-2/pro-image-to-image 1K.

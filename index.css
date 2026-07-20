@@ -22,6 +22,26 @@ html {
   scrollbar-width: none;
 }
 
+/* Parchment grain — CSS-only sıcak noise dokusu (landing ile aynı).
+   Kullanım: kapsayıcıya `grain-overlay` class'ı ekle; içerik z-index:1 ile üstte kalır. */
+.grain-overlay {
+  position: relative;
+}
+.grain-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.78 0 0 0 0 0.71 0 0 0 0 0.55 0 0 0 0.4 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  opacity: 0.15;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 0;
+}
+.grain-overlay > * {
+  position: relative;
+  z-index: 1;
+}
+
 @media print {
   body * {
     visibility: hidden;

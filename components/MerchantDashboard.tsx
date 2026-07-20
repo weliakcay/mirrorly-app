@@ -338,8 +338,16 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
   if (!isLoggedIn) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-mirrorly-black text-white animate-fade-in px-8 overflow-y-auto">
-        <div className="w-full max-w-xs space-y-6 py-8">
+      <div className="relative h-full flex flex-col items-center justify-center bg-mirrorly-black text-white animate-fade-in px-8 overflow-y-auto">
+        <img
+          src="/brand/who-boutique.jpg"
+          alt=""
+          loading="lazy"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-mirrorly-black via-mirrorly-black/85 to-mirrorly-black/70" />
+        <div className="relative z-10 w-full max-w-xs space-y-6 py-8">
           <div className="text-center mb-4">
             <h2 className="font-serif text-3xl mb-2 text-boutique-gold">Boutique Access</h2>
             <p className="text-gray-400 text-sm font-sans">
@@ -635,26 +643,36 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   return (
     <>
     {isLoggedIn && merchantProfile.status === 'pending' && (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
-        <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-6">
-          <Sparkles className="w-7 h-7 text-amber-500" />
+      <div className="relative flex flex-col items-center justify-center min-h-[60vh] p-8 text-center overflow-hidden bg-mirrorly-cream">
+        <img
+          src="/brand/owner.jpg"
+          alt=""
+          loading="lazy"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+          className="absolute inset-0 w-full h-full object-cover opacity-25 blur-md"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-mirrorly-cream/85 via-mirrorly-cream/90 to-mirrorly-cream" />
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-6">
+            <Sparkles className="w-7 h-7 text-amber-500" />
+          </div>
+          <h2 className="font-serif text-2xl text-mirrorly-black mb-3">Başvurunuz İnceleniyor</h2>
+          <p className="text-mirrorly-stone text-sm leading-relaxed max-w-xs mb-6">
+            Mağazanız Mirrorly ekibi tarafından inceleniyor. Onay sonrası panele tam erişim sağlayacaksınız.
+          </p>
+          <p className="text-xs text-gray-400">
+            Sorularınız için:{' '}
+            <a href="https://wa.me/?text=Mirrorly%20mağaza%20başvurum%20hakkında%20bilgi%20almak%20istiyorum." className="underline text-gray-600">
+              WhatsApp ile ulaşın
+            </a>
+          </p>
+          <button
+            onClick={() => setIsLoggedIn(false)}
+            className="mt-8 text-xs text-gray-400 hover:text-gray-600 uppercase tracking-widest transition-colors"
+          >
+            Çıkış Yap
+          </button>
         </div>
-        <h2 className="font-serif text-2xl text-mirrorly-black mb-3">Başvurunuz İnceleniyor</h2>
-        <p className="text-mirrorly-stone text-sm leading-relaxed max-w-xs mb-6">
-          Mağazanız Mirrorly ekibi tarafından inceleniyor. Onay sonrası panele tam erişim sağlayacaksınız.
-        </p>
-        <p className="text-xs text-gray-400">
-          Sorularınız için:{' '}
-          <a href="https://wa.me/?text=Mirrorly%20mağaza%20başvurum%20hakkında%20bilgi%20almak%20istiyorum." className="underline text-gray-600">
-            WhatsApp ile ulaşın
-          </a>
-        </p>
-        <button
-          onClick={() => setIsLoggedIn(false)}
-          className="mt-8 text-xs text-gray-400 hover:text-gray-600 uppercase tracking-widest transition-colors"
-        >
-          Çıkış Yap
-        </button>
       </div>
     )}
     {isLoggedIn && merchantProfile.status !== 'pending' && (
@@ -803,7 +821,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full aspect-[4/3] bg-mirrorly-cream border-2 border-dashed border-mirrorly-paper rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden relative"
+                  className="w-full aspect-[4/3] bg-mirrorly-cream border-2 border-dashed border-mirrorly-gold/40 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden relative"
                 >
                   {newItemImage ? (
                     <img src={newItemImage} alt="Preview" className="w-full h-full object-cover" />
@@ -831,14 +849,14 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 <input
                   type="text"
                   placeholder="Urun adi"
-                  className="w-full bg-mirrorly-cream rounded-lg p-3 text-sm"
+                  className="w-full bg-mirrorly-cream rounded-lg p-3 text-sm border border-mirrorly-paper focus:border-mirrorly-gold focus:outline-none transition-colors"
                   value={newItemName}
                   onChange={(e) => setNewItemName(e.target.value)}
                   required
                 />
                 <textarea
                   placeholder="Kisa aciklama"
-                  className="w-full bg-mirrorly-cream rounded-lg p-3 text-sm min-h-24 resize-none"
+                  className="w-full bg-mirrorly-cream rounded-lg p-3 text-sm min-h-24 resize-none border border-mirrorly-paper focus:border-mirrorly-gold focus:outline-none transition-colors"
                   value={newItemDesc}
                   onChange={(e) => setNewItemDesc(e.target.value)}
                 />
@@ -846,7 +864,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   type="number"
                   step="0.01"
                   placeholder="Fiyat"
-                  className="w-full bg-mirrorly-cream rounded-lg p-3 text-sm"
+                  className="w-full bg-mirrorly-cream rounded-lg p-3 text-sm border border-mirrorly-paper focus:border-mirrorly-gold focus:outline-none transition-colors"
                   value={newItemPrice}
                   onChange={(e) => setNewItemPrice(e.target.value)}
                   required
@@ -856,7 +874,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   <input
                     type="url"
                     placeholder="Urun linki (opsiyonel)"
-                    className="w-full bg-mirrorly-cream rounded-lg p-3 pl-9 text-sm"
+                    className="w-full bg-mirrorly-cream rounded-lg p-3 pl-9 text-sm border border-mirrorly-paper focus:border-mirrorly-gold focus:outline-none transition-colors"
                     value={newItemShopUrl}
                     onChange={(e) => setNewItemShopUrl(e.target.value)}
                   />

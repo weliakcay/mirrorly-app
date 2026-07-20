@@ -134,11 +134,11 @@ const GarmentView: React.FC<GarmentViewProps> = ({
 
             {/* Product Details */}
             <div className="space-y-2">
-              <p className="text-gray-200 font-sans text-sm font-light leading-relaxed text-gray-600">
+              <p className="font-sans text-sm font-light leading-relaxed text-mirrorly-stone">
                 {garment.description}
               </p>
-              <div className="inline-block px-3 py-1 border border-mirrorly-paper rounded-full bg-mirrorly-cream">
-                <p className="font-sans font-medium text-sm text-mirrorly-black">{formatPrice(garment.price, merchantProfile.currency || garment.currency)}</p>
+              <div className="inline-block px-3 py-1 border border-mirrorly-gold/30 rounded-full bg-mirrorly-cream">
+                <p className="font-sans font-medium text-sm text-mirrorly-black tracking-wide">{formatPrice(garment.price, merchantProfile.currency || garment.currency)}</p>
               </div>
             </div>
 

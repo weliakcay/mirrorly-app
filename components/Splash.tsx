@@ -18,13 +18,29 @@ const Splash: React.FC<SplashProps> = ({ onComplete }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center animate-fade-out overflow-hidden"
+      className="fixed inset-0 z-50 flex items-center justify-center animate-fade-out overflow-hidden grain-overlay"
       style={{ animationDelay: '1.5s', backgroundColor: '#F5EFE3' }}
     >
+      {/* Logo arkasi: bulanik + dusuk opasiteli marka fotografi (sicak butik anisi) */}
+      <img
+        src="/brand/hero.jpg"
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        draggable={false}
+        className="absolute inset-0 h-full w-full object-cover blur-md opacity-20 pointer-events-none select-none"
+        style={{ position: 'absolute', inset: 0 }}
+        onError={(e) => {
+          (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
+        }}
+      />
+
       {/* Sicak butik parildamasi */}
       <div
         className="absolute inset-0"
         style={{
+          position: 'absolute',
+          inset: 0,
           background:
             'radial-gradient(ellipse 60% 45% at 50% 45%, rgba(201,169,97,0.14), rgba(245,239,227,0) 70%)',
         }}

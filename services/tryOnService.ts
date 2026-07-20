@@ -212,7 +212,9 @@ export const generateTryOnImage = async (
   try {
     const optimizedPhoto = await resizeImage(userPhotoBase64);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 95_000);
+    // Sunucu maxDuration 150s + poll 135s'in hafif ustunde → sunucunun kendi hata
+    // JSON'u client abort'tan once yetissin (yavas mobil calismalar tamamlanabilsin).
+    const timeoutId = setTimeout(() => controller.abort(), 155_000);
 
     const response = await fetch("/api/try-on", {
       method: "POST",

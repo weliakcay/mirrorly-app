@@ -59,7 +59,17 @@ const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome, varia
   // Basit yükleme (ürün/veri) — yanıltıcı giydirme metni yok.
   if (variant !== 'tryon') {
     return (
-      <div className="absolute inset-0 bg-boutique-cream flex flex-col items-center justify-center z-40 animate-fade-in px-8 py-6">
+      <div className="absolute inset-0 bg-boutique-cream flex flex-col items-center justify-center z-40 animate-fade-in px-8 py-6 overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none select-none">
+          <img
+            src="/brand/step-scan.jpg"
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+            className="w-full h-full object-cover blur-2xl scale-110 opacity-[0.08]"
+          />
+        </div>
         {(onBack || onHome) && (
           <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
             {onBack ? (
@@ -93,7 +103,17 @@ const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome, varia
   }
 
   return (
-    <div className="absolute inset-0 bg-boutique-cream flex flex-col items-center justify-center z-40 animate-fade-in px-8 py-6">
+    <div className="absolute inset-0 bg-boutique-cream flex flex-col items-center justify-center z-40 animate-fade-in px-8 py-6 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none select-none">
+        <img
+          src="/brand/proof-rail.jpg"
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+          className="w-full h-full object-cover blur-2xl scale-110 opacity-[0.08]"
+        />
+      </div>
       <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
         <button
           onClick={onBack || onCancel}
