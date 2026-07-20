@@ -486,8 +486,27 @@ export const getGarmentsFromDb = async (): Promise<Garment[]> => {
   }
 };
 
-export const getGarmentById = async (id: string): Promise<Garment | null> => {
+export const getGarmentById = async (
+  id: string,
+  merchantUid?: string
+): Promise<Garment | null> => {
   if (!db || !id) return null;
+
+  // Hızlı yol: merchantUid biliniyorsa (QR'da ?m= veya yüklü garment) doğrudan doc get.
+  // Tüm koleksiyonu taramaya gerek yok → ölçekle sabit maliyet.
+  if (merchantUid) {
+    try {
+      const directRef = doc(db, COLLECTION_PRIVATE_PROFILE, merchantUid, COLLECTION_GARMENTS, id);
+      const directSnap = await getDoc(directRef);
+      if (directSnap.exists()) {
+        const garment = directSnap.data() as Garment;
+        return { ...garment, id: directSnap.id, merchantUid: garment.merchantUid || merchantUid };
+      }
+      // Bulunamazsa aşağıdaki tarama fallback'ine düş (yanlış m parametresi vb.)
+    } catch (error) {
+      console.warn("Direct garment lookup failed, scanning:", error);
+    }
+  }
 
   try {
     const garmentsQuery = query(collectionGroup(db, COLLECTION_GARMENTS));

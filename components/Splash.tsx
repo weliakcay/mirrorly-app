@@ -6,9 +6,12 @@ interface SplashProps {
 
 const Splash: React.FC<SplashProps> = ({ onComplete }) => {
   useEffect(() => {
+    // QR ile gelen kullanici (?id=...) urununu beklemeden gormeli → splash'i kisalt.
+    const hasDeepLink =
+      typeof window !== 'undefined' && Boolean(new URLSearchParams(window.location.search).get('id'));
     const timer = setTimeout(() => {
       onComplete();
-    }, 2000); // logolu intro suresi
+    }, hasDeepLink ? 500 : 2000); // logolu intro suresi (deep-link'te kisa)
 
     return () => clearTimeout(timer);
   }, [onComplete]);

@@ -327,7 +327,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   };
 
   const getProductDeepLink = (itemId: string) =>
-    `${window.location.origin}${window.location.pathname}?id=${itemId}`;
+    `${window.location.origin}${window.location.pathname}?id=${itemId}&m=${merchantProfile.uid}`;
 
   const generateQrImage = (itemId: string) => {
     const data = encodeURIComponent(getProductDeepLink(itemId));

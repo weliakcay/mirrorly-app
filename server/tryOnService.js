@@ -18,8 +18,25 @@ const uploadDataUrlToKie = async ({ dataUrl, uploadPath, fileName }) => {
   });
 };
 
-const getGarmentById = async (garmentId) => {
+const getGarmentById = async (garmentId, merchantUid) => {
   const db = getAdminDb();
+
+  // Hizli yol: merchantUid (client'tan hint) varsa dogrudan doc get — collectionGroup
+  // taramasi yok. merchantUid dogrulanmaz; sadece lookup hint'i, kredi hep garment
+  // dokumanindaki merchantUid'den dusulur. Yanlis/eksikse asagidaki taramaya duser.
+  if (merchantUid) {
+    const directSnap = await db
+      .collection(COLLECTION_PRIVATE_PROFILE)
+      .doc(merchantUid)
+      .collection(COLLECTION_GARMENTS)
+      .doc(garmentId)
+      .get();
+    if (directSnap.exists) {
+      const garment = directSnap.data();
+      return { ...garment, id: directSnap.id, merchantUid: garment.merchantUid || merchantUid };
+    }
+  }
+
   const snapshots = await db.collectionGroup(COLLECTION_GARMENTS).get();
   const match = snapshots.docs.find((snapshot) => snapshot.id === garmentId);
 
@@ -133,6 +150,7 @@ export const handleTryOnRequest = async (payload) => {
     const userPhotoDataUrl = payload?.userPhotoDataUrl?.trim();
     const requestedCustomerUid = payload?.customerUid?.trim();
     const customerAuthToken = payload?.customerAuthToken?.trim();
+    const requestedMerchantUid = payload?.merchantUid?.trim();
 
     if (!garmentId || !userPhotoDataUrl) {
       return {
@@ -187,7 +205,7 @@ export const handleTryOnRequest = async (payload) => {
       }
     }
 
-    const garment = await getGarmentById(garmentId);
+    const garment = await getGarmentById(garmentId, requestedMerchantUid);
     if (!garment) {
       return {
         status: 404,

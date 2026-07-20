@@ -474,7 +474,8 @@ const App: React.FC = () => {
 
   const loadGarmentExperience = async (
     garmentId: string,
-    originState: AppState = AppState.LANDING
+    originState: AppState = AppState.LANDING,
+    merchantUid?: string
   ) => {
     setIsLoadingData(true);
     setExperienceOriginState(originState);
@@ -483,7 +484,7 @@ const App: React.FC = () => {
       let garment: Garment | null = null;
 
       if (isFirebaseConfigured()) {
-        garment = await getGarmentById(garmentId);
+        garment = await getGarmentById(garmentId, merchantUid);
       }
 
       if (!garment) {
@@ -529,9 +530,10 @@ const App: React.FC = () => {
   const handleSplashComplete = async () => {
     const params = new URLSearchParams(window.location.search);
     const garmentId = params.get('id');
+    const merchantUid = params.get('m') || undefined;
 
     if (garmentId) {
-      await loadGarmentExperience(garmentId, AppState.LANDING);
+      await loadGarmentExperience(garmentId, AppState.LANDING, merchantUid);
       return;
     }
 
@@ -767,7 +769,7 @@ const App: React.FC = () => {
   const handleSelectCatalogItem = async (item: CatalogItem) => {
     const nextUrl = `${window.location.pathname}?id=${encodeURIComponent(item.garment.id)}`;
     window.history.pushState({ path: nextUrl }, '', nextUrl);
-    await loadGarmentExperience(item.garment.id, currentState);
+    await loadGarmentExperience(item.garment.id, currentState, item.garment.merchantUid);
   };
 
   const favoriteIds = new Set(customerFavorites.map((item) => item.garment.id));
@@ -858,7 +860,8 @@ const App: React.FC = () => {
             selectedGarment.imageUrl,
             selectedGarment.name,
             customerProfile?.uid,
-            customerProfile ? await getCurrentCustomerIdToken() : undefined
+            customerProfile ? await getCurrentCustomerIdToken() : undefined,
+            selectedGarment.merchantUid
           );
 
           setResult(apiResult);
@@ -971,7 +974,7 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     if (isLoadingData) {
-      return <Processing />;
+      return <Processing variant="loading" />;
     }
 
     switch (currentState) {
@@ -1190,15 +1193,15 @@ const App: React.FC = () => {
     <div className="w-full min-h-[100dvh] bg-neutral-100 flex items-stretch justify-center overflow-x-hidden">
       {isAdminScreen ? (
         <div className="w-full min-h-[100dvh] bg-slate-50 relative overflow-hidden">
-          <Suspense fallback={<Processing />}>{renderContent()}</Suspense>
+          <Suspense fallback={<Processing variant="loading" />}>{renderContent()}</Suspense>
         </div>
       ) : isMerchantScreen ? (
         <div className="w-full min-h-[100dvh] bg-boutique-cream relative overflow-hidden">
-          <Suspense fallback={<Processing />}>{renderContent()}</Suspense>
+          <Suspense fallback={<Processing variant="loading" />}>{renderContent()}</Suspense>
         </div>
       ) : (
         <div className="w-full min-h-[100dvh] bg-boutique-cream relative overflow-hidden sm:min-h-0 sm:max-w-md sm:h-[calc(100dvh-2rem)] sm:max-h-[900px] sm:my-4 sm:rounded-3xl sm:shadow-2xl sm:border sm:border-gray-200">
-          <Suspense fallback={<Processing />}>{renderContent()}</Suspense>
+          <Suspense fallback={<Processing variant="loading" />}>{renderContent()}</Suspense>
         </div>
       )}
     </div>

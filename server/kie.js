@@ -183,6 +183,15 @@ const createMarketTask = async (config, userImageUrl, garmentImageUrl, prompt) =
       resolution: config.resolution || "1K",
       nsfw_checker: false,
     };
+  } else if (config.family === "nano-banana-lite") {
+    // Google nano-banana-2-lite (~hizli): {prompt, image_urls, aspect_ratio} — resolution/
+    // output_format YOK, alan adi image_input DEGIL image_urls. Env-only gecis icin:
+    // KIE_MODEL_PRIMARY=nano-banana-2-lite + KIE_MODEL_PRIMARY_FAMILY=nano-banana-lite
+    input = {
+      prompt,
+      image_urls: [userImageUrl, garmentImageUrl],
+      aspect_ratio: "2:3",
+    };
   } else if (config.family === "nano-banana") {
     input = {
       prompt,
