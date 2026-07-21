@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AppState,
   CustomerProfile,
@@ -78,6 +79,7 @@ const buildFallbackMerchant = (
 });
 
 const App: React.FC = () => {
+  const { t } = useTranslation();
   const CUSTOMER_PROFILE_KEY = 'mirrorly_customer_profile';
   const CUSTOMER_POST_AUTH_TARGET_KEY = 'mirrorly_customer_post_auth_target';
   // Admin emails normalize: trim + lowercase. Google bazen profile.email'i farkli case ile
@@ -1072,7 +1074,7 @@ const App: React.FC = () => {
         return customerProfile ? (
           <CustomerCreditsView
             customerProfile={customerProfile}
-            notice={customerCreditsNotice}
+            notice={t(customerCreditsNotice)}
             onBack={() => setCurrentState(customerCreditsBackState)}
             onAddCredits={handleAddCustomerCredits}
           />

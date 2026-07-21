@@ -1,8 +1,10 @@
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight, Chrome, History, Sparkles, Store } from 'lucide-react';
 import { CustomerProfile } from '../types';
 import Avatar from './Avatar';
+import LanguageSwitcher from './LanguageSwitcher';
 
 interface LandingProps {
   onMerchantLogin: () => void;
@@ -21,14 +23,16 @@ const Landing: React.FC<LandingProps> = ({
   customerProfile = null,
   onCustomerAccount,
 }) => {
+  const { t } = useTranslation();
   return (
-    <div className="h-full bg-boutique-cream animate-fade-in overflow-y-auto">
+    <div className="relative h-full bg-boutique-cream animate-fade-in overflow-y-auto">
+      <LanguageSwitcher className="absolute top-4 right-4 z-50" />
       {customerProfile && onCustomerAccount && (
         <div className="px-6 pt-4 pb-2 flex items-center justify-end">
           <button
             onClick={onCustomerAccount}
             className="rounded-full overflow-hidden hover:shadow-md transition-shadow"
-            title="Hesabim"
+            title={t('Hesabim')}
           >
             <Avatar
               photoURL={customerProfile.photoURL}
@@ -57,9 +61,9 @@ const Landing: React.FC<LandingProps> = ({
 
           <div className="space-y-3 mb-6">
             <p className="text-mirrorly-gold text-[11px] uppercase tracking-[0.3em] font-semibold mb-3">Mirrorly</p>
-            <h2 className="font-serif text-3xl sm:text-4xl text-mirrorly-black">Mirrorly seni bekliyor</h2>
+            <h2 className="font-serif text-3xl sm:text-4xl text-mirrorly-black">{t('Mirrorly seni bekliyor')}</h2>
             <p className="font-sans text-sm sm:text-base text-mirrorly-stone font-light leading-relaxed max-w-xs mx-auto">
-              QR ile geldikten sonra Google ile gir, kesfete gec ve deneme gecmisini hesabinda tut.
+              {t('QR ile geldikten sonra Google ile gir, kesfete gec ve deneme gecmisini hesabinda tut.')}
             </p>
           </div>
         </div>
@@ -77,15 +81,15 @@ const Landing: React.FC<LandingProps> = ({
                 </div>
                 <div className="min-w-0">
                   <p className="text-[10px] uppercase tracking-[0.26em] text-white/45 mb-1">
-                    Musteri Alani
+                    {t('Musteri Alani')}
                   </p>
                   <h3 className="font-serif text-2xl leading-none">
-                    {isCustomerLoggedIn ? 'Kesfete Don' : 'Google ile Gir'}
+                    {isCustomerLoggedIn ? t('Kesfete Don') : t('Google ile Gir')}
                   </h3>
                   <p className="text-sm text-white/70 mt-2">
                     {isCustomerLoggedIn
-                      ? 'Favorilerini ve butikleri gezmeye kaldigin yerden devam et.'
-                      : 'Favorilerini kaydet, butikleri gez ve denemelerini takip et.'}
+                      ? t('Favorilerini ve butikleri gezmeye kaldigin yerden devam et.')
+                      : t('Favorilerini kaydet, butikleri gez ve denemelerini takip et.')}
                   </p>
                 </div>
               </div>
@@ -104,8 +108,8 @@ const Landing: React.FC<LandingProps> = ({
               <History className="w-5 h-5 text-gray-700" />
             </div>
             <div className="text-left min-w-0">
-              <span className="block font-serif text-lg text-mirrorly-black leading-none">Deneme Gecmisi</span>
-              <span className="text-[10px] text-gray-400 uppercase tracking-wider">Son gorunumlerini ac</span>
+              <span className="block font-serif text-lg text-mirrorly-black leading-none">{t('Deneme Gecmisi')}</span>
+              <span className="text-[10px] text-gray-400 uppercase tracking-wider">{t('Son gorunumlerini ac')}</span>
             </div>
           </button>
 
@@ -115,7 +119,7 @@ const Landing: React.FC<LandingProps> = ({
               className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-white/60 border border-mirrorly-paper rounded-2xl text-mirrorly-stone hover:text-gray-800 hover:bg-white hover:border-gray-300 transition-all text-sm font-sans"
             >
               <Store className="w-4 h-4" />
-              Mağaza Girişi
+              {t('Mağaza Girişi')}
             </button>
           </div>
         </div>

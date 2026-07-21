@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Chrome, ShieldCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface CustomerAuthProps {
   onBack: () => void;
@@ -22,6 +23,7 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
   onEmailSignIn,
   isPending = false,
 }) => {
+  const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [email, setEmail] = useState('');
@@ -173,10 +175,10 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
     }
   };
 
-  const titleText = isPending ? 'Giris tamamlaniyor' : (isRegister ? 'Kayit Ol' : 'Giris Yap');
+  const titleText = isPending ? t('Giris tamamlaniyor') : (isRegister ? t('Kayit Ol') : t('Giris Yap'));
   const subtitleText = isPending
-    ? 'Onaydan sonra oturumun cihaza geri yazilmasi birkac saniye surebilir.'
-    : 'Hesabina girerek favorilerini kaydet, deneme gecmisini gor ve kesfet akisini kullan.';
+    ? t('Onaydan sonra oturumun cihaza geri yazilmasi birkac saniye surebilir.')
+    : t('Hesabina girerek favorilerini kaydet, deneme gecmisini gor ve kesfet akisini kullan.');
 
   const inputsDisabled = isSubmitting || isPending;
 
@@ -212,7 +214,7 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
           <form onSubmit={handleEmailSubmit} className="space-y-3">
             <input
               type="email"
-              placeholder="E-posta"
+              placeholder={t('E-posta')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={inputsDisabled}
@@ -222,7 +224,7 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
 
             <input
               type="password"
-              placeholder="Sifre"
+              placeholder={t('Sifre')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={inputsDisabled}
@@ -235,7 +237,7 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
               disabled={inputsDisabled}
               className="w-full flex items-center justify-center gap-2 rounded-2xl bg-mirrorly-black text-white py-3 shadow-xl hover:bg-mirrorly-stone transition-all disabled:opacity-60 disabled:cursor-not-allowed font-medium mt-4"
             >
-              {isSubmitting ? 'Isleniyor...' : isRegister ? 'Kayit Ol' : 'Giris Yap'}
+              {isSubmitting ? t('Isleniyor...') : isRegister ? t('Kayit Ol') : t('Giris Yap')}
             </button>
           </form>
 
@@ -248,13 +250,13 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
               disabled={inputsDisabled}
               className="text-xs text-mirrorly-stone hover:text-mirrorly-black transition-colors underline disabled:opacity-60"
             >
-              {isRegister ? 'Zaten hesabin var mi? Giris yap' : 'Henuz hesabin yok mu? Kayit ol'}
+              {isRegister ? t('Zaten hesabin var mi? Giris yap') : t('Henuz hesabin yok mu? Kayit ol')}
             </button>
           </div>
 
           <div className="mt-6 flex items-center gap-3">
             <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-gray-400">veya</span>
+            <span className="text-xs text-gray-400">{t('veya')}</span>
             <div className="flex-1 h-px bg-gray-200" />
           </div>
 
@@ -270,14 +272,14 @@ const CustomerAuth: React.FC<CustomerAuthProps> = ({
                 className="w-full flex items-center justify-center gap-2 rounded-2xl border border-gray-300 bg-white text-gray-700 py-3 shadow-sm hover:bg-mirrorly-cream transition-all text-sm disabled:opacity-60"
               >
                 <Chrome className="w-4 h-4" />
-                <span>Google ile devam et</span>
+                <span>{t('Google ile devam et')}</span>
               </button>
             )}
           </div>
 
           {error && (
             <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-              {error}
+              {t(error)}
             </div>
           )}
         </div>

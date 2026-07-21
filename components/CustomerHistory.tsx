@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, ShoppingBag, Calendar, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { HistoryItem } from '../types';
 import { getHistory, clearHistory } from '../services/historyService';
 import { formatPrice } from '../utils/currency';
@@ -20,6 +21,7 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
     isCloudMode = false,
     onClearCloud,
 }) => {
+    const { t } = useTranslation();
     const [items, setItems] = useState<HistoryItem[]>([]);
     const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
 
@@ -37,7 +39,7 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
     };
 
     const handleClear = async () => {
-        if (!confirm("Gecmisini temizlemek istedigine emin misin?")) {
+        if (!confirm(t("Gecmisini temizlemek istedigine emin misin?"))) {
             return;
         }
 
@@ -85,20 +87,20 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
                             if (selectedItem.garment.shopUrl) {
                                 window.open(selectedItem.garment.shopUrl, '_blank');
                             } else {
-                                alert("Bu urun su anda sadece magaza icinde gorunuyor.");
+                                alert(t("Bu urun su anda sadece magaza icinde gorunuyor."));
                             }
                         }}
                         className="w-full bg-mirrorly-black text-white py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-mirrorly-stone transition-colors"
                     >
                         <ShoppingBag className="w-5 h-5" />
-                        {selectedItem.garment.shopUrl ? 'Online Incele' : 'Magazada Sor'}
+                        {selectedItem.garment.shopUrl ? t('Online Incele') : t('Magazada Sor')}
                     </button>
 
                     <button
                         onClick={() => setSelectedItem(null)}
                         className="w-full mt-3 py-3 rounded-xl border border-mirrorly-paper text-sm text-mirrorly-stone hover:text-mirrorly-black hover:border-gray-300 transition-colors"
                     >
-                        Gecmise Don
+                        {t('Gecmise Don')}
                     </button>
                 </div>
             </div>
@@ -113,16 +115,16 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
                     <ArrowLeft className="w-6 h-6" />
                 </button>
                 <h2 className="font-serif text-xl text-mirrorly-black">
-                    {isCloudMode ? 'Deneme Gecmisi' : 'Son Denemeler'}
+                    {isCloudMode ? t('Deneme Gecmisi') : t('Son Denemeler')}
                 </h2>
                 {isCloudMode ? (
-                    <span className="text-[11px] uppercase tracking-[0.2em] text-gray-400">Bulutta</span>
+                    <span className="text-[11px] uppercase tracking-[0.2em] text-gray-400">{t('Bulutta')}</span>
                 ) : (
                     <button
                         onClick={() => onLogin?.()}
                         className="px-3 py-1.5 rounded-full bg-mirrorly-black text-white text-[11px] uppercase tracking-[0.18em] hover:bg-mirrorly-stone transition-colors"
                     >
-                        Google ile Gir
+                        {t('Google ile Gir')}
                     </button>
                 )}
             </div>
@@ -131,13 +133,13 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
                 {items.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center opacity-50 space-y-4">
                         <Calendar className="w-12 h-12 text-gray-300" />
-                        <p className="font-serif text-xl text-gray-400">Henuz kayitli bir deneme yok.</p>
+                        <p className="font-serif text-xl text-gray-400">{t('Henuz kayitli bir deneme yok.')}</p>
                         {!isCloudMode && onLogin && (
                             <button
                                 onClick={() => onLogin()}
                                 className="mt-2 px-5 py-3 rounded-full bg-mirrorly-black text-white text-xs uppercase tracking-[0.2em] opacity-100"
                             >
-                                Google ile Gir
+                                {t('Google ile Gir')}
                             </button>
                         )}
                     </div>
@@ -167,7 +169,7 @@ const CustomerHistory: React.FC<CustomerHistoryProps> = ({
             {items.length > 0 && (
                 <div className="p-6 text-center">
                     <button onClick={handleClear} className="text-xs text-red-300 hover:text-red-500 flex items-center justify-center gap-1 mx-auto transition-colors">
-                        <Trash2 className="w-3 h-3" /> Gecmisi Temizle
+                        <Trash2 className="w-3 h-3" /> {t('Gecmisi Temizle')}
                     </button>
                 </div>
             )}

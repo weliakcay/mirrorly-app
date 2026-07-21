@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, ChevronRight, Coins, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   CUSTOMER_CREDIT_PACKAGES,
   CustomerCreditPack,
@@ -20,6 +21,7 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
   onBack,
   onAddCredits,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="h-full min-h-0 flex flex-col bg-boutique-cream animate-fade-in overflow-y-auto">
       <div className="px-6 pt-6 pb-4 flex items-center justify-between">
@@ -30,7 +32,7 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
           <ArrowLeft className="w-5 h-5 text-mirrorly-black" />
         </button>
 
-        <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400">Krediler</p>
+        <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400">{t('Krediler')}</p>
       </div>
 
       <div className="px-6 pb-6 space-y-4">
@@ -38,14 +40,14 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-[0.28em] text-white/45 mb-2">
-                Kullanilabilir Bakiye
+                {t('Kullanilabilir Bakiye')}
               </p>
               <div className="flex items-center gap-3">
                 <Coins className="w-7 h-7 text-boutique-gold" />
                 <span className="font-serif text-4xl">{customerProfile.credits}</span>
               </div>
               <p className="text-sm text-white/70 mt-3">
-                Giris yaptiktan sonra try-on denemeleri bu bakiyeden dusulur.
+                {t('Giris yaptiktan sonra try-on denemeleri bu bakiyeden dusulur.')}
               </p>
             </div>
 
@@ -57,14 +59,14 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
 
         {notice && (
           <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-            {notice}
+            {t(notice)}
           </div>
         )}
 
         <div className="rounded-[1.75rem] bg-white/82 border border-white px-5 py-5 shadow-sm">
-          <h3 className="font-serif text-2xl text-mirrorly-black">Kredi Paketleri</h3>
+          <h3 className="font-serif text-2xl text-mirrorly-black">{t('Kredi Paketleri')}</h3>
           <p className="text-sm text-mirrorly-stone mt-2">
-            Paket secerek bakiyene aninda kredi ekleyebilirsin.
+            {t('Paket secerek bakiyene aninda kredi ekleyebilirsin.')}
           </p>
         </div>
 
@@ -81,10 +83,10 @@ const CustomerCreditsView: React.FC<CustomerCreditsViewProps> = ({
             >
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="font-serif text-xl text-mirrorly-black">{pack.label}</p>
-                  <p className="text-sm text-mirrorly-stone mt-1">{pack.description}</p>
+                  <p className="font-serif text-xl text-mirrorly-black">{t(pack.label)}</p>
+                  <p className="text-sm text-mirrorly-stone mt-1">{t(pack.description)}</p>
                   <p className="text-xs uppercase tracking-[0.22em] text-gray-400 mt-3">
-                    {pack.credits} kredi yukler
+                    {t('{{credits}} kredi yukler', { credits: pack.credits })}
                   </p>
                 </div>
 

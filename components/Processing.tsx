@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Home, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ProcessingProps {
   onCancel?: () => void;
@@ -43,6 +44,7 @@ const LoadingRing: React.FC = () => (
 );
 
 const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome, variant = 'tryon' }) => {
+  const { t } = useTranslation();
   const [elapsed, setElapsed] = useState(0);
   const [factIndex, setFactIndex] = useState(0);
 
@@ -86,7 +88,7 @@ const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome, varia
         )}
         <div className="flex flex-col items-center gap-6">
           <LoadingRing />
-          <p className="font-serif text-xl text-gray-600">Ürün yükleniyor...</p>
+          <p className="font-serif text-xl text-gray-600">{t('Ürün yükleniyor...')}</p>
         </div>
       </div>
     );
@@ -135,7 +137,7 @@ const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome, varia
 
         <div className="w-full space-y-4">
           <div className="h-12 overflow-hidden text-center">
-            <p className="font-serif text-xl text-gray-600">{currentMessage}</p>
+            <p className="font-serif text-xl text-gray-600">{t(currentMessage)}</p>
           </div>
 
           <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
@@ -146,7 +148,7 @@ const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome, varia
           </div>
 
           <div className="text-center">
-            <p className="text-xs text-gray-400 italic leading-relaxed">💡 {FUN_FACTS[factIndex]}</p>
+            <p className="text-xs text-gray-400 italic leading-relaxed">💡 {t(FUN_FACTS[factIndex])}</p>
           </div>
         </div>
       </div>
@@ -156,7 +158,7 @@ const Processing: React.FC<ProcessingProps> = ({ onCancel, onBack, onHome, varia
           onClick={onCancel}
           className="mt-6 px-6 py-2 bg-white/70 border border-mirrorly-paper rounded-full text-gray-600 hover:bg-white hover:text-mirrorly-black transition-colors text-xs uppercase tracking-wider font-medium"
         >
-          İptal Et
+          {t('İptal Et')}
         </button>
       )}
     </div>

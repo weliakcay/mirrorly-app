@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Garment, MerchantPublicProfile } from '../types';
 import { ArrowLeft, ChevronRight, Grid3X3, Heart, Home, Sparkles, X } from 'lucide-react';
 import { formatPrice } from '../utils/currency';
+import { useTranslation } from 'react-i18next';
 
 interface GarmentViewProps {
   garment: Garment;
@@ -34,6 +35,7 @@ const GarmentView: React.FC<GarmentViewProps> = ({
   onBack,
   onHome,
 }) => {
+  const { t } = useTranslation();
   const [showCollection, setShowCollection] = useState(false);
   const [imageError, setImageError] = useState(false);
   const otherItems = inventory.filter((item) => item.id !== garment.id);
@@ -65,7 +67,7 @@ const GarmentView: React.FC<GarmentViewProps> = ({
                 <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mx-auto">
                   <span className="text-gray-400 text-xl">📷</span>
                 </div>
-                <p className="text-xs text-gray-400">Ürün görseli yüklenemedi</p>
+                <p className="text-xs text-gray-400">{t('Ürün görseli yüklenemedi')}</p>
               </div>
             </div>
           ) : (
@@ -106,7 +108,7 @@ const GarmentView: React.FC<GarmentViewProps> = ({
               <div className="flex items-center justify-center gap-3">
                 <Sparkles className="w-5 h-5 text-boutique-gold animate-pulse" />
                 <span className="font-serif text-lg tracking-[0.18em] uppercase font-semibold">
-                  Uzerinde Gor
+                  {t('Uzerinde Gor')}
                 </span>
               </div>
             </button>
@@ -150,15 +152,15 @@ const GarmentView: React.FC<GarmentViewProps> = ({
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-[10px] uppercase tracking-[0.24em] text-gray-400 mb-1">
-                    Musteri Girisi
+                    {t('Musteri Girisi')}
                   </p>
                   <p className="font-serif text-lg text-mirrorly-black">
-                    {isCustomerLoggedIn ? 'Kesfete Gec' : 'Google ile Gir'}
+                    {isCustomerLoggedIn ? t('Kesfete Gec') : t('Google ile Gir')}
                   </p>
                   <p className="text-sm text-mirrorly-stone mt-1">
                     {isCustomerLoggedIn
-                      ? 'Butikleri gez ve favorilerini tek alandan yonet.'
-                      : 'Favorilerini kaydetmek ve kesfette dolasmak icin hesabini ac.'}
+                      ? t('Butikleri gez ve favorilerini tek alandan yonet.')
+                      : t('Favorilerini kaydetmek ve kesfette dolasmak icin hesabini ac.')}
                   </p>
                 </div>
                 <div className="w-11 h-11 rounded-full bg-mirrorly-black text-white flex items-center justify-center flex-shrink-0">
@@ -178,17 +180,17 @@ const GarmentView: React.FC<GarmentViewProps> = ({
                 }`}
               >
                 <p className="text-[10px] uppercase tracking-[0.22em] opacity-60 mb-1">
-                  Kredi Durumu
+                  {t('Kredi Durumu')}
                 </p>
                 <p className="font-serif text-lg">
                   {customerCredits > 0
-                    ? `${customerCredits} kredi kullanima hazir`
-                    : 'Denemeye devam etmek icin kredi yukle'}
+                    ? t('{{customerCredits}} kredi kullanima hazir', { customerCredits })
+                    : t('Denemeye devam etmek icin kredi yukle')}
                 </p>
                 <p className="text-sm opacity-80 mt-1">
                   {customerCredits > 0
-                    ? 'Giris yaptiktan sonraki try-on denemeleri bu bakiyeden duser.'
-                    : 'Google hesabin icin bakiye yukleyip try-on akisini acabilirsin.'}
+                    ? t('Giris yaptiktan sonraki try-on denemeleri bu bakiyeden duser.')
+                    : t('Google hesabin icin bakiye yukleyip try-on akisini acabilirsin.')}
                 </p>
               </button>
             )}
@@ -201,7 +203,7 @@ const GarmentView: React.FC<GarmentViewProps> = ({
               >
                 <Grid3X3 className="w-4 h-4" />
                 <span className="text-xs font-sans uppercase tracking-wider">
-                  Diger Urunleri Gor
+                  {t('Diger Urunleri Gor')}
                 </span>
               </button>
             )}
@@ -215,7 +217,7 @@ const GarmentView: React.FC<GarmentViewProps> = ({
           <div className="w-full max-w-md bg-white rounded-t-3xl p-6 pb-10 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="font-serif text-xl text-mirrorly-black">Magaza Seckisi</h3>
+                <h3 className="font-serif text-xl text-mirrorly-black">{t('Magaza Seckisi')}</h3>
                 <p className="text-xs uppercase tracking-[0.2em] text-gray-400 mt-1">
                   {merchantProfile.name}
                 </p>

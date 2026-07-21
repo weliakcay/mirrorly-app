@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Check,
@@ -38,6 +39,7 @@ import {
   saveMerchantProfile,
   updateGarmentInUserInventory,
 } from '../services/firebase';
+import LanguageSwitcher from './LanguageSwitcher';
 
 interface MerchantDashboardProps {
   inventory: Garment[];
@@ -56,6 +58,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   onBack,
   onCustomerLogin,
 }) => {
+  const { t } = useTranslation();
   // Refresh sonrasi App.tsx merchant detection ile dolu profil pass eder; bu durumda
   // login formunu gostermeden direkt dashboard'a girilsin diye prop'tan turetiyoruz.
   const [isLoggedIn, setIsLoggedIn] = useState(() => Boolean(merchantProfile.uid));
@@ -213,7 +216,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('Gorsel boyutu cok buyuk. Lutfen 5MB altinda bir gorsel secin.');
+      alert(t('Gorsel boyutu cok buyuk. Lutfen 5MB altinda bir gorsel secin.'));
       return;
     }
 
@@ -228,12 +231,12 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
     e.preventDefault();
 
     if (!newItemImage) {
-      alert('Lutfen urun gorseli ekleyin.');
+      alert(t('Lutfen urun gorseli ekleyin.'));
       return;
     }
 
     if (!merchantProfile.uid) {
-      alert('Magaza profili bulunamadi. Lutfen tekrar giris yapin.');
+      alert(t('Magaza profili bulunamadi. Lutfen tekrar giris yapin.'));
       return;
     }
 
@@ -267,7 +270,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
       localStorage.setItem('mirrorly_inventory', JSON.stringify(updatedInventory));
       closeItemEditor();
     } catch (error: any) {
-      alert(error?.message || 'Urun kaydedilemedi.');
+      alert(t(error?.message || 'Urun kaydedilemedi.'));
     } finally {
       setIsSaving(false);
     }
@@ -276,7 +279,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!merchantProfile.uid) {
-      alert('Magaza profili bulunamadi.');
+      alert(t('Magaza profili bulunamadi.'));
       return;
     }
 
@@ -301,7 +304,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
       onUpdateProfile(nextProfile);
       localStorage.setItem('mirrorly_profile', JSON.stringify(nextProfile));
     } catch (error: any) {
-      alert(error?.message || 'Magaza bilgileri guncellenemedi.');
+      alert(t(error?.message || 'Magaza bilgileri guncellenemedi.'));
     } finally {
       setIsSaving(false);
     }
@@ -310,7 +313,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
   const handleDeleteItem = async (item: Garment) => {
     if (!merchantProfile.uid) return;
 
-    const confirmed = window.confirm(`"${item.name}" urununu silmek istediginize emin misiniz?`);
+    const confirmed = window.confirm(t('"{{name}}" urununu silmek istediginize emin misiniz?', { name: item.name }));
     if (!confirmed) return;
 
     setDeletingItemId(item.id);
@@ -320,7 +323,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
       onUpdateInventory(updatedInventory);
       localStorage.setItem('mirrorly_inventory', JSON.stringify(updatedInventory));
     } catch (error: any) {
-      alert(error?.message || 'Silme islemi basarisiz oldu.');
+      alert(t(error?.message || 'Silme islemi basarisiz oldu.'));
     } finally {
       setDeletingItemId(null);
     }
@@ -351,7 +354,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
           <div className="text-center mb-4">
             <h2 className="font-serif text-3xl mb-2 text-boutique-gold">Boutique Access</h2>
             <p className="text-gray-400 text-sm font-sans">
-              Urunlerini yukle, QR olustur ve deneme kredilerini yonet.
+              {t('Urunlerini yukle, QR olustur ve deneme kredilerini yonet.')}
             </p>
           </div>
 
@@ -362,7 +365,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 !isRegistering ? 'bg-boutique-gold text-mirrorly-black' : 'text-gray-400 hover:text-white'
               }`}
             >
-              Giris Yap
+              {t('Giris Yap')}
             </button>
             <button
               onClick={() => setIsRegistering(true)}
@@ -370,13 +373,13 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 isRegistering ? 'bg-boutique-gold text-mirrorly-black' : 'text-gray-400 hover:text-white'
               }`}
             >
-              Kayit Ol
+              {t('Kayit Ol')}
             </button>
           </div>
 
           {authError && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
-              <p className="text-sm text-red-200">{authError}</p>
+              <p className="text-sm text-red-200">{t(authError)}</p>
             </div>
           )}
 
@@ -395,7 +398,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 value={storeName}
                 onChange={(e) => setStoreName(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white placeholder-gray-600"
-                placeholder="Magaza adi"
+                placeholder={t('Magaza adi')}
                 required
               />
               <input
@@ -403,7 +406,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white placeholder-gray-600"
-                placeholder="En az 6 karakter"
+                placeholder={t('En az 6 karakter')}
                 minLength={6}
                 required
               />
@@ -412,7 +415,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 disabled={authLoading}
                 className="w-full bg-boutique-gold text-mirrorly-black font-medium py-3 rounded-lg flex justify-center uppercase tracking-wide text-xs"
               >
-                {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Hesap Olustur'}
+                {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('Hesap Olustur')}
               </button>
             </form>
           ) : (
@@ -430,7 +433,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white placeholder-gray-600"
-                placeholder="Sifre"
+                placeholder={t('Sifre')}
                 required
               />
               <button
@@ -438,14 +441,14 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 disabled={authLoading}
                 className="w-full bg-boutique-gold text-mirrorly-black font-medium py-3 rounded-lg flex justify-center uppercase tracking-wide text-xs"
               >
-                {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Giris Yap'}
+                {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('Giris Yap')}
               </button>
             </form>
           )}
 
           <div className="relative flex items-center py-2">
             <div className="flex-grow border-t border-gray-700" />
-            <span className="flex-shrink-0 mx-4 text-mirrorly-stone text-xs">veya</span>
+            <span className="flex-shrink-0 mx-4 text-mirrorly-stone text-xs">{t('veya')}</span>
             <div className="flex-grow border-t border-gray-700" />
           </div>
 
@@ -453,11 +456,11 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
             onClick={onCustomerLogin}
             className="w-full bg-white text-mirrorly-black font-medium py-3 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            Musteri Girisine Gec
+            {t('Musteri Girisine Gec')}
           </button>
 
           <button onClick={onBack} className="w-full text-xs text-mirrorly-stone hover:text-white mt-4">
-            Aynaya Don
+            {t('Aynaya Don')}
           </button>
         </div>
       </div>
@@ -476,13 +479,13 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-mirrorly-black transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Panele Don
+              {t('Panele Don')}
             </button>
 
             <button
               onClick={() => setActiveQrItem(null)}
               className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 shadow-sm transition-all active:scale-95"
-              title="Kapat"
+              title={t('Kapat')}
             >
               <X className="w-5 h-5 text-mirrorly-black" />
             </button>
@@ -525,7 +528,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               <p className="text-sm text-mirrorly-stone mt-1">{merchantProfile.name}</p>
               <p className="text-xl font-medium mt-3 text-boutique-gold">{formatPrice(activeQrItem.price, merchantProfile.currency)}</p>
               <p className="text-[10px] text-gray-400 mt-3 uppercase tracking-widest">
-                QR kodu okutun, deneyin
+                {t('QR kodu okutun, deneyin')}
               </p>
             </div>
           </div>
@@ -537,7 +540,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               className="w-full bg-mirrorly-black text-white py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-mirrorly-stone shadow-lg shadow-gray-200 transition-all"
             >
               <Printer className="w-4 h-4" />
-              Etiketi Yazdır
+              {t('Etiketi Yazdır')}
             </button>
 
             <div className="grid grid-cols-2 gap-2">
@@ -553,12 +556,12 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 {copiedLink ? (
                   <>
                     <Check className="w-4 h-4 text-green-500" />
-                    <span>Kopyalandı</span>
+                    <span>{t('Kopyalandı')}</span>
                   </>
                 ) : (
                   <>
                     <Copy className="w-4 h-4" />
-                    <span>Linki Kopyala</span>
+                    <span>{t('Linki Kopyala')}</span>
                   </>
                 )}
               </button>
@@ -576,45 +579,45 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 className="bg-white text-gray-700 py-2 rounded-lg flex items-center justify-center gap-2 border border-mirrorly-paper hover:bg-mirrorly-cream transition-colors text-sm"
               >
                 <Download className="w-4 h-4" />
-                <span>Resim İndir</span>
+                <span>{t('Resim İndir')}</span>
               </button>
             </div>
           </div>
 
           {/* Instructions */}
           <div className="no-print w-full max-w-sm bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3">
-            <h4 className="font-serif text-base text-mirrorly-black">QR Kodunu Nasıl Kullanırım?</h4>
+            <h4 className="font-serif text-base text-mirrorly-black">{t('QR Kodunu Nasıl Kullanırım?')}</h4>
 
             <div className="space-y-2 text-left text-sm text-gray-700">
               <div className="flex gap-3">
                 <span className="text-lg font-bold text-amber-600 flex-shrink-0">1</span>
                 <div>
-                  <p className="font-medium">Etiket olarak yazdır</p>
-                  <p className="text-xs text-gray-600">Yukarıdan "Etiketi Yazdır" butonunu tıkla, QR kodunu yazdır ve ürün etiketine yapıştır.</p>
+                  <p className="font-medium">{t('Etiket olarak yazdır')}</p>
+                  <p className="text-xs text-gray-600">{t('Yukarıdan "Etiketi Yazdır" butonunu tıkla, QR kodunu yazdır ve ürün etiketine yapıştır.')}</p>
                 </div>
               </div>
 
               <div className="flex gap-3">
                 <span className="text-lg font-bold text-amber-600 flex-shrink-0">2</span>
                 <div>
-                  <p className="font-medium">Online ürün sayfasında göster</p>
-                  <p className="text-xs text-gray-600">QR kodunu indir ve web sitenizde / sosyal medya ürün görseline ekle. Müşteriler okuttuktan sonra sanal deneme yapabilir.</p>
+                  <p className="font-medium">{t('Online ürün sayfasında göster')}</p>
+                  <p className="text-xs text-gray-600">{t('QR kodunu indir ve web sitenizde / sosyal medya ürün görseline ekle. Müşteriler okuttuktan sonra sanal deneme yapabilir.')}</p>
                 </div>
               </div>
 
               <div className="flex gap-3">
                 <span className="text-lg font-bold text-amber-600 flex-shrink-0">3</span>
                 <div>
-                  <p className="font-medium">Sosyal medyada paylaş</p>
-                  <p className="text-xs text-gray-600">Instagram, TikTok veya başka kanallarında bu ürünü paylaş. Takipçilerin QR ile deneyim yapmasını sağla.</p>
+                  <p className="font-medium">{t('Sosyal medyada paylaş')}</p>
+                  <p className="text-xs text-gray-600">{t('Instagram, TikTok veya başka kanallarında bu ürünü paylaş. Takipçilerin QR ile deneyim yapmasını sağla.')}</p>
                 </div>
               </div>
 
               <div className="flex gap-3">
                 <span className="text-lg font-bold text-amber-600 flex-shrink-0">4</span>
                 <div>
-                  <p className="font-medium">Linki kendi tasarımında kullan</p>
-                  <p className="text-xs text-gray-600">"Linki Kopyala" butonuyla bağlantıyı al, kendi tasarımın veya dökümanında kullan.</p>
+                  <p className="font-medium">{t('Linki kendi tasarımında kullan')}</p>
+                  <p className="text-xs text-gray-600">{t('"Linki Kopyala" butonuyla bağlantıyı al, kendi tasarımın veya dökümanında kullan.')}</p>
                 </div>
               </div>
             </div>
@@ -622,7 +625,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
           {/* Link Display */}
           <div className="no-print w-full max-w-sm text-center">
-            <p className="text-[10px] text-gray-400 mb-2 font-medium">QR Bağlantısı:</p>
+            <p className="text-[10px] text-gray-400 mb-2 font-medium">{t('QR Bağlantısı:')}</p>
             <p className="text-[10px] text-mirrorly-stone font-mono break-all bg-mirrorly-cream p-3 rounded border border-mirrorly-paper max-h-16 overflow-y-auto">
               {getProductDeepLink(activeQrItem.id)}
             </p>
@@ -633,7 +636,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
             onClick={() => setActiveQrItem(null)}
             className="w-full max-w-sm bg-white text-gray-600 py-3 rounded-lg font-medium border border-mirrorly-paper hover:bg-mirrorly-cream transition-colors no-print"
           >
-            Panele Dön
+            {t('Panele Dön')}
           </button>
         </div>
       </div>
@@ -656,21 +659,21 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
           <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-6">
             <Sparkles className="w-7 h-7 text-amber-500" />
           </div>
-          <h2 className="font-serif text-2xl text-mirrorly-black mb-3">Başvurunuz İnceleniyor</h2>
+          <h2 className="font-serif text-2xl text-mirrorly-black mb-3">{t('Başvurunuz İnceleniyor')}</h2>
           <p className="text-mirrorly-stone text-sm leading-relaxed max-w-xs mb-6">
-            Mağazanız Mirrorly ekibi tarafından inceleniyor. Onay sonrası panele tam erişim sağlayacaksınız.
+            {t('Mağazanız Mirrorly ekibi tarafından inceleniyor. Onay sonrası panele tam erişim sağlayacaksınız.')}
           </p>
           <p className="text-xs text-gray-400">
-            Sorularınız için:{' '}
+            {t('Sorularınız için:')}{' '}
             <a href="https://wa.me/?text=Mirrorly%20mağaza%20başvurum%20hakkında%20bilgi%20almak%20istiyorum." className="underline text-gray-600">
-              WhatsApp ile ulaşın
+              {t('WhatsApp ile ulaşın')}
             </a>
           </p>
           <button
             onClick={() => setIsLoggedIn(false)}
             className="mt-8 text-xs text-gray-400 hover:text-gray-600 uppercase tracking-widest transition-colors"
           >
-            Çıkış Yap
+            {t('Çıkış Yap')}
           </button>
         </div>
       </div>
@@ -693,25 +696,28 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               </div>
             )}
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-gray-400 font-sans">Mağaza Paneli</p>
+              <p className="text-[10px] uppercase tracking-widest text-gray-400 font-sans">{t('Mağaza Paneli')}</p>
               <p className="font-serif text-lg leading-tight text-mirrorly-black">{merchantProfile.name}</p>
             </div>
           </div>
 
-          <button
-            onClick={() => setIsLoggedIn(false)}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs text-mirrorly-stone hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="font-sans">Çıkış</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <button
+              onClick={() => setIsLoggedIn(false)}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs text-mirrorly-stone hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="font-sans">{t('Çıkış')}</span>
+            </button>
+          </div>
         </div>
 
         <div className="flex gap-3">
           {[
-            { key: 'inventory', label: 'Urunler', icon: Package },
-            { key: 'balance', label: 'Krediler', icon: Coins },
-            { key: 'profile', label: 'Magaza', icon: Store },
+            { key: 'inventory', label: t('Urunler'), icon: Package },
+            { key: 'balance', label: t('Krediler'), icon: Coins },
+            { key: 'profile', label: t('Magaza'), icon: Store },
           ].map((tab) => {
             const Icon = tab.icon;
             return (
@@ -743,9 +749,9 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               <Coins className="w-4 h-4 text-red-500" />
             </div>
             <div>
-              <p className="text-sm font-medium text-red-800">Krediniz tükendi</p>
+              <p className="text-sm font-medium text-red-800">{t('Krediniz tükendi')}</p>
               <p className="text-xs text-red-600 mt-0.5">
-                Müşterileriniz deneme yapamıyor. Kredi eklemek için bizimle iletişime geçin.
+                {t('Müşterileriniz deneme yapamıyor. Kredi eklemek için bizimle iletişime geçin.')}
               </p>
             </div>
           </div>
@@ -757,9 +763,9 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               <Coins className="w-4 h-4 text-amber-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-amber-800">Krediniz azalıyor ({merchantProfile.credits} kaldı)</p>
+              <p className="text-sm font-medium text-amber-800">{t('Krediniz azalıyor ({{count}} kaldı)', { count: merchantProfile.credits })}</p>
               <p className="text-xs text-amber-600 mt-0.5">
-                Yakında müşteri denemeleri durabilir. Kredi eklemek için bizimle iletişime geçin.
+                {t('Yakında müşteri denemeleri durabilir. Kredi eklemek için bizimle iletişime geçin.')}
               </p>
             </div>
           </div>
@@ -769,10 +775,9 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
           <>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="font-sans font-medium text-mirrorly-black">Envanter Listesi</h3>
+                <h3 className="font-sans font-medium text-mirrorly-black">{t('Envanter Listesi')}</h3>
                 <p className="text-xs text-gray-400 mt-1">
-                  Her urun icin benzersiz bir QR otomatik olusturulur. Kartlara dokunarak urun
-                  detaylarini guncelleyebilirsin.
+                  {t('Her urun icin benzersiz bir QR otomatik olusturulur. Kartlara dokunarak urun detaylarini guncelleyebilirsin.')}
                 </p>
               </div>
               <button
@@ -794,7 +799,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center rounded-xl">
                     <div className="flex flex-col items-center">
                       <Loader2 className="w-8 h-8 text-boutique-gold animate-spin" />
-                      <span className="text-xs mt-2 text-mirrorly-stone">Kaydediliyor...</span>
+                      <span className="text-xs mt-2 text-mirrorly-stone">{t('Kaydediliyor...')}</span>
                     </div>
                   </div>
                 )}
@@ -802,12 +807,12 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h4 className="font-medium text-mirrorly-black">
-                      {itemEditorMode === 'edit' ? 'Urunu Duzenle' : 'Yeni Urun Ekle'}
+                      {itemEditorMode === 'edit' ? t('Urunu Duzenle') : t('Yeni Urun Ekle')}
                     </h4>
                     <p className="text-xs text-gray-400 mt-1">
                       {itemEditorMode === 'edit'
-                        ? 'Karttaki bilgileri guncelleyip yeniden kaydedebilirsin.'
-                        : 'QR olusmadan once urun detaylarini tamamla.'}
+                        ? t('Karttaki bilgileri guncelleyip yeniden kaydedebilirsin.')
+                        : t('QR olusmadan once urun detaylarini tamamla.')}
                     </p>
                   </div>
                   <button
@@ -815,7 +820,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                     onClick={closeItemEditor}
                     className="text-xs text-mirrorly-stone hover:text-mirrorly-black"
                   >
-                    Vazgec
+                    {t('Vazgec')}
                   </button>
                 </div>
 
@@ -829,11 +834,10 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                     <>
                       <ImageIcon className="w-8 h-8 text-gray-300 mb-2" />
                       <span className="text-xs text-gray-400 font-medium uppercase">
-                        Urun Gorseli Yukle
+                        {t('Urun Gorseli Yukle')}
                       </span>
                       <p className="text-[11px] text-gray-400 mt-3 max-w-[220px] text-center leading-relaxed">
-                        Duz arka plan, net kadraj ve urunun tek basina gorundugu fotoograflar en iyi
-                        sonucu verir.
+                        {t('Duz arka plan, net kadraj ve urunun tek basina gorundugu fotoograflar en iyi sonucu verir.')}
                       </p>
                     </>
                   )}
@@ -848,14 +852,14 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
 
                 <input
                   type="text"
-                  placeholder="Urun adi"
+                  placeholder={t('Urun adi')}
                   className="w-full bg-mirrorly-cream rounded-lg p-3 text-sm border border-mirrorly-paper focus:border-mirrorly-gold focus:outline-none transition-colors"
                   value={newItemName}
                   onChange={(e) => setNewItemName(e.target.value)}
                   required
                 />
                 <textarea
-                  placeholder="Kisa aciklama"
+                  placeholder={t('Kisa aciklama')}
                   className="w-full bg-mirrorly-cream rounded-lg p-3 text-sm min-h-24 resize-none border border-mirrorly-paper focus:border-mirrorly-gold focus:outline-none transition-colors"
                   value={newItemDesc}
                   onChange={(e) => setNewItemDesc(e.target.value)}
@@ -863,7 +867,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 <input
                   type="number"
                   step="0.01"
-                  placeholder="Fiyat"
+                  placeholder={t('Fiyat')}
                   className="w-full bg-mirrorly-cream rounded-lg p-3 text-sm border border-mirrorly-paper focus:border-mirrorly-gold focus:outline-none transition-colors"
                   value={newItemPrice}
                   onChange={(e) => setNewItemPrice(e.target.value)}
@@ -873,7 +877,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   <LinkIcon className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
                   <input
                     type="url"
-                    placeholder="Urun linki (opsiyonel)"
+                    placeholder={t('Urun linki (opsiyonel)')}
                     className="w-full bg-mirrorly-cream rounded-lg p-3 pl-9 text-sm border border-mirrorly-paper focus:border-mirrorly-gold focus:outline-none transition-colors"
                     value={newItemShopUrl}
                     onChange={(e) => setNewItemShopUrl(e.target.value)}
@@ -884,20 +888,20 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   type="submit"
                   className="w-full bg-mirrorly-black text-white py-3 rounded-lg text-sm font-medium"
                 >
-                  {itemEditorMode === 'edit' ? 'Degisiklikleri Kaydet' : 'Envantere Ekle'}
+                  {itemEditorMode === 'edit' ? t('Degisiklikleri Kaydet') : t('Envantere Ekle')}
                 </button>
               </form>
             )}
 
             {!isFirebaseConfigured() && (
               <div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-xs mb-4">
-                Bu akisin telefonla calisabilmesi icin Firebase yapilandirmasi aktif olmali.
+                {t('Bu akisin telefonla calisabilmesi icin Firebase yapilandirmasi aktif olmali.')}
               </div>
             )}
 
             <div className="space-y-3 pb-8">
               {inventory.length === 0 && (
-                <p className="text-gray-400 text-center text-sm py-8">Henuz urun yok.</p>
+                <p className="text-gray-400 text-center text-sm py-8">{t('Henuz urun yok.')}</p>
               )}
               {inventory.map((item) => (
                 <div
@@ -924,7 +928,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                         setActiveQrItem(item);
                       }}
                       className="p-2 bg-mirrorly-cream rounded-lg hover:bg-mirrorly-black hover:text-white text-gray-600 transition-colors"
-                      title="QR Olustur"
+                      title={t('QR Olustur')}
                     >
                       <QrCode className="w-5 h-5" />
                     </button>
@@ -934,7 +938,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                         openEditItemForm(item);
                       }}
                       className="p-2 bg-amber-50 rounded-lg hover:bg-amber-500 hover:text-white text-amber-500 transition-colors"
-                      title="Urunu Duzenle"
+                      title={t('Urunu Duzenle')}
                     >
                       <Pencil className="w-5 h-5" />
                     </button>
@@ -945,7 +949,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                       }}
                       disabled={deletingItemId === item.id}
                       className="p-2 bg-red-50 rounded-lg hover:bg-red-500 hover:text-white text-red-400 transition-colors disabled:opacity-50"
-                      title="Urunu Sil"
+                      title={t('Urunu Sil')}
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -959,31 +963,31 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
         {activeTab === 'balance' && (
           <div className="space-y-4">
             <div className="p-6 bg-white rounded-2xl border border-mirrorly-paper shadow-sm text-center">
-              <p className="text-[10px] uppercase tracking-widest text-gray-400 font-sans mb-2">Mevcut Kredi</p>
+              <p className="text-[10px] uppercase tracking-widest text-gray-400 font-sans mb-2">{t('Mevcut Kredi')}</p>
               <p className="font-serif text-5xl text-mirrorly-black mb-1">{merchantProfile.credits}</p>
-              <p className="text-sm text-mirrorly-stone">kullanılabilir deneme kredisi</p>
+              <p className="text-sm text-mirrorly-stone">{t('kullanılabilir deneme kredisi')}</p>
             </div>
 
             <div className="p-4 bg-mirrorly-cream rounded-2xl border border-mirrorly-paper space-y-2">
-              <p className="text-sm font-medium text-gray-700">Kredi nasıl çalışır?</p>
+              <p className="text-sm font-medium text-gray-700">{t('Kredi nasıl çalışır?')}</p>
               <ul className="text-sm text-mirrorly-stone space-y-1 list-disc list-inside">
-                <li>Ekonomik mod: 1 kredi / deneme</li>
-                <li>Dengeli mod: 2 kredi / deneme</li>
-                <li>Premium mod: 3 kredi / deneme</li>
+                <li>{t('Ekonomik mod: 1 kredi / deneme')}</li>
+                <li>{t('Dengeli mod: 2 kredi / deneme')}</li>
+                <li>{t('Premium mod: 3 kredi / deneme')}</li>
               </ul>
             </div>
 
             <div className="p-5 bg-white rounded-2xl border border-mirrorly-paper shadow-sm space-y-4">
               <div>
-                <p className="text-sm font-medium text-mirrorly-black">Magaza Paketleri</p>
+                <p className="text-sm font-medium text-mirrorly-black">{t('Magaza Paketleri')}</p>
                 <p className="text-sm text-mirrorly-stone mt-1">
-                  QR trafigini finanse etmek icin daha yuksek kredi paketlerini buradan yonet.
+                  {t('QR trafigini finanse etmek icin daha yuksek kredi paketlerini buradan yonet.')}
                 </p>
               </div>
 
               {billingNotice && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  {billingNotice}
+                  {t(billingNotice)}
                 </div>
               )}
 
@@ -1009,10 +1013,10 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
-                          <p className="font-serif text-xl text-mirrorly-black">{pack.label}</p>
-                          <p className="text-sm text-mirrorly-stone mt-1">{pack.description}</p>
+                          <p className="font-serif text-xl text-mirrorly-black">{t(pack.label)}</p>
+                          <p className="text-sm text-mirrorly-stone mt-1">{t(pack.description)}</p>
                           <p className="text-xs uppercase tracking-[0.22em] text-gray-400 mt-3">
-                            {pack.credits} kredi yukler
+                            {t('{{credits}} kredi yukler', { credits: pack.credits })}
                           </p>
                         </div>
 
@@ -1027,13 +1031,13 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                       <div className="mt-4 flex items-center justify-between text-xs">
                         <span className="uppercase tracking-[0.22em] text-gray-400">
                           {pack.packType === 'starter'
-                            ? 'Pilot'
+                            ? t('Pilot')
                             : pack.packType === 'pro'
-                              ? 'Buyume'
-                              : 'Yuksek hacim'}
+                              ? t('Buyume')
+                              : t('Yuksek hacim')}
                         </span>
                         <span className={checkoutReady ? 'text-emerald-700' : 'text-amber-700'}>
-                          {checkoutReady ? 'Lemon checkout hazir' : 'Checkout linki bekliyor'}
+                          {checkoutReady ? t('Lemon checkout hazir') : t('Checkout linki bekliyor')}
                         </span>
                       </div>
                     </button>
@@ -1050,7 +1054,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
               <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center rounded-xl">
                 <div className="flex flex-col items-center">
                   <Loader2 className="w-8 h-8 text-boutique-gold animate-spin" />
-                  <span className="text-xs mt-2 text-mirrorly-stone">Guncelleniyor...</span>
+                  <span className="text-xs mt-2 text-mirrorly-stone">{t('Guncelleniyor...')}</span>
                 </div>
               </div>
             )}
@@ -1073,7 +1077,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   onChange={(e) => handleImageUpload(e, setProfileLogo)}
                 />
               </div>
-              <span className="text-xs text-gray-400 mt-2">Magaza logosu</span>
+              <span className="text-xs text-gray-400 mt-2">{t('Magaza logosu')}</span>
             </div>
 
             <form onSubmit={handleSaveProfile} className="space-y-4">
@@ -1082,14 +1086,14 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 value={profileName}
                 onChange={(e) => setProfileName(e.target.value)}
                 className="w-full bg-white border border-mirrorly-paper rounded-lg p-3 text-mirrorly-black"
-                placeholder="Magaza adi"
+                placeholder={t('Magaza adi')}
               />
 
               <textarea
                 value={profileDescription}
                 onChange={(e) => setProfileDescription(e.target.value)}
                 className="w-full bg-white border border-mirrorly-paper rounded-lg p-3 text-mirrorly-black min-h-24 resize-none"
-                placeholder="Magaza aciklamasi"
+                placeholder={t('Magaza aciklamasi')}
               />
 
               <div className="relative">
@@ -1098,7 +1102,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   type="url"
                   value={profileShopUrl}
                   onChange={(e) => setProfileShopUrl(e.target.value)}
-                  placeholder="Varsayilan online satis linki"
+                  placeholder={t('Varsayilan online satis linki')}
                   className="w-full bg-white border border-mirrorly-paper rounded-lg p-3 pl-9 text-mirrorly-black"
                 />
               </div>
@@ -1109,7 +1113,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   type="tel"
                   value={profileWhatsapp}
                   onChange={(e) => setProfileWhatsapp(e.target.value)}
-                  placeholder="WhatsApp numarasi"
+                  placeholder={t('WhatsApp numarasi')}
                   className="w-full bg-white border border-mirrorly-paper rounded-lg p-3 pl-9 text-mirrorly-black"
                 />
               </div>
@@ -1120,7 +1124,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                   type="text"
                   value={profileInstagram}
                   onChange={(e) => setProfileInstagram(e.target.value)}
-                  placeholder="Instagram kullanici adi veya linki"
+                  placeholder={t('Instagram kullanici adi veya linki')}
                   className="w-full bg-white border border-mirrorly-paper rounded-lg p-3 pl-9 text-mirrorly-black"
                 />
               </div>
@@ -1142,7 +1146,7 @@ const MerchantDashboard: React.FC<MerchantDashboardProps> = ({
                 type="submit"
                 className="w-full bg-mirrorly-black text-white py-4 rounded-xl font-medium shadow-lg hover:bg-mirrorly-stone transition-colors"
               >
-                Degisiklikleri Kaydet
+                {t('Degisiklikleri Kaydet')}
               </button>
             </form>
           </div>

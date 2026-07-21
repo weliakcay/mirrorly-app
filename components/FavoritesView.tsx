@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Heart } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { FavoriteItem } from '../types';
 import { formatPrice } from '../utils/currency';
 
@@ -16,6 +17,7 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({
   onSelectItem,
   onRemove,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="h-full min-h-0 flex flex-col bg-boutique-cream animate-fade-in">
       <div className="px-6 pt-6 pb-4 flex items-center justify-between">
@@ -26,14 +28,14 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({
           <ArrowLeft className="w-5 h-5 text-mirrorly-black" />
         </button>
 
-        <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400">Favoriler</p>
+        <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400">{t('Favoriler')}</p>
       </div>
 
       <div className="px-6 pb-5">
         <div className="rounded-[2rem] bg-white/82 border border-white px-5 py-5 shadow-lg">
-          <h2 className="font-serif text-3xl text-mirrorly-black">Favoriler</h2>
+          <h2 className="font-serif text-3xl text-mirrorly-black">{t('Favoriler')}</h2>
           <p className="text-sm text-mirrorly-stone mt-2">
-            Kesfette begenip sonra donmek istedigin urunleri burada tut.
+            {t('Kesfette begenip sonra donmek istedigin urunleri burada tut.')}
           </p>
         </div>
       </div>
@@ -42,8 +44,8 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({
         {items.length === 0 ? (
           <div className="rounded-[2rem] bg-white/82 border border-white px-6 py-10 text-center shadow-sm">
             <Heart className="w-8 h-8 text-gray-300 mx-auto mb-4" />
-            <h3 className="font-serif text-2xl text-mirrorly-black mb-2">Henuz favori yok</h3>
-            <p className="text-sm text-mirrorly-stone">Kesfet ekranindan urunleri kalbine ekleyebilirsin.</p>
+            <h3 className="font-serif text-2xl text-mirrorly-black mb-2">{t('Henuz favori yok')}</h3>
+            <p className="text-sm text-mirrorly-stone">{t('Kesfet ekranindan urunleri kalbine ekleyebilirsin.')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4">
@@ -75,7 +77,7 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({
                     onClick={() => onRemove(item)}
                     className="w-full rounded-xl border border-mirrorly-paper py-2 text-xs uppercase tracking-[0.18em] text-mirrorly-stone hover:text-mirrorly-black hover:border-gray-300 transition-colors"
                   >
-                    Favoriden Cikar
+                    {t('Favoriden Cikar')}
                   </button>
                 </div>
               </div>

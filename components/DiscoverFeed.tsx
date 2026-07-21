@@ -1,5 +1,6 @@
 import React, { useDeferredValue, useMemo, useState } from 'react';
 import { ArrowLeft, Compass, Heart, Search, Sparkles, Store } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { CatalogItem, CustomerProfile } from '../types';
 import { formatPrice } from '../utils/currency';
 import Avatar from './Avatar';
@@ -50,6 +51,7 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
   customerProfile,
   onOpenAccount,
 }) => {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [hiddenItemIds, setHiddenItemIds] = useState<string[]>([]);
   const deferredQuery = useDeferredValue(query);
@@ -85,13 +87,13 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
           <ArrowLeft className="w-5 h-5 text-mirrorly-black" />
         </button>
 
-        <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400">Kesfet</p>
+        <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400">{t('Kesfet')}</p>
 
         {customerProfile && onOpenAccount ? (
           <button
             onClick={onOpenAccount}
             className="rounded-full overflow-hidden shadow-sm bg-white/80 backdrop-blur-md p-0.5 hover:shadow-md transition-shadow"
-            title="Hesabim"
+            title={t('Hesabim')}
           >
             <Avatar
               photoURL={customerProfile.photoURL}
@@ -110,9 +112,9 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-[0.28em] text-gray-400 mb-2">Mirrorly</p>
-              <h2 className="font-serif text-3xl text-mirrorly-black">Kesfet</h2>
+              <h2 className="font-serif text-3xl text-mirrorly-black">{t('Kesfet')}</h2>
               <p className="text-sm text-mirrorly-stone mt-2 leading-relaxed">
-                Giris yapan musteri artik QR disinda da urun gezebiliyor.
+                {t('Giris yapan musteri artik QR disinda da urun gezebiliyor.')}
               </p>
             </div>
             <div className="w-12 h-12 rounded-2xl bg-mirrorly-black text-white flex items-center justify-center shadow-lg">
@@ -125,7 +127,7 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Urun, aciklama veya butik ara"
+              placeholder={t('Urun, aciklama veya butik ara')}
               className="w-full rounded-2xl bg-boutique-cream border border-mirrorly-paper pl-11 pr-4 py-3 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-gray-900/10"
             />
           </div>
@@ -170,7 +172,7 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
             <div className="absolute bottom-0 left-0 right-0 p-5">
               <div className="flex items-center gap-2 text-boutique-gold mb-2">
                 <Sparkles className="w-4 h-4" />
-                <span className="text-[11px] uppercase tracking-[0.24em]">Secili</span>
+                <span className="text-[11px] uppercase tracking-[0.24em]">{t('Secili')}</span>
               </div>
               <h3 className="font-serif text-3xl text-white">{heroItem.garment.name}</h3>
               <p className="text-white/72 text-sm mt-2 line-clamp-2">
@@ -183,15 +185,15 @@ const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
         {sections.length === 0 ? (
           <div className="rounded-[2rem] bg-white/82 border border-white px-6 py-10 text-center shadow-sm">
             <Store className="w-8 h-8 text-gray-300 mx-auto mb-4" />
-            <h3 className="font-serif text-2xl text-mirrorly-black mb-2">Urun bulunamadi</h3>
-            <p className="text-sm text-mirrorly-stone">Aramani temizleyip tekrar deneyebilirsin.</p>
+            <h3 className="font-serif text-2xl text-mirrorly-black mb-2">{t('Urun bulunamadi')}</h3>
+            <p className="text-sm text-mirrorly-stone">{t('Aramani temizleyip tekrar deneyebilirsin.')}</p>
           </div>
         ) : (
           sections.map((section) => (
             <section key={section.key} className="mb-8">
               <div className="mb-4">
-                <h3 className="font-serif text-2xl text-mirrorly-black">{section.title}</h3>
-                <p className="text-sm text-mirrorly-stone mt-1">{section.subtitle}</p>
+                <h3 className="font-serif text-2xl text-mirrorly-black">{t(section.title)}</h3>
+                <p className="text-sm text-mirrorly-stone mt-1">{t(section.subtitle)}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

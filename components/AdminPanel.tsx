@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, LogOut, Coins, Users, Store, TrendingUp, Download } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { CustomerProfile, MerchantProfile, HistoryItem } from '../types';
@@ -21,6 +22,7 @@ interface CustomerStats extends CustomerProfile {
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'merchants' | 'customers'>('merchants');
   const [merchants, setMerchants] = useState<MerchantStats[]>([]);
   const [customers, setCustomers] = useState<CustomerStats[]>([]);
@@ -124,15 +126,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
       <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-mirrorly-paper px-6 py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div>
-            <h1 className="font-serif text-2xl text-mirrorly-black">Admin Panel</h1>
-            <p className="text-xs text-mirrorly-stone mt-1">Giriş: {userEmail}</p>
+            <h1 className="font-serif text-2xl text-mirrorly-black">{t('Admin Panel')}</h1>
+            <p className="text-xs text-mirrorly-stone mt-1">{t('Giriş: {{email}}', { email: userEmail })}</p>
           </div>
           <button
             onClick={onLogout}
             className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
           >
             <LogOut className="w-4 h-4" />
-            Çıkış
+            {t('Çıkış')}
           </button>
         </div>
       </div>
@@ -145,7 +147,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
             <div className="bg-white rounded-xl p-6 border border-mirrorly-paper shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-widest text-mirrorly-stone font-medium">Mağazalar</p>
+                  <p className="text-xs uppercase tracking-widest text-mirrorly-stone font-medium">{t('Mağazalar')}</p>
                   <p className="font-serif text-3xl text-mirrorly-black mt-2">{totalMerchants}</p>
                 </div>
                 <Store className="w-10 h-10 text-blue-500 opacity-20" />
@@ -155,7 +157,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
             <div className="bg-white rounded-xl p-6 border border-mirrorly-paper shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-widest text-mirrorly-stone font-medium">Müşteriler</p>
+                  <p className="text-xs uppercase tracking-widest text-mirrorly-stone font-medium">{t('Müşteriler')}</p>
                   <p className="font-serif text-3xl text-mirrorly-black mt-2">{totalCustomers}</p>
                 </div>
                 <Users className="w-10 h-10 text-emerald-500 opacity-20" />
@@ -165,7 +167,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
             <div className="bg-white rounded-xl p-6 border border-mirrorly-paper shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-widest text-mirrorly-stone font-medium">Ürünler</p>
+                  <p className="text-xs uppercase tracking-widest text-mirrorly-stone font-medium">{t('Ürünler')}</p>
                   <p className="font-serif text-3xl text-mirrorly-black mt-2">{totalProducts}</p>
                 </div>
                 <Download className="w-10 h-10 text-amber-500 opacity-20" />
@@ -175,7 +177,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
             <div className="bg-white rounded-xl p-6 border border-mirrorly-paper shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-widest text-mirrorly-stone font-medium">Denemeler</p>
+                  <p className="text-xs uppercase tracking-widest text-mirrorly-stone font-medium">{t('Denemeler')}</p>
                   <p className="font-serif text-3xl text-mirrorly-black mt-2">{totalTryOns}</p>
                 </div>
                 <TrendingUp className="w-10 h-10 text-purple-500 opacity-20" />
@@ -194,7 +196,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
                     : 'text-mirrorly-stone hover:text-gray-700'
                 }`}
               >
-                Mağazalar ({totalMerchants})
+                {t('Mağazalar ({{count}})', { count: totalMerchants })}
               </button>
               <button
                 onClick={() => setActiveTab('customers')}
@@ -204,14 +206,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
                     : 'text-mirrorly-stone hover:text-gray-700'
                 }`}
               >
-                Müşteriler ({totalCustomers})
+                {t('Müşteriler ({{count}})', { count: totalCustomers })}
               </button>
             </div>
 
             <div className="p-6">
               {loading ? (
                 <div className="text-center py-12">
-                  <p className="text-mirrorly-stone">Veriler yükleniyor...</p>
+                  <p className="text-mirrorly-stone">{t('Veriler yükleniyor...')}</p>
                 </div>
               ) : activeTab === 'merchants' ? (
                 <div className="space-y-4">
@@ -225,7 +227,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      En Aktif
+                      {t('En Aktif')}
                     </button>
                     <button
                       onClick={() => setSortBy('products')}
@@ -235,7 +237,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      En Çok Ürün
+                      {t('En Çok Ürün')}
                     </button>
                     <button
                       onClick={() => setSortBy('credits')}
@@ -245,7 +247,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      En Çok Kredi
+                      {t('En Çok Kredi')}
                     </button>
                   </div>
 
@@ -258,15 +260,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
                           <p className="text-xs text-mirrorly-stone mt-1">{merchant.uid}</p>
                         </div>
                         <div className="col-span-2 text-center">
-                          <p className="text-xs text-mirrorly-stone uppercase tracking-widest">Ürünler</p>
+                          <p className="text-xs text-mirrorly-stone uppercase tracking-widest">{t('Ürünler')}</p>
                           <p className="font-serif text-xl text-mirrorly-black mt-1">{merchant.productCount}</p>
                         </div>
                         <div className="col-span-2 text-center">
-                          <p className="text-xs text-mirrorly-stone uppercase tracking-widest">Denemeler</p>
+                          <p className="text-xs text-mirrorly-stone uppercase tracking-widest">{t('Denemeler')}</p>
                           <p className="font-serif text-xl text-mirrorly-black mt-1">{merchant.totalTryOns}</p>
                         </div>
                         <div className="col-span-2 text-center">
-                          <p className="text-xs text-mirrorly-stone uppercase tracking-widest">Kredi</p>
+                          <p className="text-xs text-mirrorly-stone uppercase tracking-widest">{t('Kredi')}</p>
                           <p className="font-serif text-xl text-mirrorly-black mt-1 flex items-center justify-center gap-1">
                             <Coins className="w-4 h-4" />
                             {merchant.credits}
@@ -280,7 +282,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
                                 ? 'bg-blue-100 text-blue-700'
                                 : 'bg-gray-100 text-gray-700'
                           }`}>
-                            {merchant.totalTryOns > 10 ? 'Aktif' : merchant.totalTryOns > 0 ? 'Kullanımda' : 'Pasif'}
+                            {merchant.totalTryOns > 10 ? t('Aktif') : merchant.totalTryOns > 0 ? t('Kullanımda') : t('Pasif')}
                           </span>
                         </div>
                       </div>
@@ -298,11 +300,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
                           <p className="text-xs text-mirrorly-stone mt-1">{customer.email}</p>
                         </div>
                         <div className="col-span-2 text-center">
-                          <p className="text-xs text-mirrorly-stone uppercase tracking-widest">Denemeler</p>
+                          <p className="text-xs text-mirrorly-stone uppercase tracking-widest">{t('Denemeler')}</p>
                           <p className="font-serif text-xl text-mirrorly-black mt-1">{customer.tryOnCount}</p>
                         </div>
                         <div className="col-span-2 text-center">
-                          <p className="text-xs text-mirrorly-stone uppercase tracking-widest">Kredi</p>
+                          <p className="text-xs text-mirrorly-stone uppercase tracking-widest">{t('Kredi')}</p>
                           <p className="font-serif text-xl text-mirrorly-black mt-1 flex items-center justify-center gap-1">
                             <Coins className="w-4 h-4" />
                             {customer.credits}
@@ -311,10 +313,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
                         <div className="col-span-3 text-right">
                           {customer.lastActivity ? (
                             <span className="text-xs text-mirrorly-stone">
-                              Son: {new Date(customer.lastActivity).toLocaleDateString('tr-TR')}
+                              {t('Son: {{date}}', { date: new Date(customer.lastActivity).toLocaleDateString('tr-TR') })}
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-400">Henüz aktivite yok</span>
+                            <span className="text-xs text-gray-400">{t('Henüz aktivite yok')}</span>
                           )}
                         </div>
                       </div>
@@ -334,7 +336,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, onLogout, userEmail }) 
           className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-mirrorly-black transition-colors text-sm font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
-          Geri Dön
+          {t('Geri Dön')}
         </button>
       </div>
     </div>

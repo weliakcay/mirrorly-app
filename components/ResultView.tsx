@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Check,
@@ -23,20 +24,21 @@ interface ResultViewProps {
   onHome: () => void;
 }
 
-const buildWhatsAppHref = (phone: string, garmentName: string) => {
+const buildWhatsAppHref = (phone: string, garmentName: string, t: (key: string, options?: any) => string) => {
   let phoneNum = phone.replace(/[^\d]/g, '');
   if (phoneNum.startsWith('0') && phoneNum.length === 11) {
     phoneNum = '90' + phoneNum.substring(1);
   } else if (phoneNum.startsWith('5') && phoneNum.length === 10) {
     phoneNum = '90' + phoneNum;
   }
-  const text = encodeURIComponent(`${garmentName} urunu hakkinda bilgi almak istiyorum.`);
+  const text = encodeURIComponent(t('{{garmentName}} urunu hakkinda bilgi almak istiyorum.', { garmentName }));
   return phoneNum ? `https://wa.me/${phoneNum}?text=${text}` : '';
 };
 
 const resolvePurchaseAction = (
   garment: Garment,
-  merchantProfile: MerchantPublicProfile | null
+  merchantProfile: MerchantPublicProfile | null,
+  t: (key: string, options?: any) => string
 ): { label: string; href?: string } => {
   if (garment.shopUrl) {
     return { label: 'Online Satin Al', href: garment.shopUrl };
@@ -49,7 +51,7 @@ const resolvePurchaseAction = (
   if (merchantProfile?.whatsappNumber) {
     return {
       label: 'Magaza ile Iletisim',
-      href: buildWhatsAppHref(merchantProfile.whatsappNumber, garment.name),
+      href: buildWhatsAppHref(merchantProfile.whatsappNumber, garment.name, t),
     };
   }
 
@@ -63,10 +65,11 @@ const ResultView: React.FC<ResultViewProps> = ({
   onRetake,
   onHome,
 }) => {
+  const { t } = useTranslation();
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [noCtaVisible, setNoCtaVisible] = useState(false);
-  const purchaseAction = resolvePurchaseAction(garment, merchantProfile);
+  const purchaseAction = resolvePurchaseAction(garment, merchantProfile, t);
 
   if (!result.success) {
     const isMerchantCreditError =
@@ -93,15 +96,15 @@ const ResultView: React.FC<ResultViewProps> = ({
 
         {isMerchantCreditError ? (
           <>
-            <h3 className="font-serif text-2xl text-mirrorly-black mb-4">Bu Butik Şu An Dolu</h3>
+            <h3 className="font-serif text-2xl text-mirrorly-black mb-4">{t('Bu Butik Şu An Dolu')}</h3>
             <p className="text-mirrorly-stone text-sm leading-relaxed mb-8 max-w-xs">
-              Bu mağazanın deneme kapasitesi dolmuş. Daha sonra tekrar deneyin veya başka bir butiki keşfedin.
+              {t('Bu mağazanın deneme kapasitesi dolmuş. Daha sonra tekrar deneyin veya başka bir butiki keşfedin.')}
             </p>
           </>
         ) : (
           <>
-            <h3 className="font-serif text-2xl text-mirrorly-black mb-4">Ayna netlesemedi</h3>
-            <p className="text-gray-600 mb-8">{result.message}</p>
+            <h3 className="font-serif text-2xl text-mirrorly-black mb-4">{t('Ayna netlesemedi')}</h3>
+            <p className="text-gray-600 mb-8">{t(result.message)}</p>
           </>
         )}
 
@@ -109,7 +112,7 @@ const ResultView: React.FC<ResultViewProps> = ({
           onClick={onRetake}
           className="px-8 py-3 bg-mirrorly-black text-white rounded-full font-sans text-sm uppercase tracking-wide"
         >
-          Tekrar Dene
+          {t('Tekrar Dene')}
         </button>
       </div>
     );
@@ -163,7 +166,7 @@ const ResultView: React.FC<ResultViewProps> = ({
 
       await navigator.share({
         title: `${garment.name} - Mirrorly`,
-        text: `Bu gorunumu Mirrorly ile olusturdum: ${garment.name}`,
+        text: t('Bu gorunumu Mirrorly ile olusturdum: {{name}}', { name: garment.name }),
         files: [file],
       });
       setShowShareModal(false);
@@ -175,7 +178,7 @@ const ResultView: React.FC<ResultViewProps> = ({
       try {
         await navigator.share({
           title: `${garment.name} - Mirrorly`,
-          text: `Bu gorunumu Mirrorly ile olusturdum: ${garment.name}`,
+          text: t('Bu gorunumu Mirrorly ile olusturdum: {{name}}', { name: garment.name }),
           url: result.imageUrl,
         });
         setShowShareModal(false);
@@ -187,7 +190,7 @@ const ResultView: React.FC<ResultViewProps> = ({
     }
   };
 
-  const shareText = encodeURIComponent(`Mirrorly ile ${garment.name} denedim.`);
+  const shareText = encodeURIComponent(t('Mirrorly ile {{name}} denedim.', { name: garment.name }));
   const shareUrl = encodeURIComponent(window.location.href);
 
   const handleCopyLink = async () => {
@@ -223,7 +226,7 @@ const ResultView: React.FC<ResultViewProps> = ({
         {result.mode === 'demo' && (
           <div className="absolute top-4 left-4 px-4 py-2 rounded-full bg-white/88 backdrop-blur-md shadow-sm">
             <span className="text-[11px] uppercase tracking-[0.22em] text-gray-700">
-              Demo Onizleme
+              {t('Demo Onizleme')}
             </span>
           </div>
         )}
@@ -234,8 +237,7 @@ const ResultView: React.FC<ResultViewProps> = ({
         {result.mode === 'demo' && (
           <div className="mb-4 mx-auto max-w-sm rounded-2xl bg-white/82 backdrop-blur-md px-4 py-3 text-center shadow-sm">
             <p className="text-xs text-gray-600 leading-relaxed">
-              Bu gorsel demo onizlemedir. Gercek AI giydirme servisi baglandiginda ayni akista
-              canli sonuc gosterilecek.
+              {t('Bu gorsel demo onizlemedir. Gercek AI giydirme servisi baglandiginda ayni akista canli sonuc gosterilecek.')}
             </p>
           </div>
         )}
@@ -265,12 +267,12 @@ const ResultView: React.FC<ResultViewProps> = ({
             className="w-full h-14 bg-mirrorly-black text-white rounded-full shadow-xl flex items-center justify-center gap-2 hover:bg-mirrorly-stone transition-all active:scale-[0.98]"
           >
             <ShoppingBag className="w-5 h-5" />
-            <span className="font-sans font-semibold text-base tracking-wide">{purchaseAction.label}</span>
+            <span className="font-sans font-semibold text-base tracking-wide">{t(purchaseAction.label)}</span>
           </button>
 
           {noCtaVisible && (
             <p className="text-center text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2">
-              Bu ürün için henüz satış veya iletişim bilgisi eklenmemiş.
+              {t('Bu ürün için henüz satış veya iletişim bilgisi eklenmemiş.')}
             </p>
           )}
 
@@ -281,7 +283,7 @@ const ResultView: React.FC<ResultViewProps> = ({
               className="flex items-center justify-center gap-2 h-12 rounded-full border border-gray-300 bg-white/80 backdrop-blur-sm text-gray-700 hover:bg-white transition-colors text-sm font-medium"
             >
               <RefreshCw className="w-4 h-4" />
-              Tekrar
+              {t('Tekrar')}
             </button>
 
             <button
@@ -289,7 +291,7 @@ const ResultView: React.FC<ResultViewProps> = ({
               className="flex items-center justify-center gap-2 h-12 rounded-full border border-gray-300 bg-white/80 backdrop-blur-sm text-gray-700 hover:bg-white transition-colors text-sm font-medium"
             >
               <Share2 className="w-4 h-4" />
-              Paylaş
+              {t('Paylaş')}
             </button>
           </div>
         </div>
@@ -299,7 +301,7 @@ const ResultView: React.FC<ResultViewProps> = ({
             onClick={onHome}
             className="text-xs text-gray-400 font-sans tracking-wide uppercase hover:text-gray-600"
           >
-            Ana Ekrana Dön
+            {t('Ana Ekrana Dön')}
           </button>
         </div>
       </div>
@@ -308,7 +310,7 @@ const ResultView: React.FC<ResultViewProps> = ({
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-end justify-center z-50 animate-fade-in">
           <div className="w-full max-w-md bg-white rounded-t-3xl p-6 pb-10 space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="font-serif text-xl text-mirrorly-black">Gorunumu Paylas</h3>
+              <h3 className="font-serif text-xl text-mirrorly-black">{t('Gorunumu Paylas')}</h3>
               <button
                 onClick={() => setShowShareModal(false)}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -322,7 +324,7 @@ const ResultView: React.FC<ResultViewProps> = ({
               className="w-full flex items-center justify-center gap-3 bg-mirrorly-black text-white py-4 rounded-xl font-medium hover:bg-mirrorly-stone transition-colors"
             >
               <Download className="w-5 h-5" />
-              Gorseli Indir
+              {t('Gorseli Indir')}
             </button>
 
             <div className="grid grid-cols-3 gap-4">
@@ -365,12 +367,12 @@ const ResultView: React.FC<ResultViewProps> = ({
               {copied ? (
                 <>
                   <Check className="w-4 h-4 text-green-500" />
-                  <span className="text-green-600">Kopyalandi</span>
+                  <span className="text-green-600">{t('Kopyalandi')}</span>
                 </>
               ) : (
                 <>
                   <Link2 className="w-4 h-4" />
-                  <span>Baglantiyi Kopyala</span>
+                  <span>{t('Baglantiyi Kopyala')}</span>
                 </>
               )}
             </button>
