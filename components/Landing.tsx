@@ -26,7 +26,9 @@ const Landing: React.FC<LandingProps> = ({
   const { t } = useTranslation();
   return (
     <div className="relative h-full bg-boutique-cream animate-fade-in overflow-y-auto">
-      <LanguageSwitcher className="absolute top-4 right-4 z-50" />
+      <div className="absolute top-4 left-4 z-50">
+        <LanguageSwitcher align="left" />
+      </div>
       {customerProfile && onCustomerAccount && (
         <div className="px-6 pt-4 pb-2 flex items-center justify-end">
           <button

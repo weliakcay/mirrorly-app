@@ -3,7 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { Globe, Check } from 'lucide-react';
 import { LANGS } from '../i18n';
 
-const LanguageSwitcher = ({ className = '' }: { className?: string }) => {
+const LanguageSwitcher = ({
+  className = '',
+  align = 'right',
+}: {
+  className?: string;
+  align?: 'left' | 'right';
+}) => {
   const { i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -40,7 +46,7 @@ const LanguageSwitcher = ({ className = '' }: { className?: string }) => {
       {open && (
         <ul
           role="listbox"
-          className="absolute right-0 mt-2 w-40 rounded-2xl border border-mirrorly-paper bg-white shadow-xl py-1.5 z-[60] overflow-hidden"
+          className={`absolute ${align === 'left' ? 'left-0' : 'right-0'} mt-2 w-40 rounded-2xl border border-mirrorly-paper bg-white shadow-xl py-1.5 z-[60] overflow-hidden`}
         >
           {LANGS.map((l) => {
             const active = l.code === current.code;
