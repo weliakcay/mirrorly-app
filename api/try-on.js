@@ -31,10 +31,12 @@ function isRateLimited(ip) {
 }
 
 function clientIp(req) {
-  // GUVENLIK: x-forwarded-for'un ILK degeri client tarafindan spoof edilebilir
-  // (saldirgan kendi header'ini eklerse rate limit sifirlanir). Vercel gercek client
-  // IP'sini x-real-ip'e yazar → once onu kullan; yoksa XFF'in SON (platform-eklenen)
-  // degerini al; en son socket.
+  // GUVENLIK: client-spoof edilebilir header'lara GUVENME. x-forwarded-for'un ilk degeri
+  // ve hatta x-real-ip saldirgan tarafindan eklenebilir → rate limit sifirlanirdi.
+  // Vercel gercek client IP'sini `x-vercel-forwarded-for`'a yazar ve client-provided
+  // degeri EZER → platform-kontrollu, spoof-edilemez tek kaynak. Onu birincil kullan.
+  const vercelIp = req.headers["x-vercel-forwarded-for"];
+  if (vercelIp) return String(vercelIp).split(",")[0].trim();
   const realIp = req.headers["x-real-ip"];
   if (realIp) return String(realIp).split(",")[0].trim();
   const xff = String(req.headers["x-forwarded-for"] || "");
