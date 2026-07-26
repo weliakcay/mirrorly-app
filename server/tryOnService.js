@@ -72,16 +72,19 @@ const getCustomerProfile = async (customerUid) => {
   };
 };
 
-// Atomik kredi dusumu + merchant audit log. Transaction re-read ile lost-update
-// (paralel try-on) onlenir; bakiye asla negatif olmaz.
-const deductMerchantCreditAtomic = async (merchantUid, creditCost, garmentId) => {
+const INSUFFICIENT_CREDIT = "INSUFFICIENT_CREDIT";
+
+// Krediyi Kie cagrisindan ONCE atomik REZERVE et → TOCTOU (kontrol ile dusum arasi
+// ~50sn boslukta paralel isteklerin ayni krediyi N kez gecmesi) kapatilir. Yetersizse throw.
+const reserveMerchantCreditAtomic = async (merchantUid, creditCost, garmentId) => {
   const db = getAdminDb();
   const ref = db.collection(COLLECTION_PRIVATE_PROFILE).doc(merchantUid);
   const txnRef = ref.collection(COLLECTION_CUSTOMER_CREDIT_TRANSACTIONS).doc();
   return db.runTransaction(async (t) => {
     const snap = await t.get(ref);
     const current = snap.exists && typeof snap.data()?.credits === "number" ? snap.data().credits : 0;
-    const newBalance = Math.max(0, current - creditCost);
+    if (current < creditCost) throw new Error(INSUFFICIENT_CREDIT);
+    const newBalance = current - creditCost;
     t.set(ref, { credits: newBalance, updatedAt: Date.now() }, { merge: true });
     t.set(txnRef, {
       id: txnRef.id,
@@ -93,6 +96,46 @@ const deductMerchantCreditAtomic = async (merchantUid, creditCost, garmentId) =>
       ...(garmentId ? { garmentId } : {}),
     });
     return newBalance;
+  });
+};
+
+// Kie basarisiz olursa rezerve edilen krediyi geri yukle (audit log ile).
+const refundMerchantCreditAtomic = async (merchantUid, creditCost, garmentId) => {
+  const db = getAdminDb();
+  const ref = db.collection(COLLECTION_PRIVATE_PROFILE).doc(merchantUid);
+  const txnRef = ref.collection(COLLECTION_CUSTOMER_CREDIT_TRANSACTIONS).doc();
+  return db.runTransaction(async (t) => {
+    const snap = await t.get(ref);
+    const current = snap.exists && typeof snap.data()?.credits === "number" ? snap.data().credits : 0;
+    const newBalance = current + creditCost;
+    t.set(ref, { credits: newBalance, updatedAt: Date.now() }, { merge: true });
+    t.set(txnRef, {
+      id: txnRef.id,
+      type: "refund",
+      credits: creditCost,
+      label: "Try-on basarisiz — kredi iadesi",
+      createdAt: Date.now(),
+      balanceAfter: newBalance,
+      ...(garmentId ? { garmentId } : {}),
+    });
+    return newBalance;
+  });
+};
+
+// Gunluk Kie harcama tavani — maliyet-patlamasi / suistimal devre kesici. Atomik artir;
+// tavani asarsa false doner (istek reddedilir, Kie hic cagrilmaz). KIE_DAILY_CAP=0 → kapali.
+const KIE_DAILY_CAP = Number(process.env.KIE_DAILY_CAP || 1500);
+const checkAndIncrementDailyKieCap = async () => {
+  if (!Number.isFinite(KIE_DAILY_CAP) || KIE_DAILY_CAP <= 0) return true;
+  const db = getAdminDb();
+  const dateKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
+  const ref = db.collection("system_usage").doc(`kie_${dateKey}`);
+  return db.runTransaction(async (t) => {
+    const snap = await t.get(ref);
+    const count = snap.exists && typeof snap.data()?.count === "number" ? snap.data().count : 0;
+    if (count >= KIE_DAILY_CAP) return false;
+    t.set(ref, { count: count + 1, date: dateKey, updatedAt: Date.now() }, { merge: true });
+    return true;
   });
 };
 
@@ -242,18 +285,42 @@ export const handleTryOnRequest = async (payload) => {
       customerProfile = await getCustomerProfile(customerUid);
     }
 
+    const insufficientBody = {
+      success: false,
+      imageUrl: "",
+      message: `Bu magazanin yeterli kredisi yok. Magaza yetkilisi krediyi yuklediginde tekrar deneyebilirsin.`,
+      creditOwner: "merchant",
+      remainingCredits: merchant.credits || 0,
+      creditCost,
+    };
+
+    // Ucuz on-kontrol (Kie'ye/upload'a gitmeden guzel 402).
     if ((merchant.credits || 0) < creditCost) {
+      return { status: 402, body: insufficientBody };
+    }
+
+    // Gunluk Kie harcama tavani — maliyet-patlamasi / suistimal devre kesici.
+    const capOk = await checkAndIncrementDailyKieCap();
+    if (!capOk) {
       return {
-        status: 402,
+        status: 429,
         body: {
           success: false,
           imageUrl: "",
-          message: `Bu magazanin yeterli kredisi yok. Magaza yetkilisi krediyi yuklediginde tekrar deneyebilirsin.`,
-          creditOwner: "merchant",
-          remainingCredits: merchant.credits || 0,
-          creditCost,
+          message: "Sistem su an cok yogun. Lutfen biraz sonra tekrar dene.",
         },
       };
+    }
+
+    // TOCTOU kapatma: krediyi Kie cagrisindan ONCE atomik rezerve et.
+    let remainingCredits;
+    try {
+      remainingCredits = await reserveMerchantCreditAtomic(garment.merchantUid, creditCost, garmentId);
+    } catch (reserveError) {
+      if (String(reserveError?.message) === INSUFFICIENT_CREDIT) {
+        return { status: 402, body: insufficientBody };
+      }
+      throw reserveError;
     }
 
     const userImageUrl = await uploadDataUrlToKie({
@@ -272,9 +339,6 @@ export const handleTryOnRequest = async (payload) => {
         userImageUrl,
       });
 
-      // QR-attributed try-on: krediyi atomik olarak magazadan dus + audit log.
-      const remainingCredits = await deductMerchantCreditAtomic(garment.merchantUid, creditCost, garmentId);
-
       return {
         status: 200,
         body: {
@@ -285,6 +349,10 @@ export const handleTryOnRequest = async (payload) => {
           creditCost,
         },
       };
+    } catch (kieError) {
+      // Kie basarisiz → rezerve edilen krediyi iade et (suistimal/hata bedava kredi yakmasin).
+      await refundMerchantCreditAtomic(garment.merchantUid, creditCost, garmentId).catch(() => {});
+      throw kieError;
     } finally {
       await garmentTemp.cleanup();
     }

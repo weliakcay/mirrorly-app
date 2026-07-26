@@ -31,8 +31,18 @@ function isRateLimited(ip) {
 }
 
 function clientIp(req) {
-  const xff = req.headers["x-forwarded-for"] || req.headers["x-real-ip"] || "";
-  return String(xff).split(",")[0].trim() || req.socket?.remoteAddress || "unknown";
+  // GUVENLIK: x-forwarded-for'un ILK degeri client tarafindan spoof edilebilir
+  // (saldirgan kendi header'ini eklerse rate limit sifirlanir). Vercel gercek client
+  // IP'sini x-real-ip'e yazar → once onu kullan; yoksa XFF'in SON (platform-eklenen)
+  // degerini al; en son socket.
+  const realIp = req.headers["x-real-ip"];
+  if (realIp) return String(realIp).split(",")[0].trim();
+  const xff = String(req.headers["x-forwarded-for"] || "");
+  if (xff) {
+    const parts = xff.split(",").map((s) => s.trim()).filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
+  }
+  return req.socket?.remoteAddress || "unknown";
 }
 
 export default async function handler(req, res) {
