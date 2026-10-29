@@ -1,8 +1,18 @@
 # Mirrorly
 
-QR tabanli butik try-on deneyimi.
+QR-based virtual try-on for boutiques. React, TypeScript and Firebase, with a server-side Kie.ai integration.
 
-## Mevcut Durum
+## Project overview
+
+- Intended workflow: merchant adds a garment, shares its QR/link, and a customer starts a photo-based try-on.
+- [Public landing page](https://mirrorly-landing.vercel.app/) · [Application](https://mirrorly-app.vercel.app/) (customer access requires sign-in).
+- Documentation reviewed on 29 October 2026. The application sign-in screen was reachable; a complete provider-backed try-on was not verified in that review.
+- The implementation and release notes below describe a prototype/pilot. Reliable provider results, production configuration and a real merchant/mobile smoke test remain release acceptance requirements.
+- AI requests and infrastructure can incur costs. Public page availability is not evidence that the full generation or payment flow has passed.
+
+Technical setup and the original Turkish implementation notes follow.
+
+## Implementation notes — 11 April 2026
 
 11 Nisan 2026 itibariyla Mirrorly prototip ile pilot arasinda bir asamadadir:
 
